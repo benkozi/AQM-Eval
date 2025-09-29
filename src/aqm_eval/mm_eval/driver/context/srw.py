@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any
 
 import yaml
 from pydantic import Field, computed_field
@@ -24,9 +24,6 @@ except ImportError as exc:
 def _convert_date_string_to_mm_(date_str: str) -> str:
     dt = datetime.strptime(date_str, "%Y%m%d%H")
     return dt.strftime("%Y-%m-%d-%H:00:00")
-
-
-PackageType = TypeVar("PackageType", bound=AbstractEvalPackage)
 
 
 class SRWContext(AbstractDriverContext):
