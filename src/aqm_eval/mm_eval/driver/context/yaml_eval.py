@@ -43,7 +43,7 @@ class YAMLContext(AbstractDriverContext):
 
     @cached_property
     def mm_packages(self) -> tuple[AbstractEvalPackage, ...]:
-        # tdk: need a filter here
+        # tdk: these need to be pulled from the yaml file. new entry?
         return (
             ChemEvalPackage(
                 root_dir=self.mm_output_dir,

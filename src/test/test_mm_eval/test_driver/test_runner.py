@@ -58,6 +58,7 @@ class TestMMEvalRunner:
     def test(self, mm_eval_runner_test_data: MMEvalRunnerTestData) -> None:
         """Test "initialize", actually. "run" ensures the failure occurs in xarray when actual data
         is needed."""
+        # tdk:test: this should run through all contexts and packages
         ctx = mm_eval_runner_test_data.ctx
         runner = MMEvalRunner(ctx=ctx)
 
@@ -68,10 +69,11 @@ class TestMMEvalRunner:
         assert len(actual_links) == mm_eval_runner_test_data.expected_n_links
 
         # Test control yaml files are created
-        chem_run_dir = ctx.mm_run_dir / PackageKey.CHEM.value
-        actual_files = chem_run_dir.rglob("*")
-        assert set([ii.name for ii in actual_files]) == mm_eval_runner_test_data.expected_fns
+        for package_key in (PackageKey.CHEM, PackageKey.MET):
+            package_run_dir = ctx.mm_run_dir / package_key.value
+            actual_files = package_run_dir.rglob("*")
+            assert set([ii.name for ii in actual_files]) == mm_eval_runner_test_data.expected_fns
 
-        with pytest.raises(ValueError) as excinfo:
-            runner.run()
-        assert str(excinfo.value).startswith("did not find a match in any of xarray's currently installed IO backends")
+            with pytest.raises(ValueError) as excinfo:
+                runner.run()
+            assert str(excinfo.value).startswith("did not find a match in any of xarray's currently installed IO backends")

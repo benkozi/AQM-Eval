@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 import yaml
 from pydantic import Field, computed_field
@@ -13,7 +13,7 @@ from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.helpers import PathExisting
 from aqm_eval.mm_eval.driver.model import Model, ModelRole
-from aqm_eval.mm_eval.driver.package import AbstractEvalPackage, ChemEvalPackage, PackageKey, TaskKey
+from aqm_eval.mm_eval.driver.package import AbstractEvalPackage, ChemEvalPackage, MetEvalPackage, PackageKey, TaskKey
 
 try:
     from uwtools.api.config import YAMLConfig, get_yaml_config
@@ -24,6 +24,9 @@ except ImportError as exc:
 def _convert_date_string_to_mm_(date_str: str) -> str:
     dt = datetime.strptime(date_str, "%Y%m%d%H")
     return dt.strftime("%Y-%m-%d-%H:00:00")
+
+
+PackageType = TypeVar("PackageType", bound=AbstractEvalPackage)
 
 
 class SRWContext(AbstractDriverContext):
@@ -93,6 +96,11 @@ class SRWContext(AbstractDriverContext):
 
     @computed_field
     @cached_property
+    def mm_obs_ish_fn_template(self) -> str:  # tdk:last: ish or met?
+        return self.find_nested_key(("task_mm_prep", "MM_OBS_ISH_FN_TEMPLATE"))
+
+    @computed_field
+    @cached_property
     def link_simulation(self) -> tuple[str, ...]:
         return tuple(set([f"{str(ii.year)}*" for ii in [self.datetime_first_cycl, self.datetime_last_cycl]]))
 
@@ -115,15 +123,33 @@ class SRWContext(AbstractDriverContext):
 
     @cached_property
     def mm_packages(self) -> tuple[AbstractEvalPackage, ...]:
-        ret = []
+        ret: list[AbstractEvalPackage] = []
         use_base_model = self.mm_base_model_expt_dir is not None
+        mapping = {PackageKey.CHEM: ChemEvalPackage, PackageKey.MET: MetEvalPackage}
         for package_key in self.mm_package_keys:
-            match package_key:
-                case PackageKey.CHEM:
-                    klass = ChemEvalPackage
-                case _:
-                    raise ValueError(package_key)
-            ret.append(klass(root_dir=self.mm_run_dir, use_base_model=use_base_model))
+            # match package_key:
+            # tdk:last: replace with enum map
+            # class Color(StrEnum):
+            #     RED = "red"
+            #     GREEN = "green"
+            #     BLUE = "blue"
+            #
+            #     _class_map = {
+            #         RED: RedHandler,
+            #         GREEN: GreenHandler,
+            #         BLUE: BlueHandler,
+            #     }
+            #
+            #     def get_class(self):
+            #         """Return the Python class associated with this enum member."""
+            #         return self._class_map[self]
+            # case PackageKey.CHEM:
+            #     klass = ChemEvalPackage
+            # case PackageKey.MET:
+            #     klass = MetEvalPackage
+            # case _:
+            #     raise ValueError(package_key)
+            ret.append(mapping[package_key](root_dir=self.mm_run_dir, use_base_model=use_base_model))
         return tuple(ret)
 
     @cached_property
