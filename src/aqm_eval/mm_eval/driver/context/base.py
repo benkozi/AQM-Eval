@@ -10,7 +10,7 @@ from pydantic import BaseModel, computed_field
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.helpers import PathExisting
 from aqm_eval.mm_eval.driver.model import Model
-from aqm_eval.mm_eval.driver.package import ChemEvalPackage
+from aqm_eval.mm_eval.driver.package import AbstractEvalPackage
 
 
 class AbstractDriverContext(ABC, BaseModel):
@@ -37,11 +37,11 @@ class AbstractDriverContext(ABC, BaseModel):
 
     @cached_property
     @abstractmethod
-    def mm_packages(self) -> tuple[ChemEvalPackage, ...]:
+    def mm_packages(self) -> tuple[AbstractEvalPackage, ...]:
         """
         Returns
         -------
-        tuple[ChemEvalPackage, ...]
+        tuple[AbstractEvalPackage, ...]
             Evaluation packages to initialize and run. An evaluation package is a collection of
             evaluation plots and statistics for specific prognostic variables and observational
             datasets.

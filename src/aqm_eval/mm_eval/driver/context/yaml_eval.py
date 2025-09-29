@@ -11,7 +11,7 @@ from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.helpers import PathExisting
 from aqm_eval.mm_eval.driver.model import Model, ModelRole
-from aqm_eval.mm_eval.driver.package import ChemEvalPackage, TaskKey
+from aqm_eval.mm_eval.driver.package import AbstractEvalPackage, TaskKey, ChemEvalPackage
 
 
 def _get_or_create_path_(path: str | Path) -> PathExisting:
@@ -42,7 +42,8 @@ class YAMLContext(AbstractDriverContext):
         return PathExisting(self._config_data["cartopy_data_dir"])
 
     @cached_property
-    def mm_packages(self) -> tuple[ChemEvalPackage, ...]:
+    def mm_packages(self) -> tuple[AbstractEvalPackage, ...]:
+        #tdk: need a filter here
         return (
             ChemEvalPackage(
                 root_dir=self.mm_output_dir,

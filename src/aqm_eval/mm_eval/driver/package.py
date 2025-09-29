@@ -1,5 +1,5 @@
 """Defines package objects used when generating MM files. A package is a collection of tasks specfiic to an evaluation type."""
-
+from abc import ABC
 from enum import StrEnum, unique
 from functools import cached_property
 from pathlib import Path
@@ -33,19 +33,20 @@ class PackageKey(StrEnum):
     """Unique MM package keys."""
 
     CHEM = "chem"
-    MET = "met"
+    MET = "met" #tdk:last: should this be named ish or met?
     AQS_PM25 = "aqs_pm25"
     VOCS = "vocs"
 
 
-class ChemEvalPackage(BaseModel):
-    """Defines a chemistry evaluation package."""
+class AbstractEvalPackage(ABC, BaseModel):
+    """Defines an abstract evaluation package."""
 
     model_config = {"frozen": True}
     root_dir: PathExisting = Field(description="Root directory for MM evaluation package.")
-    use_base_model: bool = Field(description="If True, a base model will be used to generate scorecards.")
-    key: PackageKey = Field(default=PackageKey.CHEM, description="MM package key.")
-    namelist_template: str = Field(default="namelist.chem.j2", description="Package template file.")
+    use_base_model: bool = Field(
+        description="If True, a base model will be used to generate scorecards.")
+    key: PackageKey = Field(description="MM package key.")
+    namelist_template: str = Field(description="Package template file.")
 
     @computed_field(description="Run directory for the MM evaluation package.")
     @cached_property
@@ -59,3 +60,22 @@ class ChemEvalPackage(BaseModel):
             return tuple([ii for ii in TaskKey])
         else:
             return tuple([ii for ii in TaskKey if not ii.name.startswith("SCORECARD")])
+
+class ChemEvalPackage(AbstractEvalPackage):
+    """Defines a chemistry evaluation package."""
+
+    key: PackageKey = PackageKey.CHEM
+    namelist_template: str ="namelist.chem.j2"
+
+
+#tdk:last: should this be named ish or met?
+class MetEvalPackage(AbstractEvalPackage):
+    """Defines a meteorological evaluation package."""
+
+    key: PackageKey = PackageKey.MET
+    namelist_template: str = "namelist.met.j2" #tdk:last: should this be named ish or met?
+
+    @computed_field(description="Tasks that the package will run.")
+    @cached_property
+    def tasks(self) -> tuple[TaskKey, ...]:
+        return TaskKey.SAVE_PAIRED, TaskKey.TIMESERIES, TaskKey.TAYLOR, TaskKey.SPATIAL_BIAS, TaskKey.SPATIAL_OVERLAY, TaskKey.BOXPLOT, TaskKey.STATS

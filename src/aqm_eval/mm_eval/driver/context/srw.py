@@ -13,7 +13,8 @@ from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.helpers import PathExisting
 from aqm_eval.mm_eval.driver.model import Model, ModelRole
-from aqm_eval.mm_eval.driver.package import ChemEvalPackage, PackageKey, TaskKey
+from aqm_eval.mm_eval.driver.package import AbstractEvalPackage, PackageKey, TaskKey, \
+    ChemEvalPackage
 
 try:
     from uwtools.api.config import YAMLConfig, get_yaml_config
@@ -114,7 +115,7 @@ class SRWContext(AbstractDriverContext):
         return PathExisting(self.find_nested_key(("platform", "FIXshp"))).absolute().resolve(strict=True)
 
     @cached_property
-    def mm_packages(self) -> tuple[ChemEvalPackage, ...]:
+    def mm_packages(self) -> tuple[AbstractEvalPackage, ...]:
         ret = []
         use_base_model = self.mm_base_model_expt_dir is not None
         for package_key in self.mm_package_keys:
