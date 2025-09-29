@@ -1,4 +1,5 @@
 """Defines package objects used when generating MM files. A package is a collection of tasks specfiic to an evaluation type."""
+
 from abc import ABC
 from enum import StrEnum, unique
 from functools import cached_property
@@ -33,7 +34,7 @@ class PackageKey(StrEnum):
     """Unique MM package keys."""
 
     CHEM = "chem"
-    MET = "met" #tdk:last: should this be named ish or met?
+    MET = "met"  # tdk:last: should this be named ish or met?
     AQS_PM25 = "aqs_pm25"
     VOCS = "vocs"
 
@@ -43,8 +44,7 @@ class AbstractEvalPackage(ABC, BaseModel):
 
     model_config = {"frozen": True}
     root_dir: PathExisting = Field(description="Root directory for MM evaluation package.")
-    use_base_model: bool = Field(
-        description="If True, a base model will be used to generate scorecards.")
+    use_base_model: bool = Field(description="If True, a base model will be used to generate scorecards.")
     key: PackageKey = Field(description="MM package key.")
     namelist_template: str = Field(description="Package template file.")
 
@@ -61,21 +61,30 @@ class AbstractEvalPackage(ABC, BaseModel):
         else:
             return tuple([ii for ii in TaskKey if not ii.name.startswith("SCORECARD")])
 
+
 class ChemEvalPackage(AbstractEvalPackage):
     """Defines a chemistry evaluation package."""
 
     key: PackageKey = PackageKey.CHEM
-    namelist_template: str ="namelist.chem.j2"
+    namelist_template: str = "namelist.chem.j2"
 
 
-#tdk:last: should this be named ish or met?
+# tdk:last: should this be named ish or met?
 class MetEvalPackage(AbstractEvalPackage):
     """Defines a meteorological evaluation package."""
 
     key: PackageKey = PackageKey.MET
-    namelist_template: str = "namelist.met.j2" #tdk:last: should this be named ish or met?
+    namelist_template: str = "namelist.met.j2"  # tdk:last: should this be named ish or met?
 
     @computed_field(description="Tasks that the package will run.")
     @cached_property
     def tasks(self) -> tuple[TaskKey, ...]:
-        return TaskKey.SAVE_PAIRED, TaskKey.TIMESERIES, TaskKey.TAYLOR, TaskKey.SPATIAL_BIAS, TaskKey.SPATIAL_OVERLAY, TaskKey.BOXPLOT, TaskKey.STATS
+        return (
+            TaskKey.SAVE_PAIRED,
+            TaskKey.TIMESERIES,
+            TaskKey.TAYLOR,
+            TaskKey.SPATIAL_BIAS,
+            TaskKey.SPATIAL_OVERLAY,
+            TaskKey.BOXPLOT,
+            TaskKey.STATS,
+        )

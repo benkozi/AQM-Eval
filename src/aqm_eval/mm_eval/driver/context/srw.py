@@ -13,8 +13,7 @@ from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.helpers import PathExisting
 from aqm_eval.mm_eval.driver.model import Model, ModelRole
-from aqm_eval.mm_eval.driver.package import AbstractEvalPackage, PackageKey, TaskKey, \
-    ChemEvalPackage
+from aqm_eval.mm_eval.driver.package import AbstractEvalPackage, ChemEvalPackage, PackageKey, TaskKey
 
 try:
     from uwtools.api.config import YAMLConfig, get_yaml_config
