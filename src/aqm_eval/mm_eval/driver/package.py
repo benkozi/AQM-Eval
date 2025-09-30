@@ -61,6 +61,10 @@ class AbstractEvalPackage(ABC, BaseModel):
         else:
             return tuple([ii for ii in TaskKey if not ii.name.startswith("SCORECARD")])
 
+    @cached_property
+    def task_control_filenames(self) -> set[str]:
+        return set([f"control_{ii.value}.yaml" for ii in self.tasks])
+
 
 class ChemEvalPackage(AbstractEvalPackage):
     """Defines a chemistry evaluation package."""
