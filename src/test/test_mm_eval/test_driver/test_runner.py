@@ -1,6 +1,7 @@
 import pytest
 from pydantic import BaseModel
 
+from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
 from aqm_eval.mm_eval.driver.package import PackageKey
 from aqm_eval.mm_eval.driver.runner import MMEvalRunner
@@ -70,6 +71,7 @@ class TestMMEvalRunner:
 
         # Test control yaml files are created
         for package_key in (PackageKey.CHEM, PackageKey.MET):
+            LOGGER(f"{package_key=}")
             package_run_dir = ctx.mm_run_dir / package_key.value
             actual_files = package_run_dir.rglob("*")
             assert set([ii.name for ii in actual_files]) == mm_eval_runner_test_data.expected_fns
