@@ -3,7 +3,6 @@ from pydantic import BaseModel
 
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
-from aqm_eval.mm_eval.driver.package import PackageKey
 from aqm_eval.mm_eval.driver.runner import MMEvalRunner
 
 
