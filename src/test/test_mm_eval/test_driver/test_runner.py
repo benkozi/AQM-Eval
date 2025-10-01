@@ -1,8 +1,10 @@
 import pytest
 from pydantic import BaseModel
+from pytest_mock import MockerFixture
 
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
+from aqm_eval.mm_eval.driver.package import AbstractEvalPackage, MetEvalPackage
 from aqm_eval.mm_eval.driver.runner import MMEvalRunner
 
 
@@ -54,14 +56,23 @@ def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool) -> M
 
 
 class TestMMEvalRunner:
-    def test(self, mm_eval_runner_test_data: MMEvalRunnerTestData) -> None:
+    def test(self, mm_eval_runner_test_data: MMEvalRunnerTestData, mocker: MockerFixture) -> None:
         """Test "initialize", actually. "run" ensures the failure occurs in xarray when actual data
         is needed."""
-        # tdk:test: this should run through all contexts and packages
+
         ctx = mm_eval_runner_test_data.ctx
         runner = MMEvalRunner(ctx=ctx)
 
+        # Test that each package's initialization routine is called.
+        m_package_init = mocker.spy(AbstractEvalPackage, "initialize")
+        m_ish_init = mocker.spy(MetEvalPackage, "initialize")
+
         runner.initialize()
+
+        # One non-overloaded package initialization
+        assert m_package_init.call_count == 1
+
+        assert m_ish_init.call_count == 1
 
         # Test links for all days are created
         actual_links = [ii for ii in ctx.link_alldays_path.iterdir()]
