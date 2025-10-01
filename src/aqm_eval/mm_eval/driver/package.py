@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, computed_field
 
 from aqm_eval.logging_aqm_eval import log_it, LOGGER
 from aqm_eval.mm_eval.driver.helpers import PathExisting
+from aqm_eval.mm_eval.driver.model import Model
 
 
 @unique
@@ -48,9 +49,11 @@ class AbstractEvalPackage(ABC, BaseModel):
     use_base_model: bool = Field(description="If True, a base model will be used to generate scorecards.") #tdk:last: should be able to remove if expt_dirs is length 2
     key: PackageKey = Field(description="MM package key.")
     namelist_template: str = Field(description="Package template file.")
-    expt_dirs: tuple[Path, ...] = Field(description="Experiment directories containing model output. Used for linking and initialization.")
-    link_simulation: tuple[str, ...] = Field(description="Template for selecting cycle directories in the experiment directories.")
-    link_alldays_path: PathExisting = Field(description="Path to directory where symlinks to model output files will be created or other intilization data is written.")
+    #tdk:rm
+    # expt_dirs: tuple[Path, ...] = Field(description="Experiment directories containing model output. Used for linking and initialization.")
+    # link_simulation: tuple[str, ...] = Field(description="Template for selecting cycle directories in the experiment directories.")
+    # link_alldays_path: PathExisting = Field(description="Path to directory where symlinks to model output files will be created or other intilization data is written.")
+    models: tuple[Model, ...] = Field(description="Models to evaluate.")
 
     @computed_field(description="Run directory for the MM evaluation package.")
     @cached_property
@@ -121,16 +124,16 @@ class MetEvalPackage(AbstractEvalPackage):
             prefix: Prefix for output filenames
         """
         #tdk: need a prefix per experiment directory...
-        prefix = "foo"
-        out_dir = self.link_alldays_path
-        for expt_dir in self.expt_dirs:
-            expt_dir = Path(expt_dir)
+        for model in self.models:
+            prefix = model.prefix
+            out_dir = model.link_alldays_path
+            expt_dir = model.expt_dir
 
             # Get directory list
             #tdk: glob needs to be a parameter
             #tdk: this needs "module load nco" to work
             dirlist = []
-            for dir_pattern in self.link_simulation:
+            for dir_pattern in model.cycle_dir_template:
                 dirlist += sorted([d for d in expt_dir.glob(dir_pattern) if d.is_dir()])
 
             if len(dirlist) == 0:
@@ -173,28 +176,28 @@ class MetEvalPackage(AbstractEvalPackage):
                     self._run_ncap2_cmd_([ "-A", "-v", "-s", "tmp2m = tmp2m", str(f_phy), str(f_out)])
 
                     self._run_ncap2_cmd_([
-                         "-A", "-v",
+                        "-A", "-v",
                         "-s", "vapor = (spfh2m / (1 - spfh2m)) * pressfc / (0.622 + spfh2m / (1 - spfh2m))",
                         "-s", 'vapor@long_name="2 meter water vapor pressure"; vapor@units="Pa"',
                         str(f_phy), str(f_out)
                     ])
 
                     self._run_ncap2_cmd_([
-                         "-A", "-v",
+                        "-A", "-v",
                         "-s", "dew_temp = (243.5 * ln((vapor / 100) / 6.112)) / (17.269 - ln((vapor / 100) / 6.112))",
                         "-s", 'dew_temp@long_name="2 meter dew point temperature"; dew_temp@units="C"',
                         str(f_out), str(f_out)
                     ])
 
                     self._run_ncap2_cmd_([
-                         "-A", "-v",
+                        "-A", "-v",
                         "-s", "ws10m = sqrt(ugrd10m * ugrd10m + vgrd10m * vgrd10m)",
                         "-s", 'ws10m@long_name="10 meter wind speed"; ws10m@units="m/s"',
                         str(f_phy), str(f_out)
                     ])
 
                     self._run_ncap2_cmd_([
-                         "-A", "-v",
+                        "-A", "-v",
                         "-s", "wd10m = 270 - (atan2(vgrd10m, ugrd10m) * 180 / 3.1415)",
                         "-s", "where(wd10m > 360) wd10m = wd10m - 360",
                         "-s", 'wd10m@long_name="10 meter wind direction"; wd10m@units="degree"',
