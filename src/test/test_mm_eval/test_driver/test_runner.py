@@ -12,12 +12,14 @@ class MMEvalRunnerTestData(BaseModel):
     model_config = {"frozen": True}
     ctx: SRWContext
     expected_n_links: int
+    expected_ncap2_calls: int
 
 
 @pytest.fixture
 def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool) -> MMEvalRunnerTestData:
     if use_base_model:
         expected_n_links = 100
+        expected_ncap2_calls = 720*2
         # expected_fns = { #tdk:rm
         #     "control_multi_boxplot.yaml",
         #     "control_scorecard_nmb.yaml",
@@ -36,6 +38,7 @@ def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool) -> M
         # }
     else:
         expected_n_links = 50
+        expected_ncap2_calls = 720
         # expected_fns = { #tdk:rm
         #     "control_spatial_bias.yaml",
         #     "control_save_paired.yaml",
@@ -51,6 +54,7 @@ def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool) -> M
     return MMEvalRunnerTestData(
         expected_n_links=expected_n_links,
         # expected_fns=expected_fns, #tdk:rm
+        expected_ncap2_calls=expected_ncap2_calls,
         ctx=srw_context,
     )
 
@@ -66,13 +70,13 @@ class TestMMEvalRunner:
         # Test that each package's initialization routine is called.
         m_package_init = mocker.spy(AbstractEvalPackage, "initialize")
         m_ish_init = mocker.spy(MetEvalPackage, "initialize")
+        m_run_ncap2_cmd = mocker.patch.object(MetEvalPackage, "_run_ncap2_cmd_")
 
         runner.initialize()
 
-        # One non-overloaded package initialization
-        assert m_package_init.call_count == 1
-
+        assert m_package_init.call_count == 1 # One non-overloaded package initialization
         assert m_ish_init.call_count == 1
+        assert m_run_ncap2_cmd.call_count == mm_eval_runner_test_data.expected_ncap2_calls
 
         # Test links for all days are created
         actual_links = [ii for ii in ctx.link_alldays_path.iterdir()]

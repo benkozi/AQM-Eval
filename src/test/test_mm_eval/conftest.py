@@ -69,13 +69,15 @@ def config_path_var_defns(tmp_path: Path, expt_dir: Path) -> Path:
 
 
 @pytest.fixture()
-def dummy_dyn_files(expt_dir: Path) -> None:
+def dummy_phy_dyn_files(expt_dir: Path) -> None:
     for dirname in ["2023060112", "2023060212"]:
-        dyn_dir = expt_dir / dirname
-        dyn_dir.mkdir(exist_ok=False, parents=False)
+        out_dir = expt_dir / dirname
+        out_dir.mkdir(exist_ok=False, parents=False)
         for fhr in range(25):
-            dyn_file = dyn_dir / f"dynf{fhr:03d}.nc"
-            dyn_file.touch()
+            for prefix in ("phy", "dyn"):
+                new_file = out_dir / f"{prefix}f{fhr:03d}.nc"
+                new_file.touch()
+
 
 
 @pytest.fixture
@@ -84,7 +86,7 @@ def srw_context(
     config_path_user: Path,
     config_path_rocoto: Path,
     config_path_var_defns: Path,
-    dummy_dyn_files: None,
+        dummy_phy_dyn_files,
 ) -> SRWContext:
     return SRWContext(expt_dir=expt_dir)
 

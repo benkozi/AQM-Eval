@@ -146,7 +146,11 @@ class SRWContext(AbstractDriverContext):
             #     klass = MetEvalPackage
             # case _:
             #     raise ValueError(package_key)
-            ret.append(mapping[package_key](root_dir=self.mm_run_dir, use_base_model=use_base_model))
+            expt_dirs = [self.expt_dir]
+            if self.mm_base_model_expt_dir is not None:
+                expt_dirs.append(self.mm_base_model_expt_dir)
+            ret.append(mapping[package_key](root_dir=self.mm_run_dir, use_base_model=use_base_model,
+                                            expt_dirs=tuple(expt_dirs), link_simulation=self.link_simulation, link_alldays_path=self.link_alldays_path,))
         return tuple(ret)
 
     @cached_property
