@@ -48,6 +48,10 @@ class AbstractEvalPackage(ABC, BaseModel):
     key: PackageKey = Field(description="MM package key.")
     namelist_template: str = Field(description="Package template file.")
 
+    def initialize(self) -> None:
+        """Allows for package-specific initialization requirements."""
+        ...
+
     @computed_field(description="Run directory for the MM evaluation package.")
     @cached_property
     def run_dir(self) -> Path:
