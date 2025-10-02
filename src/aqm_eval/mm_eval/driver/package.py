@@ -5,11 +5,11 @@ from enum import StrEnum, unique
 from functools import cached_property
 from pathlib import Path
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, computed_field, field_validator
 
 from aqm_eval.logging_aqm_eval import log_it, LOGGER
 from aqm_eval.mm_eval.driver.helpers import PathExisting
-from aqm_eval.mm_eval.driver.model import Model
+from aqm_eval.mm_eval.driver.model import Model, ModelRole
 
 
 @unique
@@ -46,14 +46,22 @@ class AbstractEvalPackage(ABC, BaseModel):
 
     model_config = {"frozen": True}
     root_dir: PathExisting = Field(description="Root directory for MM evaluation package.")
-    use_base_model: bool = Field(description="If True, a base model will be used to generate scorecards.") #tdk:last: should be able to remove if expt_dirs is length 2
+    mm_eval_model_expt_dir: PathExisting = Field(description="Experiment directory containing evaluation model output.")
+    mm_base_model_expt_dir: PathExisting | None = Field(description="Experiment directory containing base model output.")
+    # models: tuple[Model, ...] = Field(description="Models to evaluate.")
+    link_simulation: tuple[str, ...]
+    link_alldays_path: PathExisting
     key: PackageKey = Field(description="MM package key.")
     namelist_template: str = Field(description="Package template file.")
     #tdk:rm
     # expt_dirs: tuple[Path, ...] = Field(description="Experiment directories containing model output. Used for linking and initialization.")
     # link_simulation: tuple[str, ...] = Field(description="Template for selecting cycle directories in the experiment directories.")
     # link_alldays_path: PathExisting = Field(description="Path to directory where symlinks to model output files will be created or other intilization data is written.")
-    models: tuple[Model, ...] = Field(description="Models to evaluate.")
+
+    @computed_field(description="Prefix for each model role.")
+    @cached_property
+    def model_prefixes(self) -> dict[ModelRole, str]:
+        return {ii: ii.value for ii in ModelRole}
 
     @computed_field(description="Run directory for the MM evaluation package.")
     @cached_property
@@ -63,7 +71,7 @@ class AbstractEvalPackage(ABC, BaseModel):
     @computed_field(description="Tasks that the package will run.")
     @cached_property
     def tasks(self) -> tuple[TaskKey, ...]:
-        if self.use_base_model:
+        if self.mm_base_model_expt_dir is not None:
             return tuple([ii for ii in TaskKey])
         else:
             return tuple([ii for ii in TaskKey if not ii.name.startswith("SCORECARD")])
@@ -71,6 +79,63 @@ class AbstractEvalPackage(ABC, BaseModel):
     @cached_property
     def task_control_filenames(self) -> set[str]:
         return set([f"control_{ii.value}.yaml" for ii in self.tasks])
+
+    @cached_property
+    def mm_models(self) -> tuple[Model, ...]:
+        """
+        Returns
+        -------
+        tuple[Model, ...]
+            The models to use in the evaluation. At most, this can contain two models: the
+            "evaluation" model and an optional "base" model. If two models are returned,
+            "scorecards" can be created.
+        """
+        ret = [
+            Model(
+                expt_dir=self.mm_eval_model_expt_dir,
+                label="eval_aqm",
+                title="Eval AQM",
+                prefix=self.model_prefixes[ModelRole.EVAL],
+                role=ModelRole.EVAL,
+                dyn_file_template=("dynf*.nc",),
+                cycle_dir_template=self.link_simulation,
+                link_alldays_path=self.link_alldays_path,
+            )
+        ]
+        if self.mm_base_model_expt_dir is not None:
+            ret.append(
+                Model(
+                    expt_dir=self.mm_base_model_expt_dir,
+                    label="base_aqm",
+                    title="Base AQM",
+                    prefix=self.model_prefixes[ModelRole.BASE],
+                    role=ModelRole.BASE,
+                    dyn_file_template=("dynf*.nc",),
+                    cycle_dir_template=self.link_simulation,
+                    link_alldays_path=self.link_alldays_path,
+                )
+            )
+        return tuple(ret)
+
+    @cached_property
+    def mm_model_labels(self) -> list[str]:
+        """
+        Returns
+        -------
+        list[str]
+            Model labels used for MM plotting.
+        """
+        return [mm_model.label for mm_model in self.mm_models]
+
+    @cached_property
+    def mm_model_titles_j2(self) -> str:
+        """
+        Returns
+        -------
+        list[str]
+            Model titles used for MM plotting, converted into a format suitable for ``jinja2``.
+        """
+        return ", ".join([f'"{ii.title}"' for ii in self.mm_models])
 
     def initialize(self) -> None:
         """Allows for package-specific initialization requirements."""
@@ -90,6 +155,12 @@ class MetEvalPackage(AbstractEvalPackage):
     key: PackageKey = PackageKey.MET
     namelist_template: str = "namelist.met.j2"  # tdk:last: should this be named ish or met?
 
+    @computed_field(description="Prefix for each model role.")
+    @cached_property
+    def model_prefixes(self) -> dict[ModelRole, str]:
+        # We need to differentiate these model prefixes due to transformations required for meteorological variables.
+        return {ii: ii.value + "_ish" for ii in ModelRole}
+
     @computed_field(description="Tasks that the package will run.")
     @cached_property
     def tasks(self) -> tuple[TaskKey, ...]:
@@ -102,6 +173,15 @@ class MetEvalPackage(AbstractEvalPackage):
             TaskKey.BOXPLOT,
             TaskKey.STATS,
         )
+
+    # @field_validator('models', mode="before")
+    # def _validate_models_(cls, value: tuple[Model, ...]) -> tuple[Model, ...]:
+    #     new_models = []
+    #     for model in value:
+    #         data = model.model_dump()
+    #         data["prefix"] = data["prefix"] + "_ish"
+    #         new_models.append(Model.model_validate(data))
+    #     return tuple(new_models)
 
     def initialize(self) -> None:
         #tdk: need to handle case with a base model as well!
@@ -124,13 +204,12 @@ class MetEvalPackage(AbstractEvalPackage):
             prefix: Prefix for output filenames
         """
         #tdk: need a prefix per experiment directory...
-        for model in self.models:
+        for model in self.mm_models:
             prefix = model.prefix
             out_dir = model.link_alldays_path
             expt_dir = model.expt_dir
 
             # Get directory list
-            #tdk: glob needs to be a parameter
             #tdk: this needs "module load nco" to work
             dirlist = []
             for dir_pattern in model.cycle_dir_template:

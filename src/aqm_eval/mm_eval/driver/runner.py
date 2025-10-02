@@ -29,7 +29,8 @@ class MMEvalRunner(BaseModel):
         """
         LOGGER(f"{self.ctx=}")
 
-        for model in self.ctx.mm_models:
+        # Only create symlinks once for each model
+        for model in self.ctx.mm_packages[0].mm_models:
             model.create_symlinks()
 
         LOGGER("creating MM control configs")

@@ -19,11 +19,11 @@ paired_format: '"netcdf"'
 paired_predix: "~"
 paired_save_data: '"all"'
 paired_dataset:
-{%- for mm_model in ctx.mm_models %}
+{%- for mm_model in package.mm_models %}
   {{ mm_model.label }}: "ish_{{ mm_model.label }}.nc4"
 {%- endfor %}
 
-{% for mm_model in ctx.mm_models %}
+{% for mm_model in package.mm_models %}
 # ==== Model - {{ mm_model.role.value }} ====
 model_{{ mm_model.role.value }}_label: {{ mm_model.label }}
 model_{{ mm_model.role.value }}_files: {{ mm_model.link_alldays_path_template }}
@@ -104,7 +104,7 @@ timeseries_domain_name: [
   "R1", "R2", "R3", "R4", "R5",
   "R6", "R7", "R8", "R9", "R10",
 ]
-timeseries_dataset: {{ ctx.mm_model_labels }}
+timeseries_dataset: {{ package.mm_model_labels }}
 timeseries_data_proc:
   rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
   set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
@@ -129,7 +129,7 @@ taylor_domain_name: [
   "R1", "R2", "R3", "R4", "R5",
   "R6", "R7", "R8", "R9", "R10",
 ]
-taylor_dataset: {{ ctx.mm_model_labels }}
+taylor_dataset: {{ package.mm_model_labels }}
 taylor_data_proc:
   rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
   set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
@@ -151,7 +151,7 @@ spatial_bias_domain_name: [
   "R1", "R2", "R3", "R4", "R5",
   "R6", "R7", "R8", "R9", "R10",
 ]
-spatial_bias_dataset: {{ ctx.mm_model_labels }}
+spatial_bias_dataset: {{ package.mm_model_labels }}
 spatial_bias_data_proc:
   rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
   set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
@@ -173,7 +173,7 @@ spatial_overlay_domain_name: [
   "R1", "R2", "R3", "R4", "R5",
   "R6", "R7", "R8", "R9", "R10",
 ]
-spatial_overlay_dataset: {{ ctx.mm_model_labels }}
+spatial_overlay_dataset: {{ package.mm_model_labels }}
 spatial_overlay_data_proc:
   rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
   set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
@@ -194,7 +194,7 @@ boxplot_domain_name: [
   "R1", "R2", "R3", "R4", "R5",
   "R6", "R7", "R8", "R9", "R10",
 ]
-boxplot_dataset: {{ ctx.mm_model_labels }}
+boxplot_dataset: {{ package.mm_model_labels }}
 boxplot_data_proc:
   rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
   set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
@@ -212,8 +212,8 @@ multi_boxplot_region_name: ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9"
 multi_boxplot_urban_rural_name: ["msa_name"]
 multi_boxplot_urban_rural_value: '""'
 multi_boxplot_eval_method: '"NME"'  # support 'RMSE', 'IOA' ,' NMB', 'NME'
-multi_boxplot_dataset: {{ ctx.mm_model_labels }}
-multi_boxplot_dataset_label: ["AirNow", {{ ctx.mm_model_titles_j2 }}]
+multi_boxplot_dataset: {{ package.mm_model_labels }}
+multi_boxplot_dataset_label: ["AirNow", {{ package.mm_model_titles_j2 }}]
 multi_boxplot_data_proc:
   rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
   set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
@@ -231,8 +231,8 @@ scorecard_region_name: ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R
 scorecard_urban_rural_name: ["msa_name"]
 scorecard_urban_rural_value: '""'
 scorecard_eval_method: '"RMSE"'  # support 'RMSE', 'IOA' ,' NMB', 'NME'
-scorecard_dataset: {{ ctx.mm_model_labels }}
-scorecard_dataset_label: ["AirNow", {{ ctx.mm_model_titles_j2 }}]
+scorecard_dataset: {{ package.mm_model_labels }}
+scorecard_dataset_label: ["AirNow", {{ package.mm_model_titles_j2 }}]
 
 
 scorecard_data_proc:
@@ -257,8 +257,8 @@ csi_domain_name: [
 ]
 csi_threshold: [1, 5, 10, 20, 40, 60, 80, 100]
 csi_score: '"Critical Success Index"'  # support options: 'Critical Success Index' 'False Alarm Rate' 'Hit Rate'
-csi_dataset: {{ ctx.mm_model_labels }}
-csi_dataset_label: [{{ ctx.mm_model_titles_j2 }}]
+csi_dataset: {{ package.mm_model_labels }}
+csi_dataset_label: [{{ package.mm_model_titles_j2 }}]
 csi_data_proc:
   rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
   set_axis: False  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
@@ -283,4 +283,4 @@ stats_domain_name: [
     "R1", "R2", "R3", "R4", "R5",
     "R6", "R7", "R8", "R9", "R10",
 ]
-stats_dataset: {{ ctx.mm_model_labels }}
+stats_dataset: {{ package.mm_model_labels }}

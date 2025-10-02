@@ -5,7 +5,7 @@ from functools import cached_property
 
 from pydantic import BaseModel, Field, computed_field
 
-from aqm_eval.logging_aqm_eval import log_it
+from aqm_eval.logging_aqm_eval import log_it, LOGGER
 from aqm_eval.mm_eval.driver.helpers import PathExisting, create_symlinks
 
 
@@ -17,7 +17,7 @@ class ModelRole(StrEnum):
     BASE = "base"
 
 
-class Model(BaseModel):
+class   Model(BaseModel):
     """Defines a model used for generating MM configuration files."""
 
     model_config = {"frozen": True}
@@ -34,7 +34,9 @@ class Model(BaseModel):
     @computed_field(description="Template for selecting symlinked data files.")
     @cached_property
     def link_alldays_path_template(self) -> str:
-        return str(self.link_alldays_path / f"{self.prefix}*.nc")
+        ret = str(self.link_alldays_path / f"{self.prefix}*.nc")
+        LOGGER(f"link_alldays_path_template: {ret}")
+        return ret
 
     @computed_field(description="Determines a model's color based on its role.")
     @cached_property

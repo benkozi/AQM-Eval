@@ -149,8 +149,11 @@ class SRWContext(AbstractDriverContext):
             # expt_dirs = [self.expt_dir]
             # if self.mm_base_model_expt_dir is not None:
             #     expt_dirs.append(self.mm_base_model_expt_dir)
-            ret.append(mapping[package_key](root_dir=self.mm_run_dir, use_base_model=use_base_model,
-                                            models=self.mm_models))
+            ret.append(mapping[package_key](root_dir=self.mm_run_dir,
+                                            mm_eval_model_expt_dir=self.expt_dir,
+                                            link_simulation=self.link_simulation,
+                                            link_alldays_path=self.link_alldays_path,
+                                            mm_base_model_expt_dir=self.mm_base_model_expt_dir))
         return tuple(ret)
 
     @cached_property
@@ -172,35 +175,6 @@ class SRWContext(AbstractDriverContext):
     @cached_property
     def yaml_srw_config_paths(self) -> tuple[PathExisting, ...]:
         return self.config_path_user, self.config_path_rocoto, self.config_path_var_defns
-
-    @cached_property
-    def mm_models(self) -> tuple[Model, ...]:
-        ret = [
-            Model(
-                expt_dir=self.expt_dir,
-                label="eval_aqm",
-                title="Eval AQM",
-                prefix="eval",
-                role=ModelRole.EVAL,
-                dyn_file_template=("dynf*.nc",),
-                cycle_dir_template=self.link_simulation,
-                link_alldays_path=self.link_alldays_path,
-            )
-        ]
-        if self.mm_base_model_expt_dir is not None:
-            ret.append(
-                Model(
-                    expt_dir=self.expt_dir,
-                    label="base_aqm",
-                    title="Base AQM",
-                    prefix="base",
-                    role=ModelRole.BASE,
-                    dyn_file_template=("dynf*.nc",),
-                    cycle_dir_template=self.link_simulation,
-                    link_alldays_path=self.link_alldays_path,
-                )
-            )
-        return tuple(ret)
 
     def find_nested_key(self, key_tuple: tuple[str, ...]) -> Any:
         """Find a nested key in the YAML dictionaries using a tuple of string keys.
@@ -236,7 +210,7 @@ class SRWContext(AbstractDriverContext):
                 LOGGER(f"{package_run_dir=} does not exist. creating.")
                 package_run_dir.mkdir(exist_ok=True, parents=True)
 
-            cfg = {"ctx": self, "mm_tasks": tuple([ii.value for ii in package.tasks])}
+            cfg = {"ctx": self, "mm_tasks": tuple([ii.value for ii in package.tasks]), "package": package}
             namelist_config_str = self.j2_env.get_template(package.namelist_template).render(cfg)
             namelist_config = yaml.safe_load(namelist_config_str)
             with open(package_run_dir / "namelist.yaml", "w") as f:
