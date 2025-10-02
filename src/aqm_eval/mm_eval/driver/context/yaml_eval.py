@@ -28,6 +28,25 @@ class YAMLContext(AbstractDriverContext):
 
     @computed_field
     @cached_property
+    def expt_dir(self) -> PathExisting:
+        #tdk: make abstract
+        return PathExisting(self._config_data["link_eval_path"])
+
+    @computed_field
+    @cached_property
+    def mm_base_model_expt_dir(self) -> PathExisting:
+        # tdk: make abstract
+        return PathExisting(self._config_data["link_base_path"])
+
+    @computed_field
+    @cached_property
+    def link_simulation(self) -> tuple[str, ...]:
+        # tdk: make abstract
+        value = self._config_data["link_simulation"].replace("/", "")
+        return tuple(value)
+
+    @computed_field
+    @cached_property
     def date_first_cycle_mm(self) -> str:
         return self._config_data["start_time"]
 
@@ -47,7 +66,10 @@ class YAMLContext(AbstractDriverContext):
         return (
             ChemEvalPackage(
                 root_dir=self.mm_output_dir,
-                use_base_model=True,
+                mm_eval_model_expt_dir=self.expt_dir,
+                mm_base_model_expt_dir=self.mm_base_model_expt_dir,
+                link_simulation=self.link_simulation,
+                link_alldays_path=self.link_alldays_path,
             ),
         )
 
