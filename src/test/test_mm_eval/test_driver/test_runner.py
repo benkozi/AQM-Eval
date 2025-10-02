@@ -1,3 +1,6 @@
+from pathlib import Path
+from typing import Any
+
 import pytest
 from pydantic import BaseModel
 from pytest_mock import MockerFixture
@@ -18,7 +21,7 @@ class MMEvalRunnerTestData(BaseModel):
 @pytest.fixture
 def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool) -> MMEvalRunnerTestData:
     if use_base_model:
-        expected_n_links = 100
+        expected_n_links = 100 + 96
         expected_ncap2_calls = 720*2
         # expected_fns = { #tdk:rm
         #     "control_multi_boxplot.yaml",
@@ -37,7 +40,7 @@ def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool) -> M
         #     "control_spatial_overlay.yaml",
         # }
     else:
-        expected_n_links = 50
+        expected_n_links = 50 + 48
         expected_ncap2_calls = 720
         # expected_fns = { #tdk:rm
         #     "control_spatial_bias.yaml",
@@ -58,6 +61,13 @@ def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool) -> M
         ctx=srw_context,
     )
 
+def fake_run_ncap2_cmd(self: MetEvalPackage, cmd: list[str]) -> None:
+    out_file = Path(cmd[-1])
+    if "-A" not in cmd:
+        out_file.touch()
+    else:
+        assert out_file.exists()
+
 
 class TestMMEvalRunner:
     def test(self, mm_eval_runner_test_data: MMEvalRunnerTestData, mocker: MockerFixture) -> None:
@@ -70,7 +80,8 @@ class TestMMEvalRunner:
         # Test that each package's initialization routine is called.
         m_package_init = mocker.spy(AbstractEvalPackage, "initialize")
         m_ish_init = mocker.spy(MetEvalPackage, "initialize")
-        m_run_ncap2_cmd = mocker.patch.object(MetEvalPackage, "_run_ncap2_cmd_")
+        _ = mocker.patch.object(MetEvalPackage, "_run_ncap2_cmd_", fake_run_ncap2_cmd)
+        m_run_ncap2_cmd = mocker.spy(MetEvalPackage, "_run_ncap2_cmd_")
 
         runner.initialize()
 
