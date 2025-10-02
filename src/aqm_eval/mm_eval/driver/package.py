@@ -1,13 +1,14 @@
 """Defines package objects used when generating MM files. A package is a collection of tasks specfiic to an evaluation type."""
+
 import subprocess
 from abc import ABC
 from enum import StrEnum, unique
 from functools import cached_property
 from pathlib import Path
 
-from pydantic import BaseModel, Field, computed_field, field_validator
+from pydantic import BaseModel, Field, computed_field
 
-from aqm_eval.logging_aqm_eval import log_it, LOGGER
+from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.helpers import PathExisting
 from aqm_eval.mm_eval.driver.model import Model, ModelRole
 
@@ -48,15 +49,10 @@ class AbstractEvalPackage(ABC, BaseModel):
     root_dir: PathExisting = Field(description="Root directory for MM evaluation package.")
     mm_eval_model_expt_dir: PathExisting = Field(description="Experiment directory containing evaluation model output.")
     mm_base_model_expt_dir: PathExisting | None = Field(description="Experiment directory containing base model output.")
-    # models: tuple[Model, ...] = Field(description="Models to evaluate.")
     link_simulation: tuple[str, ...]
     link_alldays_path: PathExisting
     key: PackageKey = Field(description="MM package key.")
     namelist_template: str = Field(description="Package template file.")
-    #tdk:rm
-    # expt_dirs: tuple[Path, ...] = Field(description="Experiment directories containing model output. Used for linking and initialization.")
-    # link_simulation: tuple[str, ...] = Field(description="Template for selecting cycle directories in the experiment directories.")
-    # link_alldays_path: PathExisting = Field(description="Path to directory where symlinks to model output files will be created or other intilization data is written.")
 
     @computed_field(description="Prefix for each model role.")
     @cached_property
@@ -141,6 +137,7 @@ class AbstractEvalPackage(ABC, BaseModel):
         """Allows for package-specific initialization requirements."""
         ...
 
+
 class ChemEvalPackage(AbstractEvalPackage):
     """Defines a chemistry evaluation package."""
 
@@ -184,11 +181,11 @@ class MetEvalPackage(AbstractEvalPackage):
     #     return tuple(new_models)
 
     def initialize(self) -> None:
-        #tdk: need to handle case with a base model as well!
+        # tdk: need to handle case with a base model as well!
         self._ish_conversion_()
 
     @log_it
-    def _ish_conversion_(self) -> None: #="aqmv8p1.ish"):
+    def _ish_conversion_(self) -> None:  # ="aqmv8p1.ish"):
         """
         Extract/calculate necessary variables from phy files for ISH met evaluation.
 
@@ -203,14 +200,13 @@ class MetEvalPackage(AbstractEvalPackage):
             out_dir: Output directory for processed files
             prefix: Prefix for output filenames
         """
-        #tdk: need a prefix per experiment directory...
         for model in self.mm_models:
             prefix = model.prefix
             out_dir = model.link_alldays_path
             expt_dir = model.expt_dir
 
             # Get directory list
-            #tdk: this needs "module load nco" to work
+            # tdk: this needs "module load nco" to work
             dirlist = []
             for dir_pattern in model.cycle_dir_template:
                 dirlist += sorted([d for d in expt_dir.glob(dir_pattern) if d.is_dir()])
@@ -230,64 +226,75 @@ class MetEvalPackage(AbstractEvalPackage):
                     _assert_file_exists_(f_dyn)
                     f_out = out_dir / f"{prefix}_{dir_name}_f0{fhr_str}.nc"
 
-                    # Initial ncap2 call (creates output file)
-                    self._run_ncap2_cmd_([ "-v", "-s", "time_iso = time_iso", str(f_dyn), str(f_out)])
+                    # Define ncap2 commands to run
+                    ncap2_commands = (
+                        # Initial ncap2 call (creates output file)
+                        ["-v", "-s", "time_iso = time_iso", str(f_dyn), str(f_out)],
+                        # Subsequent ncap2 calls with -A flag (append mode)
+                        ["-A", "-v", "-s", "lat = lat", str(f_dyn), str(f_out)],
+                        ["-A", "-v", "-s", "lon = lon", str(f_dyn), str(f_out)],
+                        ["-A", "-v", "-s", "pfull = pfull", str(f_dyn), str(f_out)],
+                        ["-A", "-v", "-s", "phalf = phalf", str(f_dyn), str(f_out)],
+                        ["-A", "-v", "-s", "delz = delz", str(f_dyn), str(f_out)],
+                        ["-A", "-v", "-s", "dpres = dpres", str(f_dyn), str(f_out)],
+                        ["-A", "-v", "-s", "hgtsfc = hgtsfc", str(f_dyn), str(f_out)],
+                        ["-A", "-v", "-s", "pressfc = pressfc", str(f_dyn), str(f_out)],
+                        ["-A", "-v", "-s", "tmp = tmp", str(f_dyn), str(f_out)],
+                        ["-A", "-v", "-s", "tmp2m = tmp2m", str(f_phy), str(f_out)],
+                        [
+                            "-A",
+                            "-v",
+                            "-s",
+                            "vapor = (spfh2m / (1 - spfh2m)) * pressfc / (0.622 + spfh2m / (1 - spfh2m))",
+                            "-s",
+                            'vapor@long_name="2 meter water vapor pressure"; vapor@units="Pa"',
+                            str(f_phy),
+                            str(f_out),
+                        ],
+                        [
+                            "-A",
+                            "-v",
+                            "-s",
+                            "dew_temp = (243.5 * ln((vapor / 100) / 6.112)) / (17.269 - ln((vapor / 100) / 6.112))",
+                            "-s",
+                            'dew_temp@long_name="2 meter dew point temperature"; dew_temp@units="C"',
+                            str(f_out),
+                            str(f_out),
+                        ],
+                        [
+                            "-A",
+                            "-v",
+                            "-s",
+                            "ws10m = sqrt(ugrd10m * ugrd10m + vgrd10m * vgrd10m)",
+                            "-s",
+                            'ws10m@long_name="10 meter wind speed"; ws10m@units="m/s"',
+                            str(f_phy),
+                            str(f_out),
+                        ],
+                        [
+                            "-A",
+                            "-v",
+                            "-s",
+                            "wd10m = 270 - (atan2(vgrd10m, ugrd10m) * 180 / 3.1415)",
+                            "-s",
+                            "where(wd10m > 360) wd10m = wd10m - 360",
+                            "-s",
+                            'wd10m@long_name="10 meter wind direction"; wd10m@units="degree"',
+                            str(f_phy),
+                            str(f_out),
+                        ],
+                    )
 
-                    # Subsequent ncap2 calls with -A flag (append mode)
-                    self._run_ncap2_cmd_([ "-A", "-v", "-s", "lat = lat", str(f_dyn), str(f_out)])
-
-                    self._run_ncap2_cmd_([ "-A", "-v", "-s", "lon = lon", str(f_dyn), str(f_out)])
-
-                    self._run_ncap2_cmd_([ "-A", "-v", "-s", "pfull = pfull", str(f_dyn), str(f_out)])
-
-                    self._run_ncap2_cmd_([ "-A", "-v", "-s", "phalf = phalf", str(f_dyn), str(f_out)])
-
-                    self._run_ncap2_cmd_([ "-A", "-v", "-s", "delz = delz", str(f_dyn), str(f_out)])
-
-                    self._run_ncap2_cmd_([ "-A", "-v", "-s", "dpres = dpres", str(f_dyn), str(f_out)])
-
-                    self._run_ncap2_cmd_([ "-A", "-v", "-s", "hgtsfc = hgtsfc", str(f_dyn), str(f_out)])
-
-                    self._run_ncap2_cmd_([ "-A", "-v", "-s", "pressfc = pressfc", str(f_dyn), str(f_out)])
-
-                    self._run_ncap2_cmd_([ "-A", "-v", "-s", "tmp = tmp", str(f_dyn), str(f_out)])
-
-                    self._run_ncap2_cmd_([ "-A", "-v", "-s", "tmp2m = tmp2m", str(f_phy), str(f_out)])
-
-                    self._run_ncap2_cmd_([
-                        "-A", "-v",
-                        "-s", "vapor = (spfh2m / (1 - spfh2m)) * pressfc / (0.622 + spfh2m / (1 - spfh2m))",
-                        "-s", 'vapor@long_name="2 meter water vapor pressure"; vapor@units="Pa"',
-                        str(f_phy), str(f_out)
-                    ])
-
-                    self._run_ncap2_cmd_([
-                        "-A", "-v",
-                        "-s", "dew_temp = (243.5 * ln((vapor / 100) / 6.112)) / (17.269 - ln((vapor / 100) / 6.112))",
-                        "-s", 'dew_temp@long_name="2 meter dew point temperature"; dew_temp@units="C"',
-                        str(f_out), str(f_out)
-                    ])
-
-                    self._run_ncap2_cmd_([
-                        "-A", "-v",
-                        "-s", "ws10m = sqrt(ugrd10m * ugrd10m + vgrd10m * vgrd10m)",
-                        "-s", 'ws10m@long_name="10 meter wind speed"; ws10m@units="m/s"',
-                        str(f_phy), str(f_out)
-                    ])
-
-                    self._run_ncap2_cmd_([
-                        "-A", "-v",
-                        "-s", "wd10m = 270 - (atan2(vgrd10m, ugrd10m) * 180 / 3.1415)",
-                        "-s", "where(wd10m > 360) wd10m = wd10m - 360",
-                        "-s", 'wd10m@long_name="10 meter wind direction"; wd10m@units="degree"',
-                        str(f_phy), str(f_out)
-                    ])
+                    # Execute all ncap2 commands
+                    for cmd in ncap2_commands:
+                        self._run_ncap2_cmd_(cmd)
 
     @staticmethod
     def _run_ncap2_cmd_(cmd: list[str]) -> None:
         local_cmd = ["ncap2"] + cmd
         LOGGER(f"running ncap2 command: {local_cmd}")
         subprocess.check_call(local_cmd)
+
 
 def _assert_file_exists_(path: Path) -> None:
     if not path.exists():

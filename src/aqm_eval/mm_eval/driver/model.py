@@ -5,7 +5,7 @@ from functools import cached_property
 
 from pydantic import BaseModel, Field, computed_field
 
-from aqm_eval.logging_aqm_eval import log_it, LOGGER
+from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.helpers import PathExisting, create_symlinks
 
 
@@ -17,7 +17,7 @@ class ModelRole(StrEnum):
     BASE = "base"
 
 
-class   Model(BaseModel):
+class Model(BaseModel):
     """Defines a model used for generating MM configuration files."""
 
     model_config = {"frozen": True}

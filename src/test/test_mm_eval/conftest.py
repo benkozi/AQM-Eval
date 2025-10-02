@@ -79,14 +79,13 @@ def dummy_phy_dyn_files(expt_dir: Path) -> None:
                 new_file.touch()
 
 
-
 @pytest.fixture
 def srw_context(
     expt_dir: Path,
     config_path_user: Path,
     config_path_rocoto: Path,
     config_path_var_defns: Path,
-        dummy_phy_dyn_files,
+    dummy_phy_dyn_files: None,
 ) -> SRWContext:
     return SRWContext(expt_dir=expt_dir)
 

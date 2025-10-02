@@ -12,7 +12,6 @@ from pydantic import Field, computed_field
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.helpers import PathExisting
-from aqm_eval.mm_eval.driver.model import Model, ModelRole
 from aqm_eval.mm_eval.driver.package import AbstractEvalPackage, ChemEvalPackage, MetEvalPackage, PackageKey, TaskKey
 
 try:
@@ -121,39 +120,18 @@ class SRWContext(AbstractDriverContext):
     @cached_property
     def mm_packages(self) -> tuple[AbstractEvalPackage, ...]:
         ret: list[AbstractEvalPackage] = []
-        use_base_model = self.mm_base_model_expt_dir is not None
         mapping = {PackageKey.CHEM: ChemEvalPackage, PackageKey.MET: MetEvalPackage}
         for package_key in self.mm_package_keys:
-            # match package_key:
-            # tdk:last: replace with enum map
-            # class Color(StrEnum):
-            #     RED = "red"
-            #     GREEN = "green"
-            #     BLUE = "blue"
-            #
-            #     _class_map = {
-            #         RED: RedHandler,
-            #         GREEN: GreenHandler,
-            #         BLUE: BlueHandler,
-            #     }
-            #
-            #     def get_class(self):
-            #         """Return the Python class associated with this enum member."""
-            #         return self._class_map[self]
-            # case PackageKey.CHEM:
-            #     klass = ChemEvalPackage
-            # case PackageKey.MET:
-            #     klass = MetEvalPackage
-            # case _:
-            #     raise ValueError(package_key)
-            # expt_dirs = [self.expt_dir]
-            # if self.mm_base_model_expt_dir is not None:
-            #     expt_dirs.append(self.mm_base_model_expt_dir)
-            ret.append(mapping[package_key](root_dir=self.mm_run_dir,
-                                            mm_eval_model_expt_dir=self.expt_dir,
-                                            link_simulation=self.link_simulation,
-                                            link_alldays_path=self.link_alldays_path,
-                                            mm_base_model_expt_dir=self.mm_base_model_expt_dir))
+            # tdk:last: replace with dedicated function in package.py
+            ret.append(
+                mapping[package_key](
+                    root_dir=self.mm_run_dir,
+                    mm_eval_model_expt_dir=self.expt_dir,
+                    link_simulation=self.link_simulation,
+                    link_alldays_path=self.link_alldays_path,
+                    mm_base_model_expt_dir=self.mm_base_model_expt_dir,
+                )
+            )
         return tuple(ret)
 
     @cached_property

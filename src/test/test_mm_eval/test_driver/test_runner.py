@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Any
 
 import pytest
 from pydantic import BaseModel
@@ -22,7 +21,7 @@ class MMEvalRunnerTestData(BaseModel):
 def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool) -> MMEvalRunnerTestData:
     if use_base_model:
         expected_n_links = 100 + 96
-        expected_ncap2_calls = 720*2
+        expected_ncap2_calls = 720 * 2
         # expected_fns = { #tdk:rm
         #     "control_multi_boxplot.yaml",
         #     "control_scorecard_nmb.yaml",
@@ -61,6 +60,7 @@ def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool) -> M
         ctx=srw_context,
     )
 
+
 def fake_run_ncap2_cmd(self: MetEvalPackage, cmd: list[str]) -> None:
     out_file = Path(cmd[-1])
     if "-A" not in cmd:
@@ -85,7 +85,7 @@ class TestMMEvalRunner:
 
         runner.initialize()
 
-        assert m_package_init.call_count == 1 # One non-overloaded package initialization
+        assert m_package_init.call_count == 1  # One non-overloaded package initialization
         assert m_ish_init.call_count == 1
         assert m_run_ncap2_cmd.call_count == mm_eval_runner_test_data.expected_ncap2_calls
 

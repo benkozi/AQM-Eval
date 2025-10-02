@@ -36,7 +36,7 @@ class MMEvalRunner(BaseModel):
         LOGGER("creating MM control configs")
         self.ctx.create_control_configs()
 
-        #tdk: this needs to use the package selector. recommend bumping package+task selector to the runner level
+        # tdk: this needs to use the package selector. recommend bumping package+task selector to the runner level
         for package in self.ctx.mm_packages:
             LOGGER(f"running package initialization for {package.key=}")
             package.initialize()
