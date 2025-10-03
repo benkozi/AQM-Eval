@@ -171,17 +171,7 @@ class MetEvalPackage(AbstractEvalPackage):
             TaskKey.STATS,
         )
 
-    # @field_validator('models', mode="before")
-    # def _validate_models_(cls, value: tuple[Model, ...]) -> tuple[Model, ...]:
-    #     new_models = []
-    #     for model in value:
-    #         data = model.model_dump()
-    #         data["prefix"] = data["prefix"] + "_ish"
-    #         new_models.append(Model.model_validate(data))
-    #     return tuple(new_models)
-
     def initialize(self) -> None:
-        # tdk: need to handle case with a base model as well!
         self._ish_conversion_()
 
     @log_it

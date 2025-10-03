@@ -22,40 +22,11 @@ def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool) -> M
     if use_base_model:
         expected_n_links = 100 + 96
         expected_ncap2_calls = 720 * 2
-        # expected_fns = { #tdk:rm
-        #     "control_multi_boxplot.yaml",
-        #     "control_scorecard_nmb.yaml",
-        #     "control_timeseries.yaml",
-        #     "control_boxplot.yaml",
-        #     "namelist.yaml",
-        #     "control_stats.yaml",
-        #     "control_scorecard_ioa.yaml",
-        #     "control_scorecard_nme.yaml",
-        #     "control_taylor.yaml",
-        #     "control_csi.yaml",
-        #     "control_scorecard_rmse.yaml",
-        #     "control_save_paired.yaml",
-        #     "control_spatial_bias.yaml",
-        #     "control_spatial_overlay.yaml",
-        # }
     else:
         expected_n_links = 50 + 48
         expected_ncap2_calls = 720
-        # expected_fns = { #tdk:rm
-        #     "control_spatial_bias.yaml",
-        #     "control_save_paired.yaml",
-        #     "control_stats.yaml",
-        #     "control_taylor.yaml",
-        #     "control_timeseries.yaml",
-        #     "control_csi.yaml",
-        #     "control_spatial_overlay.yaml",
-        #     "namelist.yaml",
-        #     "control_multi_boxplot.yaml",
-        #     "control_boxplot.yaml",
-        # }
     return MMEvalRunnerTestData(
         expected_n_links=expected_n_links,
-        # expected_fns=expected_fns, #tdk:rm
         expected_ncap2_calls=expected_ncap2_calls,
         ctx=srw_context,
     )
