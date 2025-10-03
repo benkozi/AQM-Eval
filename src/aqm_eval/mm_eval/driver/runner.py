@@ -13,11 +13,21 @@ from aqm_eval.mm_eval.driver.package import PackageKey, TaskKey
 
 
 class MMEvalRunner(BaseModel):
-    """Initialize, run, and finalize an MM evaluation."""
+    """Initialize, run, and finalize an MM evaluation.
+
+    Parameters
+    ----------
+    package_selector: tuple[PackageKey, ...] = tuple(PackageKey), optional
+        Optionally select packages to run. Used to limit packages that may already be configured.
+    task_selector: tuple[TaskKey, ...] = tuple(TaskKey), optional
+        Optionally select tasks to run. Used to limit tasks that may already be configured.
+    """
 
     model_config = {"frozen": True}
 
     ctx: AbstractDriverContext = Field(description="Driver context.")
+    package_selector: tuple[PackageKey, ...] = tuple(PackageKey)
+    task_selector: tuple[TaskKey, ...] = tuple(TaskKey)
 
     @log_it
     def initialize(self) -> None:
@@ -36,26 +46,20 @@ class MMEvalRunner(BaseModel):
         LOGGER("creating MM control configs")
         self.ctx.create_control_configs()
 
-        # tdk: this needs to use the package selector. recommend bumping package+task selector to the runner level
         for package in self.ctx.mm_packages:
+            if package.key not in self.package_selector:
+                LOGGER(f"skipping {package.key=}")
+                break
             LOGGER(f"running package initialization for {package.key=}")
             package.initialize()
 
     @log_it
     def run(
         self,
-        package_selector: tuple[PackageKey, ...] = tuple(PackageKey),
-        task_selector: tuple[TaskKey, ...] = tuple(TaskKey),
         finalize: bool = False,
     ) -> None:
         """Run the MM evaluation.
 
-        Parameters
-        ----------
-        package_selector: tuple[PackageKey, ...] = tuple(PackageKey), optional
-            Optionally select packages to run. Used to limit packages that may already be configured.
-        task_selector: tuple[TaskKey, ...] = tuple(TaskKey), optional
-            Optionally select tasks to run. Used to limit tasks that may already be configured.
         finalize: bool = False, optional
             If True, finalize the runner after the run completes, successfully or not.
 
@@ -63,19 +67,17 @@ class MMEvalRunner(BaseModel):
         -------
         None
         """
-        LOGGER(f"{package_selector=}")
-        LOGGER(f"{task_selector=}")
         LOGGER(f"{finalize=}")
         try:
             matplotlib.use("Agg")
             cartopy.config["data_dir"] = self.ctx.cartopy_data_dir
             dask.config.set({"array.slicing.split_large_chunks": True})
             for package in self.ctx.mm_packages:
-                if package.key not in package_selector:
+                if package.key not in self.package_selector:
                     continue
                 LOGGER(f"{package.key=}")
                 for task in package.tasks:
-                    if task not in task_selector:
+                    if task not in self.task_selector:
                         continue
                     LOGGER(f"{task=}")
                     an = driver.analysis()
