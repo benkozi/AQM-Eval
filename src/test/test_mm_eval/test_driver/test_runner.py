@@ -6,7 +6,7 @@ from pytest_mock import MockerFixture
 
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
-from aqm_eval.mm_eval.driver.package import AbstractEvalPackage, MetEvalPackage
+from aqm_eval.mm_eval.driver.package import AbstractEvalPackage, MetEvalPackage, PackageKey
 from aqm_eval.mm_eval.driver.runner import MMEvalRunner
 
 
@@ -56,7 +56,7 @@ class TestMMEvalRunner:
 
         runner.initialize()
 
-        assert m_package_init.call_count == 1  # One non-overloaded package initialization
+        assert m_package_init.call_count == 2  # Two non-overloaded package initialization
         assert m_ish_init.call_count == 1
         assert m_run_ncap2_cmd.call_count == mm_eval_runner_test_data.expected_ncap2_calls
 
@@ -65,6 +65,7 @@ class TestMMEvalRunner:
         assert len(actual_links) == mm_eval_runner_test_data.expected_n_links
 
         # Test control yaml files are created
+        assert [ii.key for ii in mm_eval_runner_test_data.ctx.mm_packages] == [PackageKey.CHEM, PackageKey.MET, PackageKey.AQS_PM]
         for package in mm_eval_runner_test_data.ctx.mm_packages:
             LOGGER(f"{package.key=}")
             package_run_dir = ctx.mm_run_dir / package.key.value
