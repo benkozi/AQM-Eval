@@ -299,6 +299,7 @@ def _assert_file_exists_(path: Path) -> None:
     if not path.is_file():
         raise ValueError(f"path is not a file: {path}")
 
+
 def package_key_to_class(key: PackageKey) -> type[AbstractEvalPackage]:
     mapping = {
         PackageKey.CHEM: ChemEvalPackage,

@@ -4,7 +4,6 @@ from pytest_mock import MockerFixture
 from typer.testing import CliRunner
 
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
-from aqm_eval.mm_eval.driver.package import PackageKey, TaskKey
 from aqm_eval.mm_eval.driver.runner import MMEvalRunner
 from aqm_eval.mm_eval.mm_eval_cli import app
 

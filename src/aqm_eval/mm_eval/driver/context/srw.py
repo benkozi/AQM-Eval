@@ -12,8 +12,12 @@ from pydantic import Field, computed_field
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.helpers import PathExisting
-from aqm_eval.mm_eval.driver.package import AbstractEvalPackage, ChemEvalPackage, MetEvalPackage, \
-    PackageKey, TaskKey, package_key_to_class
+from aqm_eval.mm_eval.driver.package import (
+    AbstractEvalPackage,
+    PackageKey,
+    TaskKey,
+    package_key_to_class,
+)
 
 try:
     from uwtools.api.config import YAMLConfig, get_yaml_config
@@ -128,15 +132,14 @@ class SRWContext(AbstractDriverContext):
         ret: list[AbstractEvalPackage] = []
         for package_key in self.mm_package_keys:
             klass = package_key_to_class(package_key)
-            ret.append(
-                klass(
-                    root_dir=self.mm_run_dir,
-                    mm_eval_model_expt_dir=self.expt_dir,
-                    link_simulation=self.link_simulation,
-                    link_alldays_path=self.link_alldays_path,
-                    mm_base_model_expt_dir=self.mm_base_model_expt_dir,
-                )
+            data = dict(
+                root_dir=self.mm_run_dir,
+                mm_eval_model_expt_dir=self.expt_dir,
+                link_simulation=self.link_simulation,
+                link_alldays_path=self.link_alldays_path,
+                mm_base_model_expt_dir=self.mm_base_model_expt_dir,
             )
+            ret.append(klass.model_validate(data))
         return tuple(ret)
 
     @cached_property
