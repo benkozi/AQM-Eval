@@ -56,7 +56,7 @@ class TestMMEvalRunner:
 
         runner.initialize()
 
-        assert m_package_init.call_count == 2  # Two non-overloaded package initialization
+        assert m_package_init.call_count == len(list(PackageKey)) - 1 # One overridden initialize function
         assert m_ish_init.call_count == 1
         assert m_run_ncap2_cmd.call_count == mm_eval_runner_test_data.expected_ncap2_calls
 
@@ -65,7 +65,7 @@ class TestMMEvalRunner:
         assert len(actual_links) == mm_eval_runner_test_data.expected_n_links
 
         # Test control yaml files are created
-        assert [ii.key for ii in mm_eval_runner_test_data.ctx.mm_packages] == [PackageKey.CHEM, PackageKey.MET, PackageKey.AQS_PM]
+        assert [ii.key for ii in mm_eval_runner_test_data.ctx.mm_packages] == list(PackageKey)
         for package in mm_eval_runner_test_data.ctx.mm_packages:
             LOGGER(f"{package.key=}")
             package_run_dir = ctx.mm_run_dir / package.key.value

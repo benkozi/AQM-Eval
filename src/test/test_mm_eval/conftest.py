@@ -5,6 +5,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
+from aqm_eval.mm_eval.driver.package import PackageKey
 
 
 @pytest.fixture(params=[True, False], ids=lambda x: f"use_base_model={x}")
@@ -35,7 +36,7 @@ def config_path_user(expt_dir: Path, use_base_model: bool) -> Path:
         },
         "task_mm_prep": {
             "MM_OUTPUT_DIR": None,
-            "MM_EVAL_PACKAGES": ["chem", "met", "aqs_pm"],
+            "MM_EVAL_PACKAGES": [ii.value for ii in PackageKey],
             # tdk:last: convert to a yaml mapping
             "MM_OBS_AIRNOW_FN_TEMPLATE": "AirNow_20230601_20230701.nc",
             "MM_OBS_ISH_FN_TEMPLATE": "ISH_20230601_20230701.nc",

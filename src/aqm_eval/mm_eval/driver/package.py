@@ -39,7 +39,7 @@ class PackageKey(StrEnum):
     CHEM = "chem"
     MET = "met"  # tdk:last: should this be named ish or met?
     AQS_PM = "aqs_pm"
-    VOCS = "vocs"
+    AQS_VOC = "aqs_voc"
 
 
 class AbstractEvalPackage(ABC, BaseModel):
@@ -289,8 +289,17 @@ class MetEvalPackage(AbstractEvalPackage):
 class AQS_PMEvalPackage(AbstractEvalPackage):
     """Defines a AQS PM evaluation package."""
 
+    #tdk: check for initialize requirements for PM
     key: PackageKey = PackageKey.AQS_PM
     namelist_template: str = "namelist.aqs.pm.j2"
+
+
+class AQS_VOCEvalPackage(AbstractEvalPackage):
+    """Defines a AQS VOC evaluation package."""
+
+    #tdk: check for initialize requirements for VOC
+    key: PackageKey = PackageKey.AQS_VOC
+    namelist_template: str = "namelist.aqs.voc.j2"
 
 
 def _assert_file_exists_(path: Path) -> None:
@@ -305,5 +314,6 @@ def package_key_to_class(key: PackageKey) -> type[AbstractEvalPackage]:
         PackageKey.CHEM: ChemEvalPackage,
         PackageKey.MET: MetEvalPackage,
         PackageKey.AQS_PM: AQS_PMEvalPackage,
+        PackageKey.AQS_VOC: AQS_VOCEvalPackage,
     }
     return mapping[key]
