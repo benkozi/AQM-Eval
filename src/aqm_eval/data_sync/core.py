@@ -311,7 +311,7 @@ class TimeVaryingSyncRunner(AbstractS3SyncRunner[TimeVaryingContext]):
                 include_templates.append(f"RESTART/*{restart_cycle_date.strftime('%Y%m%d')}*")
             for it in include_templates:
                 cmd += ["--include", it]
-            if curr_cycle_date == self._ctx.last_cycle_date or self._ctx.snippet is True:
+            if curr_cycle_date == self._ctx.last_cycle_date or (self._ctx.snippet is True and ctr == 1):
                 LOGGER("finished adding include filters")
                 break
             curr_cycle_date += datetime.timedelta(days=1)

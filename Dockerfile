@@ -12,5 +12,11 @@ RUN conda run -n aqm-eval bash -c "pip install --no-deps . && pip list"
 RUN conda run -n aqm-eval bash -c "aqm-data-sync --help"
 RUN conda run -n aqm-eval bash -c "aqm-mm-eval --help"
 
+# Test that the yaml_template directory exists after pip installation
+RUN test -d /opt/conda/envs/aqm-eval/lib/python3.11/site-packages/aqm_eval/mm_eval/yaml_template
+
 WORKDIR /opt
 RUN rm -rf /opt/build
+
+# Activate environment by default
+RUN echo "conda activate aqm-eval" >> ~/.bashrc

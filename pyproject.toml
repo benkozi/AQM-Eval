@@ -12,6 +12,12 @@ authors = [
 aqm-data-sync = "aqm_eval.data_sync.data_sync_cli:app"
 aqm-mm-eval = "aqm_eval.mm_eval.mm_eval_cli:app"
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"aqm_eval.mm_eval" = ["yaml_template/**/*"]
+
 [tool.ruff]
 line-length = 132
 

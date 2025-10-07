@@ -51,13 +51,13 @@ def time_varying(
     first_cycle_date: str = typer.Option(
         None,
         "--first-cycle-date",
-        help="First cycle date in yyyymmdd format. Required if --use-case is not provided.",
+        help="First cycle date in yyyymmddhh format. Required if --use-case is not provided.",
     ),
     fcst_hr: int = typer.Option(0, "--fcst-hr", help="Forecast hour."),
     last_cycle_date: str = typer.Option(
         None,
         "--last-cycle-date",
-        help="Last cycle date in yyyymmdd format. If not provided, defaults to 24 hours after --first-cycle-date.",
+        help="Last cycle date in yyyymmddhh format. If not provided, defaults to 24 hours after --first-cycle-date.",
     ),
     use_case: UseCaseKey = typer.Option(UseCaseKey.UNDEFINED, "--use-case", help="Use case."),
     max_concurrent_requests: int = typer.Option(

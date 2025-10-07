@@ -32,14 +32,14 @@ Usage: aqm-data-sync time-varying [OPTIONS]
 │                                                      [default: None]        │
 │                                                      [required]             │
 │    --first-cycle-date           TEXT                 First cycle date in    │
-│                                                      yyyymmdd format.       │
+│                                                      yyyymmddhh format.     │
 │                                                      Required if --use-case │
 │                                                      is not provided.       │
 │                                                      [default: None]        │
 │    --fcst-hr                    INTEGER              Forecast hour.         │
 │                                                      [default: 0]           │
 │    --last-cycle-date            TEXT                 Last cycle date in     │
-│                                                      yyyymmdd format. If    │
+│                                                      yyyymmddhh format. If  │
 │                                                      not provided, defaults │
 │                                                      to 24 hours after      │
 │                                                      --first-cycle-date.    │
@@ -52,10 +52,9 @@ Usage: aqm-data-sync time-varying [OPTIONS]
 │    --dry-run                                         Dry run. Nothing will  │
 │                                                      be materially          │
 │                                                      synchronized.          │
-│    --snippet                                         If provided, download  │
-│                                                      data for a single      │
-│                                                      forecast cycle loop    │
-│                                                      (e.g. one day).        │
+│    --snippet                                         If provided, download  |
+|                                                      data for two forecast  |
+|                                                      cycles (e.g. two days).|
 │    --help                                            Show this message and  │
 │                                                      exit.                  │
 └─────────────────────────────────────────────────────────────────────────────┘
