@@ -107,6 +107,11 @@ class SRWContext(AbstractDriverContext):
 
     @computed_field
     @cached_property
+    def mm_obs_aqs_voc_fn_template(self) -> str:
+        return self.find_nested_key(("task_mm_prep", "MM_OBS_AQS_VOC_FN_TEMPLATE"))
+
+    @computed_field
+    @cached_property
     def link_simulation(self) -> tuple[str, ...]:
         return tuple(set([f"{str(ii.year)}*" for ii in [self.datetime_first_cycl, self.datetime_last_cycl]]))
 

@@ -127,7 +127,7 @@ timeseries_domain_name: [
   "R1", "R2", "R3", "R4", "R5",
   "R6", "R7", "R8", "R9", "R10",
 ]
-timeseries_dataset: ["aqs_base_aqmv8p1", "aqs_eval_aqmv8p1_metemis"]
+timeseries_dataset: {{ package.mm_model_labels }}
 timeseries_data_proc:
   rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
   set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
@@ -152,7 +152,7 @@ taylor_domain_name: [
   "R1", "R2", "R3", "R4", "R5",
   "R6", "R7", "R8", "R9", "R10",
 ]
-taylor_dataset: ["aqs_base_aqmv8p1", "aqs_eval_aqmv8p1_metemis"]
+taylor_dataset: {{ package.mm_model_labels }}
 taylor_data_proc:
   rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
   set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
