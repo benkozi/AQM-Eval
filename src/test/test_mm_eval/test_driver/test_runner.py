@@ -56,7 +56,7 @@ class TestMMEvalRunner:
 
         runner.initialize()
 
-        assert m_package_init.call_count == len(list(PackageKey)) - 1 # One overridden initialize function
+        assert m_package_init.call_count == len(list(PackageKey)) - 1  # One overridden initialize function
         assert m_ish_init.call_count == 1
         assert m_run_ncap2_cmd.call_count == mm_eval_runner_test_data.expected_ncap2_calls
 

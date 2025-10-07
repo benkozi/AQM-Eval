@@ -289,7 +289,7 @@ class MetEvalPackage(AbstractEvalPackage):
 class AQS_PMEvalPackage(AbstractEvalPackage):
     """Defines a AQS PM evaluation package."""
 
-    #tdk: check for initialize requirements for PM
+    # tdk: check for initialize requirements for PM
     key: PackageKey = PackageKey.AQS_PM
     namelist_template: str = "namelist.aqs.pm.j2"
 
@@ -297,7 +297,7 @@ class AQS_PMEvalPackage(AbstractEvalPackage):
 class AQS_VOCEvalPackage(AbstractEvalPackage):
     """Defines a AQS VOC evaluation package."""
 
-    #tdk: check for initialize requirements for VOC
+    # tdk: check for initialize requirements for VOC
     key: PackageKey = PackageKey.AQS_VOC
     namelist_template: str = "namelist.aqs.voc.j2"
 

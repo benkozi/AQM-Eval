@@ -1,4 +1,4 @@
-# Please use this namelist script for MM settings. 13 plot/analysis options are included: save_paired, timeseries, taylor, spatial_bias, spatial_overlay, boxplot, multi_boxplot, scorecard_rmse, scorecard_ioa, scorecard_nmb, scorecard_nme, csi, and stats. 
+# Please use this namelist script for MM settings. 13 plot/analysis options are included: save_paired, timeseries, taylor, spatial_bias, spatial_overlay, boxplot, multi_boxplot, scorecard_rmse, scorecard_ioa, scorecard_nmb, scorecard_nme, csi, and stats.
 # For AQMv8 evaluation, two models (base, eval) and airnow observation are used by default.
 # Any key that is specific for a plot type will begin with ts for timeseries, ty for taylor
 # Opt: Specifying the variable or variable group is optional
@@ -65,11 +65,11 @@ obs_variables:
     ty_scale: 3.0 #Opt
     vmin_plot: 0.0 #Opt Min for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
     vmax_plot: 5.0 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
-    vdiff_plot: 1.0 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.    
+    vdiff_plot: 1.0 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
     nlevels_plot: 20 #Opt number of levels used in colorbar for contourf plot.
     # regulatory: True #Opt compute regulatory func
   PROPANE:
-    unit_scale: 1 #Opt Scaling factor 
+    unit_scale: 1 #Opt Scaling factor
     unit_scale_method: "*" #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
     nan_value: -1.0 # Opt Set this value to NaN
     ylabel_plot: "PROPANE (ppbv)"
@@ -112,7 +112,7 @@ obs_variables:
 # ==== pg1 - timeseries ====
 timeseries_fig_kwargs:
   figsize: [12, 6]
-timeseries_plot_kwargs: 
+timeseries_plot_kwargs:
   linewidth: 2.0
   markersize: 10
 timeseries_text_kwargs:
@@ -158,7 +158,7 @@ taylor_data_proc:
   set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
 
 
-# ==== pg3 - spatial_bias ==== 
+# ==== pg3 - spatial_bias ====
 spatial_bias_fig_kwargs:
   states: True
   figsize: [10, 5]
