@@ -1,14 +1,12 @@
 from pathlib import Path
 
 import pytest
-from mypy.find_sources import strip_py
 from pydantic import BaseModel
 from pytest_mock import MockerFixture
 
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
-from aqm_eval.mm_eval.driver.package import AbstractEvalPackage, MetEvalPackage, PackageKey, \
-    AQS_VOCEvalPackage
+from aqm_eval.mm_eval.driver.package import AbstractEvalPackage, AQS_VOCEvalPackage, MetEvalPackage, PackageKey
 from aqm_eval.mm_eval.driver.runner import MMEvalRunner
 
 
@@ -22,9 +20,13 @@ class MMEvalRunnerTestData(BaseModel):
 
 @pytest.fixture
 def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool) -> MMEvalRunnerTestData:
-    expected_n_links = (25 * 2) + 48 + 48 # (25 dynf hourly files * 2 cycle directories) + 96 ISH converted files + 96 AQS PM converted files
-    expected_ncks_calls = (2 * 24 * 2) # (2 cycle directories * 24 hours * 2 ncks calls)
-    expected_ncap2_calls = (15 * 24 * 2) + (23 * 24 * 2)  # (15 ncap2 ISH calls * 24 hours * 2 cycle directories) + (23 ncap2 AQS PM calls * 24 hours * 2 cycle directories)
+    expected_n_links = (
+        (25 * 2) + 48 + 48
+    )  # (25 dynf hourly files * 2 cycle directories) + 96 ISH converted files + 96 AQS PM converted files
+    expected_ncks_calls = 2 * 24 * 2  # (2 cycle directories * 24 hours * 2 ncks calls)
+    expected_ncap2_calls = (15 * 24 * 2) + (
+        23 * 24 * 2
+    )  # (15 ncap2 ISH calls * 24 hours * 2 cycle directories) + (23 ncap2 AQS PM calls * 24 hours * 2 cycle directories)
     if use_base_model:
         # Two model adjustment
         expected_n_links *= 2

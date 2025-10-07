@@ -143,7 +143,6 @@ class AbstractEvalPackage(ABC, BaseModel):
         LOGGER(f"running ncap2 command: {local_cmd}")
         subprocess.check_call(local_cmd)
 
-
     @staticmethod
     def _run_ncks_cmd_(cmd: list[str]) -> None:
         local_cmd = ["ncks"] + cmd
@@ -519,7 +518,6 @@ class AQS_VOCEvalPackage(AbstractEvalPackage):
                     # Execute PM species calculation commands
                     for cmd in ncap2_commands_post:
                         self._run_ncap2_cmd_(cmd)
-
 
 
 def _assert_file_exists_(path: Path) -> None:
