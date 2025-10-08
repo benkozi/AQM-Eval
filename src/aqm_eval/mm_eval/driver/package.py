@@ -298,13 +298,6 @@ class AQS_PMEvalPackage(AbstractEvalPackage):
     key: PackageKey = PackageKey.AQS_PM
     namelist_template: str = "namelist.aqs.pm.j2"
 
-
-class AQS_VOCEvalPackage(AbstractEvalPackage):
-    """Defines a AQS VOC evaluation package."""
-
-    key: PackageKey = PackageKey.AQS_VOC
-    namelist_template: str = "namelist.aqs.voc.j2"
-
     @computed_field(description="Prefix for each model role.")
     @cached_property
     def model_prefixes(self) -> dict[ModelRole, str]:
@@ -518,6 +511,13 @@ class AQS_VOCEvalPackage(AbstractEvalPackage):
                     # Execute PM species calculation commands
                     for cmd in ncap2_commands_post:
                         self._run_ncap2_cmd_(cmd)
+
+
+class AQS_VOCEvalPackage(AbstractEvalPackage):
+    """Defines a AQS VOC evaluation package."""
+
+    key: PackageKey = PackageKey.AQS_VOC
+    namelist_template: str = "namelist.aqs.voc.j2"
 
 
 def _assert_file_exists_(path: Path) -> None:
