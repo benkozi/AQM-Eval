@@ -26,7 +26,9 @@ class MMEvalRunner(BaseModel):
     model_config = {"frozen": True}
 
     ctx: AbstractDriverContext = Field(description="Driver context.")
-    package_selector: tuple[PackageKey, ...] = tuple(PackageKey)
+    #tdk: enable AQS_PM
+    #tdk: need way to select which packages to initialize using the SRW
+    package_selector: tuple[PackageKey, ...] = tuple([ii for ii in PackageKey if ii != PackageKey.AQS_PM])
     task_selector: tuple[TaskKey, ...] = tuple(TaskKey)
 
     @log_it
