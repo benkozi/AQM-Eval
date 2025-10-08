@@ -57,7 +57,8 @@ class AbstractEvalPackage(ABC, BaseModel):
     @computed_field(description="Prefix for each model role.")
     @cached_property
     def model_prefixes(self) -> dict[ModelRole, str]:
-        return {ii: ii.value for ii in ModelRole}
+        #tdk:last: some duplication here
+        return {ii: ii.value + "_orig" for ii in ModelRole}
 
     @computed_field(description="Run directory for the MM evaluation package.")
     @cached_property
