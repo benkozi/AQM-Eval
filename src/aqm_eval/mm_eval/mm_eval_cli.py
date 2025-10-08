@@ -45,7 +45,10 @@ def srw_init(
     from aqm_eval.mm_eval.driver.context.srw import SRWContext
 
     ctx = SRWContext(expt_dir=expt_dir)
-    runner = MMEvalRunner(ctx=ctx, task_selector=tuple(task_selector), package_selector=tuple(package_selector))
+    # tdk: need way to select which packages to initialize using the SRW
+    package_selector = tuple(
+        [ii for ii in PackageKey if ii != PackageKey.AQS_PM])
+    runner = MMEvalRunner(ctx=ctx, task_selector=tuple(task_selector), package_selector=package_selector)
     runner.initialize()
 
 
