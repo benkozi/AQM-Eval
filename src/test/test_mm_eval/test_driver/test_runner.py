@@ -82,14 +82,16 @@ class TestMMEvalRunner:
         assert spy_run_ncap2_cmd.call_count == mm_eval_runner_test_data.expected_ncap2_calls
         assert spy_run_ncks_cmd.call_count == mm_eval_runner_test_data.expected_ncks_calls
 
-        # Test links for all days are created
-        actual_links = [ii for ii in ctx.link_alldays_path.iterdir()]
-        assert len(actual_links) == mm_eval_runner_test_data.expected_n_links
-
         # Test control yaml files are created
         assert [ii.key for ii in mm_eval_runner_test_data.ctx.mm_packages] == list(PackageKey)
         for package in mm_eval_runner_test_data.ctx.mm_packages:
             LOGGER(f"{package.key=}")
+
+            # Test links/derived data is created for each package
+            actual_links = [ii for ii in package.link_alldays_path.iterdir()]
+            # LOGGER(f"{actual_links=}")
+            assert len(actual_links) == mm_eval_runner_test_data.expected_n_links
+
             package_run_dir = ctx.mm_run_dir / package.key.value
             actual_files = package_run_dir.rglob("*")
             expected_filenames = package.task_control_filenames

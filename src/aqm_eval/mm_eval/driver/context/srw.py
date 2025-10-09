@@ -116,12 +116,12 @@ class SRWContext(AbstractDriverContext):
     def link_simulation(self) -> tuple[str, ...]:
         return tuple(set([f"{str(ii.year)}*" for ii in [self.datetime_first_cycl, self.datetime_last_cycl]]))
 
-    @computed_field
-    @cached_property
-    def link_alldays_path(self) -> PathExisting:
-        ret = self.mm_run_dir / "Alldays"
-        ret.mkdir(exist_ok=True, parents=True)
-        return ret
+    # @computed_field #tdk:last: remove
+    # @cached_property
+    # def link_alldays_path(self) -> PathExisting:
+    #     ret = self.mm_run_dir / "Alldays"
+    #     ret.mkdir(exist_ok=True, parents=True)
+    #     return ret
 
     @computed_field
     @cached_property
@@ -143,7 +143,7 @@ class SRWContext(AbstractDriverContext):
                 root_output_dir=self.mm_output_dir,
                 mm_eval_model_expt_dir=self.expt_dir,
                 link_simulation=self.link_simulation,
-                link_alldays_path=self.link_alldays_path,
+                # link_alldays_path=self.link_alldays_path, #tdk:last: rm
                 mm_base_model_expt_dir=self.mm_base_model_expt_dir,
             )
             ret.append(klass.model_validate(data))

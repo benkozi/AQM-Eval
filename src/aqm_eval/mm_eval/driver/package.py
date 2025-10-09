@@ -51,9 +51,26 @@ class AbstractEvalPackage(ABC, BaseModel):
     mm_eval_model_expt_dir: PathExisting = Field(description="Experiment directory containing evaluation model output.")
     mm_base_model_expt_dir: PathExisting | None = Field(description="Experiment directory containing base model output.")
     link_simulation: tuple[str, ...]
-    link_alldays_path: PathExisting
+    # link_alldays_path: PathExisting #tdk:last: remove all references to alldays path above package
     key: PackageKey = Field(description="MM package key.")
     namelist_template: str = Field(description="Package template file.")
+
+    @computed_field(description="Run directory for the MM evaluation package.")
+    @cached_property
+    def run_dir(self) -> Path:
+        ret = self.root_dir / self.key.value
+        if not ret.exists():
+            ret.mkdir(exist_ok=True)
+        return ret
+
+    @computed_field(description="Directory containing links or derived files for package.")
+    @cached_property
+    def link_alldays_path(self) -> PathExisting:
+        ret = self.run_dir / "data"
+        if not ret.exists():
+            ret.mkdir(exist_ok=True)
+        return ret
+
 
     @computed_field(description="Output directory for the MM evaluation package.")
     @cached_property
@@ -63,17 +80,11 @@ class AbstractEvalPackage(ABC, BaseModel):
             ret.mkdir(parents=True)
         return ret
 
-
     @computed_field(description="Prefix for each model role.")
     @cached_property
     def model_prefixes(self) -> dict[ModelRole, str]:
         #tdk:last: some duplication here
         return {ii: ii.value + "_orig" for ii in ModelRole}
-
-    @computed_field(description="Run directory for the MM evaluation package.")
-    @cached_property
-    def run_dir(self) -> Path:
-        return self.root_dir / self.key.value
 
     @computed_field(description="Tasks that the package will run.")
     @cached_property
