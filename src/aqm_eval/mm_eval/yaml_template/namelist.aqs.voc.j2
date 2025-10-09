@@ -11,7 +11,7 @@ package_key: aqs_voc
 # Time format: yyyy-mm-dd-HH:MM:SS UTC
 start_time: {{ ctx.date_first_cycle_mm }}
 end_time: {{ ctx.date_last_cycle_mm }}
-output_dir: {{ ctx.mm_output_dir }}
+output_dir: {{ package.mm_package_output_dir }}
 debug_option: True
 mm_tasks: {{ mm_tasks }}
 

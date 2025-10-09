@@ -47,12 +47,22 @@ class AbstractEvalPackage(ABC, BaseModel):
 
     model_config = {"frozen": True}
     root_dir: PathExisting = Field(description="Root directory for MM evaluation package.")
+    root_output_dir: PathExisting = Field(description="Root directory for MM output.")
     mm_eval_model_expt_dir: PathExisting = Field(description="Experiment directory containing evaluation model output.")
     mm_base_model_expt_dir: PathExisting | None = Field(description="Experiment directory containing base model output.")
     link_simulation: tuple[str, ...]
     link_alldays_path: PathExisting
     key: PackageKey = Field(description="MM package key.")
     namelist_template: str = Field(description="Package template file.")
+
+    @computed_field(description="Output directory for the MM evaluation package.")
+    @cached_property
+    def mm_package_output_dir(self) -> PathExisting:
+        ret = self.root_output_dir / self.key.value
+        if not ret.exists():
+            ret.mkdir(parents=True)
+        return ret
+
 
     @computed_field(description="Prefix for each model role.")
     @cached_property

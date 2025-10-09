@@ -46,9 +46,9 @@ def srw_init(
 
     ctx = SRWContext(expt_dir=expt_dir)
     # tdk: need way to select which packages to initialize using the SRW
-    package_selector = tuple(
-        [ii for ii in PackageKey if ii != PackageKey.AQS_PM])
-    runner = MMEvalRunner(ctx=ctx, task_selector=tuple(task_selector), package_selector=package_selector)
+    # package_selector = tuple(
+    #     [ii for ii in PackageKey if ii != PackageKey.AQS_PM])
+    runner = MMEvalRunner(ctx=ctx, task_selector=tuple(task_selector), package_selector=tuple(package_selector))
     runner.initialize()
 
 
