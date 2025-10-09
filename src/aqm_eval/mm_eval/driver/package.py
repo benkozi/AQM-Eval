@@ -6,6 +6,8 @@ from enum import StrEnum, unique
 from functools import cached_property
 from pathlib import Path
 
+import yaml
+from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from pydantic import BaseModel, Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
@@ -54,31 +56,23 @@ class AbstractEvalPackage(ABC, BaseModel):
     # link_alldays_path: PathExisting #tdk:last: remove all references to alldays path above package
     key: PackageKey = Field(description="MM package key.")
     namelist_template: str = Field(description="Package template file.")
+    template_dir: PathExisting = Field(description="Directory containing template files.")
 
     @computed_field(description="Run directory for the MM evaluation package.")
     @cached_property
     def run_dir(self) -> Path:
-        ret = self.root_dir / self.key.value
-        if not ret.exists():
-            ret.mkdir(exist_ok=True)
-        return ret
+        return self.root_dir / self.key.value
 
     @computed_field(description="Directory containing links or derived files for package.")
     @cached_property
-    def link_alldays_path(self) -> PathExisting:
-        ret = self.run_dir / "data"
-        if not ret.exists():
-            ret.mkdir(exist_ok=True)
-        return ret
+    def link_alldays_path(self) -> Path:
+        return self.run_dir / "data"
 
 
     @computed_field(description="Output directory for the MM evaluation package.")
     @cached_property
-    def mm_package_output_dir(self) -> PathExisting:
-        ret = self.root_output_dir / self.key.value
-        if not ret.exists():
-            ret.mkdir(parents=True)
-        return ret
+    def mm_package_output_dir(self) -> Path:
+        return self.root_output_dir / self.key.value
 
     @computed_field(description="Prefix for each model role.")
     @cached_property
@@ -155,9 +149,58 @@ class AbstractEvalPackage(ABC, BaseModel):
         """
         return ", ".join([f'"{ii.title}"' for ii in self.mm_models])
 
+    @cached_property
+    def j2_env(self) -> Environment:
+        """
+        Returns
+        -------
+        Environment
+            Jinja2 environment for rendering template files.
+        """
+        searchpath = self.template_dir
+        LOGGER(f"creating J2 environment {self.template_dir=}")
+        return Environment(
+            loader=FileSystemLoader(searchpath=searchpath),
+            undefined=StrictUndefined,
+        )
+
     def initialize(self) -> None:
         """Allows for package-specific initialization requirements."""
         ...
+
+    def create_control_configs(self, ctx) -> None:
+        #tdk:last: figure out how to remove the ctx arg
+        package_run_dir = self.run_dir
+        LOGGER(f"{package_run_dir=}")
+        if not package_run_dir.exists():
+            LOGGER(f"{package_run_dir=} does not exist. creating.", exc_info=ValueError)
+
+        cfg = {"ctx": ctx, "mm_tasks": tuple([ii.value for ii in self.tasks]), "package": self}
+        namelist_config_str = self.j2_env.get_template(self.namelist_template).render(cfg)
+        namelist_config = yaml.safe_load(namelist_config_str)
+        with open(package_run_dir / "namelist.yaml", "w") as f:
+            f.write(namelist_config_str)
+
+        assert isinstance(cfg["mm_tasks"], tuple)
+        for task in cfg["mm_tasks"]:
+            match task:
+                case TaskKey.SCORECARD_RMSE:
+                    namelist_config["scorecard_eval_method"] = '"RMSE"'
+                case TaskKey.SCORECARD_IOA:
+                    namelist_config["scorecard_eval_method"] = '"IOA"'
+                case TaskKey.SCORECARD_NMB:
+                    namelist_config["scorecard_eval_method"] = '"NMB"'
+                case TaskKey.SCORECARD_NME:
+                    namelist_config["scorecard_eval_method"] = '"NME"'
+
+            LOGGER(f"{task=}")
+            template = self.j2_env.get_template(f"template_{task}.j2")
+            LOGGER(f"{template=}")
+            config_yaml = template.render(**namelist_config)
+            curr_control_path = package_run_dir / f"control_{task}.yaml"
+            LOGGER(f"{curr_control_path=}")
+            with open(curr_control_path, "w") as f:
+                f.write(config_yaml)
 
     @staticmethod
     def _run_ncap2_cmd_(cmd: list[str]) -> None:

@@ -71,28 +71,13 @@ class AbstractDriverContext(ABC, BaseModel):
     def template_dir(self) -> PathExisting:
         return (Path(__file__).parent.parent.parent / "yaml_template").absolute().resolve()
 
-    @cached_property
-    def j2_env(self) -> Environment:
-        """
-        Returns
-        -------
-        Environment
-            Jinja2 environment for rendering template files.
-        """
-        searchpath = self.template_dir
-        LOGGER(f"creating J2 environment {self.template_dir=}")
-        return Environment(
-            loader=FileSystemLoader(searchpath=searchpath),
-            undefined=StrictUndefined,
-        )
-
-    @abstractmethod
-    def create_control_configs(self) -> None:
-        """Create all configuration files and other artifacts necessary for running the MM
-        evaluation.
-
-        Returns
-        -------
-        None
-        """
-        ...
+    # @abstractmethod #tdk:rm
+    # def create_control_configs(self) -> None:
+    #     """Create all configuration files and other artifacts necessary for running the MM
+    #     evaluation.
+    #
+    #     Returns
+    #     -------
+    #     None
+    #     """
+    #     ...

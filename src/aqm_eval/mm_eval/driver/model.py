@@ -2,6 +2,7 @@
 
 from enum import StrEnum, unique
 from functools import cached_property
+from pathlib import Path
 
 from pydantic import BaseModel, Field, computed_field
 
@@ -29,7 +30,7 @@ class Model(BaseModel):
     role: ModelRole = Field(description="Model role when generating configuration files.")
     cycle_dir_template: tuple[str, ...] = Field(description="Templates for selecting model output directories.")
     dyn_file_template: tuple[str, ...] = Field(description="Templates for selecting model output dynamics files.")
-    link_alldays_path: PathExisting = Field(description="Path to directory where symlinks to model output files will be created.")
+    link_alldays_path: Path = Field(description="Path to directory where symlinks to model output files will be created.")
 
     @computed_field(description="Template for selecting symlinked data files.")
     @cached_property

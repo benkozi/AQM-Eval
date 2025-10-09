@@ -1,4 +1,5 @@
 """Defines the MM evaluation runner to initialize, run, and finalize a configuration."""
+from functools import cached_property
 
 import cartopy  # type: ignore[import-untyped]
 import dask
@@ -9,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
-from aqm_eval.mm_eval.driver.package import PackageKey, TaskKey
+from aqm_eval.mm_eval.driver.package import PackageKey, TaskKey, AbstractEvalPackage
 
 
 class MMEvalRunner(BaseModel):
@@ -27,8 +28,7 @@ class MMEvalRunner(BaseModel):
 
     ctx: AbstractDriverContext = Field(description="Driver context.")
     #tdk: runner should only be for one package and task?
-    package_selector: tuple[PackageKey, ...] = tuple(PackageKey)
-    task_selector: tuple[TaskKey, ...] = tuple(TaskKey)
+    package_key: PackageKey = Field(description="MM package key to run.")
 
     @log_it
     def initialize(self) -> None:
@@ -39,24 +39,39 @@ class MMEvalRunner(BaseModel):
         None
         """
         LOGGER(f"{self.ctx=}")
+        LOGGER(f"{self.package_key=}")
 
         # Only create symlinks once for each model
-        for model in self.ctx.mm_packages[0].mm_models:
+        #tdk:last: move to package
+        assert not self.package_to_run.run_dir.exists()
+        assert not self.package_to_run.mm_package_output_dir.exists()
+        assert not self.package_to_run.mm_models[0].link_alldays_path.exists()
+        for model in self.package_to_run.mm_models:
             model.create_symlinks()
 
         LOGGER("creating MM control configs")
-        self.ctx.create_control_configs()
+        #tdk:last: move to package
+        self.package_to_run.create_control_configs(self.ctx)
 
+        LOGGER("initializing package")
+        self.package_to_run.initialize()
+
+    @cached_property
+    def package_to_run(self) -> AbstractEvalPackage:
+        package_to_run = None
         for package in self.ctx.mm_packages:
-            if package.key not in self.package_selector:
-                LOGGER(f"skipping {package.key=}")
+            if package.key == self.package_key:
+                package_to_run = package
                 break
-            LOGGER(f"running package initialization for {package.key=}")
-            package.initialize()
+        if package_to_run is None:
+            raise ValueError
+        assert isinstance(package_to_run, AbstractEvalPackage)
+        return package_to_run
 
     @log_it
     def run(
         self,
+        task_key: TaskKey, #tdk: doc
         finalize: bool = False,
     ) -> None:
         """Run the MM evaluation.
@@ -68,26 +83,23 @@ class MMEvalRunner(BaseModel):
         -------
         None
         """
+        LOGGER(f"{task_key=}")
         LOGGER(f"{finalize=}")
+
+        assert self.package_to_run.run_dir.exists()
+        assert not self.package_to_run.mm_package_output_dir.exists()
+
         try:
             matplotlib.use("Agg")
             cartopy.config["data_dir"] = self.ctx.cartopy_data_dir
             dask.config.set({"array.slicing.split_large_chunks": True})
-            for package in self.ctx.mm_packages:
-                if package.key not in self.package_selector:
-                    continue
-                LOGGER(f"{package.key=}")
-                for task in package.tasks:
-                    if task not in self.task_selector:
-                        continue
-                    LOGGER(f"{task=}")
-                    an = driver.analysis()
-                    control_yaml = self.ctx.mm_run_dir / package.key.value / f"control_{task.value}.yaml"
-                    LOGGER(f"{control_yaml=}")
-                    an.control = control_yaml
-                    an.read_control()
+            an = driver.analysis()
+            control_yaml = self.ctx.mm_run_dir / self.package_to_run.key.value / f"control_{task_key.value}.yaml"
+            LOGGER(f"{control_yaml=}")
+            an.control = control_yaml
+            an.read_control()
 
-                    self._run_task_(an, task)
+            self._run_task_(an, task_key)
         finally:
             if finalize:
                 self.finalize()

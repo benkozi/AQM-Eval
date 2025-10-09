@@ -7,7 +7,7 @@ from pytest_mock import MockerFixture
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
 from aqm_eval.mm_eval.driver.package import AbstractEvalPackage, AQS_VOCEvalPackage, MetEvalPackage, \
-    PackageKey, AQS_PMEvalPackage
+    PackageKey, AQS_PMEvalPackage, TaskKey
 from aqm_eval.mm_eval.driver.runner import MMEvalRunner
 
 
@@ -58,6 +58,64 @@ def fake_run_ncks_cmd(self: AbstractEvalPackage, cmd: list[str]) -> None:
 
 
 class TestMMEvalRunner:
+
+    def test2(self, mm_eval_runner_test_data: MMEvalRunnerTestData, mocker: MockerFixture) -> None:
+        """Test "initialize", actually. "run" ensures the failure occurs in xarray when actual data
+        is needed."""
+
+        ctx = mm_eval_runner_test_data.ctx
+        package_key = PackageKey.CHEM
+        runner = MMEvalRunner(ctx=ctx, package_key=package_key)
+
+        runner.initialize()
+
+        for task_key in runner.package_to_run.tasks:
+            #tdk: add better mock testing
+            with pytest.raises((ValueError, FileNotFoundError)) as excinfo:
+                runner.run(task_key=task_key)
+
+        # tdk
+
+        # # Test that each package's initialization routine is called.
+        # m_package_init = mocker.spy(AbstractEvalPackage, "initialize")
+        # spy_ish_init = mocker.spy(MetEvalPackage, "initialize")
+        # spy_aqm_pm_init = mocker.spy(AQS_PMEvalPackage, "initialize")
+        # _ = mocker.patch.object(AbstractEvalPackage, "_run_ncap2_cmd_", fake_run_ncap2_cmd)
+        # spy_run_ncap2_cmd = mocker.spy(AbstractEvalPackage, "_run_ncap2_cmd_")
+        # _ = mocker.patch.object(AbstractEvalPackage, "_run_ncks_cmd_", fake_run_ncks_cmd)
+        # spy_run_ncks_cmd = mocker.spy(AbstractEvalPackage, "_run_ncks_cmd_")
+        #
+        # runner.initialize()
+        #
+        # assert m_package_init.call_count == len(list(PackageKey)) - 2  # Two overridden initialize methods
+        # assert spy_ish_init.call_count == 1
+        # assert spy_aqm_pm_init.call_count == 1
+        # assert spy_run_ncap2_cmd.call_count == mm_eval_runner_test_data.expected_ncap2_calls
+        # assert spy_run_ncks_cmd.call_count == mm_eval_runner_test_data.expected_ncks_calls
+        #
+        # # Test control yaml files are created
+        # assert [ii.key for ii in mm_eval_runner_test_data.ctx.mm_packages] == list(PackageKey)
+        # for package in mm_eval_runner_test_data.ctx.mm_packages:
+        #     LOGGER(f"{package.key=}")
+        #
+        #     # Test links/derived data is created for each package
+        #     actual_links = [ii for ii in package.link_alldays_path.iterdir()]
+        #     # LOGGER(f"{actual_links=}")
+        #     assert len(actual_links) == mm_eval_runner_test_data.expected_n_links
+        #
+        #     package_run_dir = ctx.mm_run_dir / package.key.value
+        #     actual_files = package_run_dir.rglob("*")
+        #     expected_filenames = package.task_control_filenames
+        #     expected_filenames.update({"namelist.yaml"})
+        #     assert set([ii.name for ii in actual_files]) == expected_filenames
+        #
+        #     with pytest.raises(ValueError) as excinfo:
+        #         runner.run()
+        #     assert str(excinfo.value).startswith("did not find a match in any of xarray's currently installed IO backends")
+        #
+        # # Test output directories are created
+        # assert set([ii.name for ii in mm_eval_runner_test_data.ctx.mm_output_dir.glob("*")]) == set([ii.value for ii in PackageKey])
+
     def test(self, mm_eval_runner_test_data: MMEvalRunnerTestData, mocker: MockerFixture) -> None:
         """Test "initialize", actually. "run" ensures the failure occurs in xarray when actual data
         is needed."""
