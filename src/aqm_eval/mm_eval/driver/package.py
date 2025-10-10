@@ -6,11 +6,17 @@ from enum import StrEnum, unique
 from functools import cached_property
 from pathlib import Path
 
+import cartopy
+import dask
+import matplotlib
 import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
+from melodies_monet import driver
+from melodies_monet.driver import analysis
 from pydantic import BaseModel, Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
+from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.helpers import PathExisting
 from aqm_eval.mm_eval.driver.model import Model, ModelRole
 
@@ -48,20 +54,21 @@ class AbstractEvalPackage(ABC, BaseModel):
     """Defines an abstract evaluation package."""
 
     model_config = {"frozen": True}
-    root_dir: PathExisting = Field(description="Root directory for MM evaluation package.")
-    root_output_dir: PathExisting = Field(description="Root directory for MM output.")
-    mm_eval_model_expt_dir: PathExisting = Field(description="Experiment directory containing evaluation model output.")
-    mm_base_model_expt_dir: PathExisting | None = Field(description="Experiment directory containing base model output.")
-    link_simulation: tuple[str, ...]
+    ctx: AbstractDriverContext
+    # root_dir: PathExisting = Field(description="Root directory for MM evaluation package.")
+    # root_output_dir: PathExisting = Field(description="Root directory for MM output.")
+    # mm_eval_model_expt_dir: PathExisting = Field(description="Experiment directory containing evaluation model output.")
+    # mm_base_model_expt_dir: PathExisting | None = Field(description="Experiment directory containing base model output.")
+    # link_simulation: tuple[str, ...]
     # link_alldays_path: PathExisting #tdk:last: remove all references to alldays path above package
     key: PackageKey = Field(description="MM package key.")
     namelist_template: str = Field(description="Package template file.")
-    template_dir: PathExisting = Field(description="Directory containing template files.")
+    # template_dir: PathExisting = Field(description="Directory containing template files.")
 
     @computed_field(description="Run directory for the MM evaluation package.")
     @cached_property
     def run_dir(self) -> Path:
-        return self.root_dir / self.key.value
+        return self.ctx.mm_run_dir / self.key.value
 
     @computed_field(description="Directory containing links or derived files for package.")
     @cached_property
@@ -72,7 +79,7 @@ class AbstractEvalPackage(ABC, BaseModel):
     @computed_field(description="Output directory for the MM evaluation package.")
     @cached_property
     def mm_package_output_dir(self) -> Path:
-        return self.root_output_dir / self.key.value
+        return self.ctx.mm_output_dir / self.key.value
 
     @computed_field(description="Prefix for each model role.")
     @cached_property
@@ -83,7 +90,7 @@ class AbstractEvalPackage(ABC, BaseModel):
     @computed_field(description="Tasks that the package will run.")
     @cached_property
     def tasks(self) -> tuple[TaskKey, ...]:
-        if self.mm_base_model_expt_dir is not None:
+        if self.ctx.mm_base_model_expt_dir is not None:
             return tuple([ii for ii in TaskKey])
         else:
             return tuple([ii for ii in TaskKey if not ii.name.startswith("SCORECARD")])
@@ -104,26 +111,26 @@ class AbstractEvalPackage(ABC, BaseModel):
         """
         ret = [
             Model(
-                expt_dir=self.mm_eval_model_expt_dir,
+                expt_dir=self.ctx.expt_dir,
                 label="eval_aqm",
                 title="Eval AQM",
                 prefix=self.model_prefixes[ModelRole.EVAL],
                 role=ModelRole.EVAL,
                 dyn_file_template=("dynf*.nc",),
-                cycle_dir_template=self.link_simulation,
+                cycle_dir_template=self.ctx.link_simulation,
                 link_alldays_path=self.link_alldays_path,
             )
         ]
-        if self.mm_base_model_expt_dir is not None:
+        if self.ctx.mm_base_model_expt_dir is not None:
             ret.append(
                 Model(
-                    expt_dir=self.mm_base_model_expt_dir,
+                    expt_dir=self.ctx.mm_base_model_expt_dir,
                     label="base_aqm",
                     title="Base AQM",
                     prefix=self.model_prefixes[ModelRole.BASE],
                     role=ModelRole.BASE,
                     dyn_file_template=("dynf*.nc",),
-                    cycle_dir_template=self.link_simulation,
+                    cycle_dir_template=self.ctx.link_simulation,
                     link_alldays_path=self.link_alldays_path,
                 )
             )
@@ -157,25 +164,105 @@ class AbstractEvalPackage(ABC, BaseModel):
         Environment
             Jinja2 environment for rendering template files.
         """
-        searchpath = self.template_dir
-        LOGGER(f"creating J2 environment {self.template_dir=}")
+        searchpath = self.ctx.template_dir
+        LOGGER(f"creating J2 environment {searchpath=}")
         return Environment(
             loader=FileSystemLoader(searchpath=searchpath),
             undefined=StrictUndefined,
         )
 
+    @log_it
     def initialize(self) -> None:
-        """Allows for package-specific initialization requirements."""
+        """Initialize the runner. Create symlinks and control files for example.
+
+        Returns
+        -------
+        None
+        """
+        LOGGER(f"{self.ctx=}")
+        LOGGER(f"{self.key=}")
+
+        # Only create symlinks once for each model
+        # tdk:last: move to package
+        assert not self.mm_package_output_dir.exists()
+
+        LOGGER("creating MM control configs")
+        # tdk:last: move to package
+        self._create_control_configs_()
+
+    @log_it
+    def run(
+            self,
+            task_key: TaskKey,  # tdk: doc
+            finalize: bool = False,
+    ) -> None:
+        """Run the MM evaluation.
+
+        finalize: bool = False, optional
+            If True, finalize the runner after the run completes, successfully or not.
+
+        Returns
+        -------
+        None
+        """
+        LOGGER(f"{task_key=}")
+        LOGGER(f"{finalize=}")
+
+        assert self.run_dir.exists()
+        assert not self.mm_package_output_dir.exists()
+
+        try:
+            matplotlib.use("Agg")
+            cartopy.config["data_dir"] = self.ctx.cartopy_data_dir
+            dask.config.set({"array.slicing.split_large_chunks": True})
+            an = driver.analysis()
+            control_yaml = self.ctx.mm_run_dir / self.key.value / f"control_{task_key.value}.yaml"
+            LOGGER(f"{control_yaml=}")
+            an.control = control_yaml
+            an.read_control()
+
+            self._run_task_(an, task_key)
+        finally:
+            if finalize:
+                self.finalize()
+
+    @staticmethod
+    @log_it
+    def _run_task_(an: analysis, task: TaskKey) -> None:
+        match task:
+            case TaskKey.SAVE_PAIRED:
+                an.open_models()
+                an.open_obs()
+                an.pair_data()
+                an.save_analysis()
+            case TaskKey.SPATIAL_OVERLAY | TaskKey.SPATIAL_BIAS:
+                an.read_analysis()
+                an.open_models()
+                an.plotting()
+            case TaskKey.STATS:
+                an.read_analysis()
+                an.stats()
+            case _:
+                an.read_analysis()
+                an.plotting()
+
+    @log_it
+    def finalize(self) -> None:
+        """Finalize the runner.
+
+        Returns
+        -------
+        None
+        """
         ...
 
-    def create_control_configs(self, ctx) -> None:
-        #tdk:last: figure out how to remove the ctx arg
+    def _create_control_configs_(self) -> None:
         package_run_dir = self.run_dir
         LOGGER(f"{package_run_dir=}")
         if not package_run_dir.exists():
             LOGGER(f"{package_run_dir=} does not exist. creating.", exc_info=ValueError)
 
-        cfg = {"ctx": ctx, "mm_tasks": tuple([ii.value for ii in self.tasks]), "package": self}
+        cfg = {"ctx": self.ctx, "mm_tasks": tuple([ii.value for ii in self.tasks]), "package": self}
         namelist_config_str = self.j2_env.get_template(self.namelist_template).render(cfg)
         namelist_config = yaml.safe_load(namelist_config_str)
         with open(package_run_dir / "namelist.yaml", "w") as f:
@@ -221,6 +308,13 @@ class ChemEvalPackage(AbstractEvalPackage):
     key: PackageKey = PackageKey.CHEM
     namelist_template: str = "namelist.chem.j2"
 
+    @log_it
+    def initialize(self) -> None:
+        assert not self.run_dir.exists()
+        assert not self.mm_models[0].link_alldays_path.exists()
+        for model in self.mm_models:
+            model.create_symlinks()
+        super().initialize()
 
 # tdk:last: should this be named ish or met?
 class MetEvalPackage(AbstractEvalPackage):
@@ -583,6 +677,13 @@ class AQS_VOCEvalPackage(AbstractEvalPackage):
 
     key: PackageKey = PackageKey.AQS_VOC
     namelist_template: str = "namelist.aqs.voc.j2"
+
+    @log_it
+    def initialize(self) -> None:
+        assert not self.mm_models[0].link_alldays_path.exists()
+        for model in self.mm_models:
+            model.create_symlinks()
+        super().initialize()
 
 
 def _assert_file_exists_(path: Path) -> None:

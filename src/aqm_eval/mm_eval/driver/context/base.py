@@ -9,7 +9,6 @@ from pydantic import BaseModel, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.helpers import PathExisting
-from aqm_eval.mm_eval.driver.package import AbstractEvalPackage
 
 
 class AbstractDriverContext(ABC, BaseModel):
@@ -34,18 +33,18 @@ class AbstractDriverContext(ABC, BaseModel):
     @abstractmethod
     def date_last_cycle_mm(self) -> str: ...
 
-    @cached_property
-    @abstractmethod
-    def mm_packages(self) -> tuple[AbstractEvalPackage, ...]:
-        """
-        Returns
-        -------
-        tuple[AbstractEvalPackage, ...]
-            Evaluation packages to initialize and run. An evaluation package is a collection of
-            evaluation plots and statistics for specific prognostic variables and observational
-            datasets.
-        """
-        ...
+    # @cached_property
+    # @abstractmethod
+    # def mm_packages(self) -> tuple[AbstractEvalPackage, ...]:
+    #     """
+    #     Returns
+    #     -------
+    #     tuple[AbstractEvalPackage, ...]
+    #         Evaluation packages to initialize and run. An evaluation package is a collection of
+    #         evaluation plots and statistics for specific prognostic variables and observational
+    #         datasets.
+    #     """
+    #     ...
 
     @computed_field(description="Path template to select AirNow observational. Wildcards may be used to select multiple files.")
     @cached_property
