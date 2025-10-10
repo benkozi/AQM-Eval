@@ -66,7 +66,7 @@ def srw_run(
     ctx = SRWContext(expt_dir=expt_dir)
     klass = package_key_to_class(package_selector)
     package = klass.model_validate(dict(ctx=ctx))
-    package.run(task_selector=task_selector)
+    package.run(task_key=task_selector)
 
 if __name__ == "__main__":
     app()
