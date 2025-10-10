@@ -6,7 +6,6 @@ channels:
 dependencies:
   - awscli=2.28.*
   - mypy=1.17.*
-  - polyfactory=2.22.* # dev only
   - pre-commit=4.3.* # dev only
   - pydantic=2.11.*
   - pytest=8.4.* # dev only

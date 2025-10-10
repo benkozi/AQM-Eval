@@ -18,6 +18,10 @@ class AbstractDriverContext(ABC, BaseModel):
 
     model_config = {"frozen": True}
 
+    @abstractmethod
+    def expt_dir(self) -> PathExisting:
+        ...
+
     @computed_field(description="Path to the Cartopy data directory containing NaturalEarth shapefiles.")
     @cached_property
     @abstractmethod

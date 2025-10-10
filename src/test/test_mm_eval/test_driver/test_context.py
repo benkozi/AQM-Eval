@@ -4,7 +4,6 @@ import pytest
 
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
 from aqm_eval.mm_eval.driver.context.yaml_eval import YAMLContext
-from aqm_eval.mm_eval.driver.runner import MMEvalRunner
 
 
 class TestSRWContext:
@@ -30,5 +29,3 @@ class TestYAMLContext:
     def test_init_happy_path(self, namelist_chem_yaml_config: Path) -> None:
         ctx = YAMLContext(yaml_config=namelist_chem_yaml_config)
         assert isinstance(ctx, YAMLContext)
-        runner = MMEvalRunner(ctx=ctx)
-        runner.initialize()

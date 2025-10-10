@@ -29,7 +29,6 @@ class YAMLContext(AbstractDriverContext):
     @computed_field
     @cached_property
     def expt_dir(self) -> PathExisting:
-        # tdk: make abstract
         return PathExisting(self._config_data["link_eval_path"])
 
     @computed_field
@@ -61,48 +60,40 @@ class YAMLContext(AbstractDriverContext):
         return PathExisting(self._config_data["cartopy_data_dir"])
 
     @cached_property
-    def mm_packages(self) -> tuple[AbstractEvalPackage, ...]:
-        package_key = PackageKey(self._config_data["package_key"])
+    def mm_package_key(self) -> PackageKey:
+        return PackageKey(self._config_data["package_key"])
         klass = package_key_to_class(package_key)
-        data = dict(
-            root_dir=self.mm_run_dir,
-            root_output_dir=self.mm_output_dir,
-            mm_eval_model_expt_dir=self.expt_dir,
-            mm_base_model_expt_dir=self.mm_base_model_expt_dir,
-            link_simulation=self.link_simulation,
-            link_alldays_path=self.link_alldays_path,
-        )
-        return (klass.model_validate(data),)
+        return klass.model_validate(dict(ctx=self))
 
     @computed_field
     @cached_property
     def link_alldays_path(self) -> PathExisting:
         return _get_or_create_path_(self._config_data["link_Alldays_path"])
 
-    @cached_property
-    def mm_models(self) -> tuple[Model, ...]:
-        data = self._config_data
-        base_model = Model(
-            expt_dir=Path(data["link_base_path"]),
-            role=ModelRole.BASE,
-            label=data["model_base_label"],
-            title="Base AQM",
-            prefix=data["link_base_predix"],
-            cycle_dir_template=(data["link_simulation"],),
-            dyn_file_template=(data["link_base_target"],),
-            link_alldays_path=self.link_alldays_path,
-        )
-        eval_model = Model(
-            expt_dir=Path(data["link_eval_path"]),
-            role=ModelRole.BASE,
-            label=data["model_eval_label"],
-            title="Eval AQM",
-            prefix=data["link_eval_predix"],
-            cycle_dir_template=(data["link_simulation"],),
-            dyn_file_template=(data["link_eval_target"],),
-            link_alldays_path=self.link_alldays_path,
-        )
-        return eval_model, base_model
+    # @cached_property
+    # def mm_models(self) -> tuple[Model, ...]:
+    #     data = self._config_data
+    #     base_model = Model(
+    #         expt_dir=Path(data["link_base_path"]),
+    #         role=ModelRole.BASE,
+    #         label=data["model_base_label"],
+    #         title="Base AQM",
+    #         prefix=data["link_base_predix"],
+    #         cycle_dir_template=(data["link_simulation"],),
+    #         dyn_file_template=(data["link_base_target"],),
+    #         link_alldays_path=self.link_alldays_path,
+    #     )
+    #     eval_model = Model(
+    #         expt_dir=Path(data["link_eval_path"]),
+    #         role=ModelRole.BASE,
+    #         label=data["model_eval_label"],
+    #         title="Eval AQM",
+    #         prefix=data["link_eval_predix"],
+    #         cycle_dir_template=(data["link_simulation"],),
+    #         dyn_file_template=(data["link_eval_target"],),
+    #         link_alldays_path=self.link_alldays_path,
+    #     )
+    #     return eval_model, base_model
 
     @computed_field
     @cached_property

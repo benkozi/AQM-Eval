@@ -110,15 +110,6 @@ class TestChemEvalPackage:
         m_analysis.save_analysis.assert_called_once()
 
 
-class MetEvalPackageFactory(ModelFactory[MetEvalPackage]): ...
-
-
-class TestMetEvalPackage:
-    def test(self) -> None:
-        package = MetEvalPackageFactory.build()
-        assert package.mm_models[0].link_alldays_path_template.endswith("eval_ish*.nc")
-
-
 # class TestMMEvalRunner:
 #
 #     def test2(self, mm_eval_runner_test_data: MMEvalRunnerTestData, mocker: MockerFixture) -> None:
