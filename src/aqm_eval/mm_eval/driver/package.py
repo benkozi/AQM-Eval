@@ -182,14 +182,10 @@ class AbstractEvalPackage(ABC, BaseModel):
         LOGGER(f"{self.ctx=}")
         LOGGER(f"{self.key=}")
 
-        # Only create symlinks once for each model
-        # tdk:last: move to package
-        assert not self.mm_package_output_dir.exists()
-        assert not self.link_alldays_path.exists()
         self.link_alldays_path.mkdir(parents=True, exist_ok=False)
+        self.mm_package_output_dir.mkdir(parents=True, exist_ok=False)
 
         LOGGER("creating MM control configs")
-        # tdk:last: move to package
         self._create_control_configs_()
 
     @log_it
@@ -211,7 +207,6 @@ class AbstractEvalPackage(ABC, BaseModel):
         LOGGER(f"{finalize=}")
 
         assert self.run_dir.exists()
-        assert not self.mm_package_output_dir.exists()
 
         try:
             matplotlib.use("Agg")
