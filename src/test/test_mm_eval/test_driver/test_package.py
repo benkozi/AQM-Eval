@@ -9,22 +9,36 @@ from pytest_mock import MockerFixture
 
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
 from aqm_eval.mm_eval.driver.package import MetEvalPackage, AbstractEvalPackage, ChemEvalPackage, \
-    TaskKey
+    TaskKey, PackageKey, package_key_to_class
 
 
 class MMEvalRunnerTestData(BaseModel):
     model_config = {"frozen": True}
     ctx: SRWContext
+    package_class: type[AbstractEvalPackage]
     expected_n_links: int
     expected_ncap2_calls: int
     expected_ncks_calls: int
 
+@pytest.fixture(params=tuple(PackageKey))
+def package_key(request: pytest.FixtureRequest) -> PackageKey:
+    return request.param
 
 @pytest.fixture
-def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool) -> MMEvalRunnerTestData:
+def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool, package_key: PackageKey) -> MMEvalRunnerTestData:
+    package_class = package_key_to_class(package_key)
     expected_n_links = 25 * 2  # 25 dynf hourly files * 2 cycle directories
     expected_ncap2_calls = 0
     expected_ncks_calls = 0
+
+    match package_key:
+        case PackageKey.MET:
+            expected_n_links = 24 * 2  # 24 dynf hourly files * 2 cycle directories
+            expected_ncap2_calls = 15 * 24 * 2 # 15 ncap2 calls * 24 hours * 2 cycle directories
+        case PackageKey.AQS_PM:
+            expected_n_links = 24 * 2  # 24 dynf hourly files * 2 cycle directories
+            expected_ncap2_calls = 23 * 24 * 2  # 15 ncap2 calls * 24 hours * 2 cycle directories
+            expected_ncks_calls = 2 * 24 * 2 # 2 ncks calls * 24 hours * 2 cycle directories
 
     # expected_n_links = (
     #     (25 * 2) + 48 + 48
@@ -46,6 +60,7 @@ def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool) -> M
         expected_ncap2_calls=expected_ncap2_calls,
         ctx=srw_context,
         expected_ncks_calls=expected_ncks_calls,
+        package_class=package_class,
     )
 
 
@@ -65,49 +80,48 @@ def fake_run_ncks_cmd(self: AbstractEvalPackage, cmd: list[str]) -> None:
         assert out_file.exists()
 
 
-class TestChemEvalPackage:
-    def test(self,mm_eval_runner_test_data: MMEvalRunnerTestData, mocker: MockerFixture) -> None:
-        package = ChemEvalPackage.model_validate(dict(ctx=mm_eval_runner_test_data.ctx))
+def test_all_packages(mm_eval_runner_test_data: MMEvalRunnerTestData, mocker: MockerFixture) -> None:
+    package = mm_eval_runner_test_data.package_class.model_validate(dict(ctx=mm_eval_runner_test_data.ctx))
 
-        # Test initialize --------------------------------------------------------------------------
+    # Test initialize --------------------------------------------------------------------------
 
-        package.initialize()
+    _ = mocker.patch.object(AbstractEvalPackage, "_run_ncap2_cmd_", fake_run_ncap2_cmd)
+    spy_run_ncap2_cmd = mocker.spy(AbstractEvalPackage, "_run_ncap2_cmd_")
+    _ = mocker.patch.object(AbstractEvalPackage, "_run_ncks_cmd_", fake_run_ncks_cmd)
+    spy_run_ncks_cmd = mocker.spy(AbstractEvalPackage, "_run_ncks_cmd_")
 
-        actual_data = [ii.name for ii in package.link_alldays_path.iterdir()]
-        assert len(actual_data) == mm_eval_runner_test_data.expected_n_links
+    package.initialize()
 
-        actual_files = package.run_dir.rglob("*.yaml")
-        expected_filenames = package.task_control_filenames
-        expected_filenames.update({"namelist.yaml"})
-        assert set([ii.name for ii in actual_files]) == expected_filenames
+    assert spy_run_ncap2_cmd.call_count == mm_eval_runner_test_data.expected_ncap2_calls
+    assert spy_run_ncks_cmd.call_count == mm_eval_runner_test_data.expected_ncks_calls
 
-        assert package.link_alldays_path.name in [ii.name for ii in package.run_dir.iterdir()]
+    actual_data = [ii.name for ii in package.link_alldays_path.iterdir()]
+    assert len(actual_data) == mm_eval_runner_test_data.expected_n_links
 
-        # Test run ---------------------------------------------------------------------------------
+    actual_files = package.run_dir.rglob("*.yaml")
+    expected_filenames = package.task_control_filenames
+    expected_filenames.update({"namelist.yaml"})
+    assert set([ii.name for ii in actual_files]) == expected_filenames
 
-        _ = mocker.patch.object(AbstractEvalPackage, "_run_ncap2_cmd_", fake_run_ncap2_cmd)
-        spy_run_ncap2_cmd = mocker.spy(AbstractEvalPackage, "_run_ncap2_cmd_")
-        _ = mocker.patch.object(AbstractEvalPackage, "_run_ncks_cmd_", fake_run_ncks_cmd)
-        spy_run_ncks_cmd = mocker.spy(AbstractEvalPackage, "_run_ncks_cmd_")
+    assert package.link_alldays_path.name in [ii.name for ii in package.run_dir.iterdir()]
 
-        m_analysis = Mock()
-        m_analysis.read_control = Mock()
-        m_analysis.open_models = Mock()
-        m_analysis.open_obs = Mock()
-        m_analysis.pair_data = Mock()
-        m_analysis.save_analysis = Mock()
-        _ = mocker.patch.object(melodies_monet.driver, "analysis", return_value=m_analysis)
+    # Test run ---------------------------------------------------------------------------------
 
-        package.run(TaskKey.SAVE_PAIRED)
+    m_analysis = Mock()
+    m_analysis.read_control = Mock()
+    m_analysis.open_models = Mock()
+    m_analysis.open_obs = Mock()
+    m_analysis.pair_data = Mock()
+    m_analysis.save_analysis = Mock()
+    _ = mocker.patch.object(melodies_monet.driver, "analysis", return_value=m_analysis)
 
-        assert spy_run_ncap2_cmd.call_count == mm_eval_runner_test_data.expected_ncap2_calls
-        assert spy_run_ncks_cmd.call_count == mm_eval_runner_test_data.expected_ncks_calls
+    package.run(TaskKey.SAVE_PAIRED)
 
-        m_analysis.read_control.assert_called_once()
-        m_analysis.open_models.assert_called_once()
-        m_analysis.open_obs.assert_called_once()
-        m_analysis.pair_data.assert_called_once()
-        m_analysis.save_analysis.assert_called_once()
+    m_analysis.read_control.assert_called_once()
+    m_analysis.open_models.assert_called_once()
+    m_analysis.open_obs.assert_called_once()
+    m_analysis.pair_data.assert_called_once()
+    m_analysis.save_analysis.assert_called_once()
 
 
 # class TestMMEvalRunner:

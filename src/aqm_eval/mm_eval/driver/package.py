@@ -185,6 +185,8 @@ class AbstractEvalPackage(ABC, BaseModel):
         # Only create symlinks once for each model
         # tdk:last: move to package
         assert not self.mm_package_output_dir.exists()
+        assert not self.link_alldays_path.exists()
+        self.link_alldays_path.mkdir(parents=True, exist_ok=False)
 
         LOGGER("creating MM control configs")
         # tdk:last: move to package
@@ -260,7 +262,8 @@ class AbstractEvalPackage(ABC, BaseModel):
         package_run_dir = self.run_dir
         LOGGER(f"{package_run_dir=}")
         if not package_run_dir.exists():
-            LOGGER(f"{package_run_dir=} does not exist. creating.", exc_info=ValueError)
+            LOGGER(f"{package_run_dir=} does not exist. creating.")
+            package_run_dir.mkdir(parents=True, exist_ok=False)
 
         cfg = {"ctx": self.ctx, "mm_tasks": tuple([ii.value for ii in self.tasks]), "package": self}
         namelist_config_str = self.j2_env.get_template(self.namelist_template).render(cfg)
@@ -310,11 +313,9 @@ class ChemEvalPackage(AbstractEvalPackage):
 
     @log_it
     def initialize(self) -> None:
-        assert not self.run_dir.exists()
-        assert not self.mm_models[0].link_alldays_path.exists()
+        super().initialize()
         for model in self.mm_models:
             model.create_symlinks()
-        super().initialize()
 
 # tdk:last: should this be named ish or met?
 class MetEvalPackage(AbstractEvalPackage):
@@ -343,6 +344,7 @@ class MetEvalPackage(AbstractEvalPackage):
         )
 
     def initialize(self) -> None:
+        super().initialize()
         self._ish_conversion_()
 
     @log_it
@@ -464,6 +466,7 @@ class AQS_PMEvalPackage(AbstractEvalPackage):
         return {ii: ii.value + "_pm" for ii in ModelRole}
 
     def initialize(self) -> None:
+        super().initialize()
         self._pm_conversion_()
 
     @log_it
@@ -680,10 +683,9 @@ class AQS_VOCEvalPackage(AbstractEvalPackage):
 
     @log_it
     def initialize(self) -> None:
-        assert not self.mm_models[0].link_alldays_path.exists()
+        super().initialize()
         for model in self.mm_models:
             model.create_symlinks()
-        super().initialize()
 
 
 def _assert_file_exists_(path: Path) -> None:
