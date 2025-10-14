@@ -207,8 +207,8 @@ class AbstractEvalPackage(ABC, BaseModel):
         LOGGER(f"{finalize=}")
 
         #tdk: rm?
-        if task_key not in self.mm_tasks:
-            LOGGER(f"{task_key=} not in {self.mm_tasks=}. returning.", level=logging.WARN)
+        if task_key not in self.tasks:
+            LOGGER(f"{task_key=} not in {self.tasks=}. returning.", level=logging.WARN)
             return
 
         assert self.run_dir.exists()
