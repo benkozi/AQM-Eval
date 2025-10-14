@@ -12,9 +12,7 @@ from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.helpers import PathExisting
 from aqm_eval.mm_eval.driver.package import (
-    AbstractEvalPackage,
     PackageKey,
-    package_key_to_class,
 )
 
 try:
@@ -30,6 +28,11 @@ def _convert_date_string_to_mm_(date_str: str) -> str:
 
 class SRWContext(AbstractDriverContext):
     expt_dir: PathExisting = Field(description="Experiment directory.")
+
+    @computed_field
+    @cached_property
+    def mm_eval_model_expt_dir(self) -> PathExisting:
+        return self.expt_dir
 
     @computed_field
     @cached_property
@@ -131,22 +134,21 @@ class SRWContext(AbstractDriverContext):
     def cartopy_data_dir(self) -> PathExisting:
         return PathExisting(self.find_nested_key(("platform", "FIXshp"))).absolute().resolve(strict=True)
 
-    @cached_property
-    def mm_packages(self) -> tuple[AbstractEvalPackage, ...]:
-        ret: list[AbstractEvalPackage] = []
-        for package_key in self.mm_package_keys:
-            klass = package_key_to_class(package_key)
-            data = dict(
-                root_dir=self.mm_run_dir,
-                root_output_dir=self.mm_output_dir,
-                mm_eval_model_expt_dir=self.expt_dir,
-                link_simulation=self.link_simulation,
-                # link_alldays_path=self.link_alldays_path, #tdk:last: rm
-                mm_base_model_expt_dir=self.mm_base_model_expt_dir,
-                template_dir=self.template_dir,
-            )
-            ret.append(klass.model_validate(data))
-        return tuple(ret)
+    # @cached_property
+    # def mm_packages(self) -> tuple[AbstractEvalPackage, ...]:
+    #     ret: list[AbstractEvalPackage] = []
+    #     for package_key in self.mm_package_keys:
+    #         klass = package_key_to_class(package_key)
+    #         data = dict(
+    #             root_dir=self.mm_run_dir,
+    #             root_output_dir=self.mm_output_dir,
+    #             link_simulation=self.link_simulation,
+    #             # link_alldays_path=self.link_alldays_path, #tdk:last: rm
+    #             mm_base_model_expt_dir=self.mm_base_model_expt_dir,
+    #             template_dir=self.template_dir,
+    #         )
+    #         ret.append(klass.model_validate(data))
+    #     return tuple(ret)
 
     @cached_property
     def datetime_first_cycl(self) -> datetime:

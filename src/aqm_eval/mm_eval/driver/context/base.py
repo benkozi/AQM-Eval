@@ -16,8 +16,23 @@ class AbstractDriverContext(ABC, BaseModel):
 
     model_config = {"frozen": True}
 
+    # @abstractmethod
+    # def expt_dir(self) -> PathExisting: ...
+
+    @computed_field
+    @cached_property
     @abstractmethod
-    def expt_dir(self) -> PathExisting: ...
+    def mm_base_model_expt_dir(self) -> PathExisting | None: ...
+
+    @computed_field
+    @cached_property
+    @abstractmethod
+    def mm_eval_model_expt_dir(self) -> PathExisting: ...
+
+    @computed_field
+    @cached_property
+    @abstractmethod
+    def link_simulation(self) -> tuple[str, ...]: ...
 
     @computed_field(description="Path to the Cartopy data directory containing NaturalEarth shapefiles.")
     @cached_property

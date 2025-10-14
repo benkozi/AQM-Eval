@@ -34,7 +34,7 @@ def yaml_run(
     ctx = YAMLContext(yaml_config=yaml_config)
     klass = package_key_to_class(ctx.mm_package_key)
     package = klass.model_validate(dict(ctx=ctx))
-    package.run(task_selector=task_selector)
+    package.run(task_key=task_selector)
 
 
 @app.command(

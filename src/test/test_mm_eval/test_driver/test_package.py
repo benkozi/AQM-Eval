@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-import melodies_monet
+import melodies_monet  # type: ignore[import-untyped]
 import pytest
 from pydantic import BaseModel
 from pytest_mock import MockerFixture

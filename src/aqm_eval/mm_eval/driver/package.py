@@ -110,7 +110,7 @@ class AbstractEvalPackage(ABC, BaseModel):
         """
         ret = [
             Model(
-                expt_dir=self.ctx.expt_dir,
+                expt_dir=self.ctx.mm_eval_model_expt_dir,
                 label="eval_aqm",
                 title="Eval AQM",
                 prefix=self.model_prefixes[ModelRole.EVAL],
