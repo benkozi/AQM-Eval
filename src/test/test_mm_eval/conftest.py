@@ -8,9 +8,7 @@ from aqm_eval.mm_eval.driver.context.srw import SRWContext
 from aqm_eval.mm_eval.driver.package import PackageKey
 
 
-@pytest.fixture(params=[True,
-                        False
-                        ], ids=lambda x: f"use_base_model={x}")
+@pytest.fixture(params=[True, False], ids=lambda x: f"use_base_model={x}")
 def use_base_model(request: pytest.FixtureRequest) -> bool:
     return request.param
 

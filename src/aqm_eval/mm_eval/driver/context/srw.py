@@ -6,7 +6,6 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any
 
-import yaml
 from pydantic import Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER
@@ -15,7 +14,6 @@ from aqm_eval.mm_eval.driver.helpers import PathExisting
 from aqm_eval.mm_eval.driver.package import (
     AbstractEvalPackage,
     PackageKey,
-    TaskKey,
     package_key_to_class,
 )
 
@@ -71,7 +69,7 @@ class SRWContext(AbstractDriverContext):
     @computed_field
     @cached_property
     def mm_output_dir(self) -> PathExisting:
-        #tdk: this needs to be on the package level - too much in regular output directory
+        # tdk: this needs to be on the package level - too much in regular output directory
         config_path = self.find_nested_key(("task_mm_prep", "MM_OUTPUT_DIR"))
         if config_path is None:
             config_path = self.expt_dir / "mm_output"
@@ -145,7 +143,7 @@ class SRWContext(AbstractDriverContext):
                 link_simulation=self.link_simulation,
                 # link_alldays_path=self.link_alldays_path, #tdk:last: rm
                 mm_base_model_expt_dir=self.mm_base_model_expt_dir,
-                template_dir=self.template_dir
+                template_dir=self.template_dir,
             )
             ret.append(klass.model_validate(data))
         return tuple(ret)

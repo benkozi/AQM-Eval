@@ -4,10 +4,8 @@ from abc import ABC, abstractmethod
 from functools import cached_property
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from pydantic import BaseModel, computed_field
 
-from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.helpers import PathExisting
 
 
@@ -19,8 +17,7 @@ class AbstractDriverContext(ABC, BaseModel):
     model_config = {"frozen": True}
 
     @abstractmethod
-    def expt_dir(self) -> PathExisting:
-        ...
+    def expt_dir(self) -> PathExisting: ...
 
     @computed_field(description="Path to the Cartopy data directory containing NaturalEarth shapefiles.")
     @cached_property

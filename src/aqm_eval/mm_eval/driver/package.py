@@ -1,4 +1,5 @@
 """Defines package objects used when generating MM files. A package is a collection of tasks specfiic to an evaluation type."""
+
 import logging
 import subprocess
 from abc import ABC
@@ -6,18 +7,17 @@ from enum import StrEnum, unique
 from functools import cached_property
 from pathlib import Path
 
-import cartopy
+import cartopy  # type: ignore[import-untyped]
 import dask
 import matplotlib
 import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
-from melodies_monet import driver
-from melodies_monet.driver import analysis
+from melodies_monet import driver  # type: ignore[import-untyped]
+from melodies_monet.driver import analysis  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
-from aqm_eval.mm_eval.driver.helpers import PathExisting
 from aqm_eval.mm_eval.driver.model import Model, ModelRole
 
 
@@ -75,7 +75,6 @@ class AbstractEvalPackage(ABC, BaseModel):
     def link_alldays_path(self) -> Path:
         return self.run_dir / "data"
 
-
     @computed_field(description="Output directory for the MM evaluation package.")
     @cached_property
     def mm_package_output_dir(self) -> Path:
@@ -84,7 +83,7 @@ class AbstractEvalPackage(ABC, BaseModel):
     @computed_field(description="Prefix for each model role.")
     @cached_property
     def model_prefixes(self) -> dict[ModelRole, str]:
-        #tdk:last: some duplication here
+        # tdk:last: some duplication here
         return {ii: ii.value + "_orig" for ii in ModelRole}
 
     @computed_field(description="Tasks that the package will run.")
@@ -190,9 +189,9 @@ class AbstractEvalPackage(ABC, BaseModel):
 
     @log_it
     def run(
-            self,
-            task_key: TaskKey,  # tdk: doc
-            finalize: bool = False,
+        self,
+        task_key: TaskKey,  # tdk: doc
+        finalize: bool = False,
     ) -> None:
         """Run the MM evaluation.
 
@@ -206,7 +205,7 @@ class AbstractEvalPackage(ABC, BaseModel):
         LOGGER(f"{task_key=}")
         LOGGER(f"{finalize=}")
 
-        #tdk: rm?
+        # tdk: rm?
         if task_key not in self.tasks:
             LOGGER(f"{task_key=} not in {self.tasks=}. returning.", level=logging.WARN)
             return
@@ -316,6 +315,7 @@ class ChemEvalPackage(AbstractEvalPackage):
         super().initialize()
         for model in self.mm_models:
             model.create_symlinks()
+
 
 # tdk:last: should this be named ish or met?
 class MetEvalPackage(AbstractEvalPackage):

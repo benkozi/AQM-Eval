@@ -10,8 +10,7 @@ from pydantic import Field, computed_field
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.helpers import PathExisting
-from aqm_eval.mm_eval.driver.model import Model, ModelRole
-from aqm_eval.mm_eval.driver.package import AbstractEvalPackage, PackageKey, TaskKey, package_key_to_class
+from aqm_eval.mm_eval.driver.package import PackageKey, TaskKey
 
 
 def _get_or_create_path_(path: str | Path) -> PathExisting:
@@ -62,8 +61,8 @@ class YAMLContext(AbstractDriverContext):
     @cached_property
     def mm_package_key(self) -> PackageKey:
         return PackageKey(self._config_data["package_key"])
-        klass = package_key_to_class(package_key)
-        return klass.model_validate(dict(ctx=self))
+        # klass = package_key_to_class(package_key) #tdk:rm
+        # return klass.model_validate(dict(ctx=self))
 
     @computed_field
     @cached_property

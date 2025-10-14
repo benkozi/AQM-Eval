@@ -23,13 +23,14 @@ def yaml_init(yaml_config: Path = typer.Option(..., "--yaml-config", help="The e
     package.initialize()
 
 
-
 @app.command(
     name="yaml-run",
     help="Run the MELODIES MONET UFS-AQM evaluation using a pure YAML file.",
 )
-def yaml_run(yaml_config: Path = typer.Option(..., "--yaml-config", help="The evaluation's YAML configuration."),
-             task_selector: TaskKey = typer.Option(..., "--task", help="Task selector."),) -> None:
+def yaml_run(
+    yaml_config: Path = typer.Option(..., "--yaml-config", help="The evaluation's YAML configuration."),
+    task_selector: TaskKey = typer.Option(..., "--task", help="Task selector."),
+) -> None:
     ctx = YAMLContext(yaml_config=yaml_config)
     klass = package_key_to_class(ctx.mm_package_key)
     package = klass.model_validate(dict(ctx=ctx))
@@ -58,8 +59,8 @@ def srw_init(
 )
 def srw_run(
     expt_dir: Path = typer.Option(..., "--expt-dir", help="Experiment directory."),
-        package_selector: PackageKey = typer.Option(..., "--package", help="Package selector."),
-        task_selector: TaskKey = typer.Option(..., "--task", help="Task selector."),
+    package_selector: PackageKey = typer.Option(..., "--package", help="Package selector."),
+    task_selector: TaskKey = typer.Option(..., "--task", help="Task selector."),
 ) -> None:
     from aqm_eval.mm_eval.driver.context.srw import SRWContext
 
@@ -67,6 +68,7 @@ def srw_run(
     klass = package_key_to_class(package_selector)
     package = klass.model_validate(dict(ctx=ctx))
     package.run(task_key=task_selector)
+
 
 if __name__ == "__main__":
     app()
