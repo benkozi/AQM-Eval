@@ -1,5 +1,5 @@
 """Defines package objects used when generating MM files. A package is a collection of tasks specfiic to an evaluation type."""
-
+import logging
 import subprocess
 from abc import ABC
 from enum import StrEnum, unique
@@ -205,6 +205,11 @@ class AbstractEvalPackage(ABC, BaseModel):
         """
         LOGGER(f"{task_key=}")
         LOGGER(f"{finalize=}")
+
+        #tdk: rm?
+        if task_key not in self.mm_tasks:
+            LOGGER(f"{task_key=} not in {self.mm_tasks=}. returning.", level=logging.WARN)
+            return
 
         assert self.run_dir.exists()
 
