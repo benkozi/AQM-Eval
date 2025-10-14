@@ -325,18 +325,18 @@ class MetEvalPackage(AbstractEvalPackage):
         # We need to differentiate these model prefixes due to transformations required for meteorological variables.
         return {ii: ii.value + "_ish" for ii in ModelRole}
 
-    # @computed_field(description="Tasks that the package will run.")
-    # @cached_property
-    # def tasks(self) -> tuple[TaskKey, ...]:
-    #     return (
-    #         TaskKey.SAVE_PAIRED,
-    #         TaskKey.TIMESERIES,
-    #         TaskKey.TAYLOR,
-    #         TaskKey.SPATIAL_BIAS,
-    #         TaskKey.SPATIAL_OVERLAY,
-    #         TaskKey.BOXPLOT,
-    #         TaskKey.STATS,
-    #     )
+    @computed_field(description="Tasks that the package will run.")
+    @cached_property
+    def tasks(self) -> tuple[TaskKey, ...]:
+        return (
+            TaskKey.SAVE_PAIRED,
+            TaskKey.TIMESERIES,
+            TaskKey.TAYLOR,
+            TaskKey.SPATIAL_BIAS,
+            TaskKey.SPATIAL_OVERLAY,
+            TaskKey.BOXPLOT,
+            TaskKey.STATS,
+        )
 
     def initialize(self) -> None:
         super().initialize()
