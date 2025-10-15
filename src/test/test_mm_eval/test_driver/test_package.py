@@ -37,7 +37,7 @@ def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool, pack
     expected_ncks_calls = 0
 
     match package_key:
-        case PackageKey.MET:
+        case PackageKey.ISH:
             expected_n_links = 24 * 2  # 24 dynf hourly files * 2 cycle directories
             expected_ncap2_calls = 15 * 24 * 2  # 15 ncap2 calls * 24 hours * 2 cycle directories
         case PackageKey.AQS_PM:

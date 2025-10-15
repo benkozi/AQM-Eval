@@ -98,7 +98,7 @@ class SRWContext(AbstractDriverContext):
 
     @computed_field
     @cached_property
-    def mm_obs_ish_fn_template(self) -> str:  # tdk:last: ish or met?
+    def mm_obs_ish_fn_template(self) -> str:
         return self.find_nested_key(("task_mm_prep", "MM_OBS_ISH_FN_TEMPLATE"))
 
     @computed_field

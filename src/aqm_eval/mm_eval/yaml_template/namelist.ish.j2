@@ -4,10 +4,9 @@
 # Opt: Specifying the variable or variable group is optional
 # For now all plots except time series average over the analysis window.
 # Seting axis values - If set_axis = True in data_proc section of each plot_grp the yaxis for the plot will be set based on the values specified in the obs section for each variable. If set_axis is set to False, then defaults will be used. 'vmin_plot' and 'vmax_plot' are needed for 'timeseries', 'spatial_overlay', and 'boxplot'. 'vdiff_plot' is needed for 'spatial_bias' plots and'ty_scale' is needed for 'taylor' plots. 'nlevels' or the number of levels used in the contour plot can also optionally be provided for spatial_overlay plot. If set_axis = True and the proper limits are not provided in the obs section, a warning will print, and the plot will be created using the default limits.
-#tdk: this is not accurate for met/ish
 # ==== General settings ====
 # For MM yamls
-package_key: met #tdk:last: met or ish?
+package_key: met
 # Time format: yyyy-mm-dd-HH:MM:SS UTC
 start_time: {{ ctx.date_first_cycle_mm }}
 end_time: {{ ctx.date_last_cycle_mm }}
@@ -104,7 +103,6 @@ timeseries_data_proc:
   ts_select_time: "time_local"  # Options: 'time' for UTC or 'time_local' for LT
   ts_avg_window: "H"  # None for no averaging, pandas resample rule (e.g., 'H', 'D')
 
-
 # ==== pg2 - taylor ====
 taylor_fig_kwargs:
   figsize: [8, 8]
@@ -118,7 +116,6 @@ taylor_dataset: {{ package.mm_model_labels }}
 taylor_data_proc:
   rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
   set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
-
 
 # ==== pg3 - spatial_bias ====
 spatial_bias_fig_kwargs:
@@ -134,7 +131,6 @@ spatial_bias_data_proc:
   rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
   set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
 
-
 # ==== pg4 - spatial_overlay ====
 spatial_overlay_fig_kwargs:
   states: True
@@ -148,7 +144,6 @@ spatial_overlay_data_proc:
   filter_dict: {'longitude':{'value':0,'oper':'<'}} # Constrain map to US only.
   rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
   set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
-
 
 # ==== pg5 - boxplot ====
 boxplot_fig_kwargs:
