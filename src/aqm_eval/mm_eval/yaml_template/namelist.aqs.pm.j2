@@ -49,7 +49,7 @@ model_{{ mm_model.role.value }}_plot_kwargs:
 {% endfor %}
 
 # ==== Obs (AQS by default) ====
-obs_label: aqs
+obs_label: {{ package.key.value }}
 obs_airnow: False
 obs_aqs: True
 obs_file: {{ ctx.mm_obs_aqs_pm_fn_template }}
