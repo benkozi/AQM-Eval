@@ -72,7 +72,6 @@ class SRWContext(AbstractDriverContext):
     @computed_field
     @cached_property
     def mm_output_dir(self) -> PathExisting:
-        # tdk: this needs to be on the package level - too much in regular output directory
         config_path = self.find_nested_key(("task_mm_prep", "MM_OUTPUT_DIR"))
         if config_path is None:
             config_path = self.expt_dir / "mm_output"
@@ -117,13 +116,6 @@ class SRWContext(AbstractDriverContext):
     def link_simulation(self) -> tuple[str, ...]:
         return tuple(set([f"{str(ii.year)}*" for ii in [self.datetime_first_cycl, self.datetime_last_cycl]]))
 
-    # @computed_field #tdk:last: remove
-    # @cached_property
-    # def link_alldays_path(self) -> PathExisting:
-    #     ret = self.mm_run_dir / "Alldays"
-    #     ret.mkdir(exist_ok=True, parents=True)
-    #     return ret
-
     @computed_field
     @cached_property
     def mm_base_model_expt_dir(self) -> PathExisting | None:
@@ -133,22 +125,6 @@ class SRWContext(AbstractDriverContext):
     @cached_property
     def cartopy_data_dir(self) -> PathExisting:
         return PathExisting(self.find_nested_key(("platform", "FIXshp"))).absolute().resolve(strict=True)
-
-    # @cached_property
-    # def mm_packages(self) -> tuple[AbstractEvalPackage, ...]:
-    #     ret: list[AbstractEvalPackage] = []
-    #     for package_key in self.mm_package_keys:
-    #         klass = package_key_to_class(package_key)
-    #         data = dict(
-    #             root_dir=self.mm_run_dir,
-    #             root_output_dir=self.mm_output_dir,
-    #             link_simulation=self.link_simulation,
-    #             # link_alldays_path=self.link_alldays_path, #tdk:last: rm
-    #             mm_base_model_expt_dir=self.mm_base_model_expt_dir,
-    #             template_dir=self.template_dir,
-    #         )
-    #         ret.append(klass.model_validate(data))
-    #     return tuple(ret)
 
     @cached_property
     def datetime_first_cycl(self) -> datetime:

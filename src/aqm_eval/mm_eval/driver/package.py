@@ -55,15 +55,8 @@ class AbstractEvalPackage(ABC, BaseModel):
 
     model_config = {"frozen": True}
     ctx: AbstractDriverContext
-    # root_dir: PathExisting = Field(description="Root directory for MM evaluation package.")
-    # root_output_dir: PathExisting = Field(description="Root directory for MM output.")
-    # mm_eval_model_expt_dir: PathExisting = Field(description="Experiment directory containing evaluation model output.")
-    # mm_base_model_expt_dir: PathExisting | None = Field(description="Experiment directory containing base model output.")
-    # link_simulation: tuple[str, ...]
-    # link_alldays_path: PathExisting #tdk:last: remove all references to alldays path above package
     key: PackageKey = Field(description="MM package key.")
     namelist_template: str = Field(description="Package template file.")
-    # template_dir: PathExisting = Field(description="Directory containing template files.")
 
     @computed_field(description="Run directory for the MM evaluation package.")
     @cached_property
@@ -83,7 +76,6 @@ class AbstractEvalPackage(ABC, BaseModel):
     @computed_field(description="Prefix for each model role.")
     @cached_property
     def model_prefixes(self) -> dict[ModelRole, str]:
-        # tdk:last: some duplication here
         return {ii: ii.value + "_orig" for ii in ModelRole}
 
     @computed_field(description="Tasks that the package will run.")
@@ -190,11 +182,13 @@ class AbstractEvalPackage(ABC, BaseModel):
     @log_it
     def run(
         self,
-        task_key: TaskKey,  # tdk: doc
+        task_key: TaskKey,
         finalize: bool = False,
     ) -> None:
         """Run the MM evaluation.
 
+        task_key: TaskKey
+            The task to run. The task may be skipped if the package does not support it. If skipped, a warning is issued.
         finalize: bool = False, optional
             If True, finalize the runner after the run completes, successfully or not.
 
@@ -205,7 +199,6 @@ class AbstractEvalPackage(ABC, BaseModel):
         LOGGER(f"{task_key=}")
         LOGGER(f"{finalize=}")
 
-        # tdk: rm?
         if task_key not in self.tasks:
             LOGGER(f"{task_key=} not in {self.tasks=}. returning.", level=logging.WARN)
             return
@@ -369,7 +362,6 @@ class MetEvalPackage(AbstractEvalPackage):
             expt_dir = model.expt_dir
 
             # Get directory list
-            # tdk: this needs "module load nco" to work
             dirlist = []
             for dir_pattern in model.cycle_dir_template:
                 dirlist += sorted([d for d in expt_dir.glob(dir_pattern) if d.is_dir()])
@@ -486,7 +478,6 @@ class AQS_PMEvalPackage(AbstractEvalPackage):
             expt_dir = model.expt_dir
 
             # Get directory list
-            # tdk: this needs "module load nco" to work
             dirlist = []
             for dir_pattern in model.cycle_dir_template:
                 dirlist += sorted([d for d in expt_dir.glob(dir_pattern) if d.is_dir()])

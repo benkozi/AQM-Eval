@@ -49,19 +49,6 @@ class AbstractDriverContext(ABC, BaseModel):
     @abstractmethod
     def date_last_cycle_mm(self) -> str: ...
 
-    # @cached_property
-    # @abstractmethod
-    # def mm_packages(self) -> tuple[AbstractEvalPackage, ...]:
-    #     """
-    #     Returns
-    #     -------
-    #     tuple[AbstractEvalPackage, ...]
-    #         Evaluation packages to initialize and run. An evaluation package is a collection of
-    #         evaluation plots and statistics for specific prognostic variables and observational
-    #         datasets.
-    #     """
-    #     ...
-
     @computed_field(description="Path template to select AirNow observational. Wildcards may be used to select multiple files.")
     @cached_property
     @abstractmethod
@@ -85,14 +72,3 @@ class AbstractDriverContext(ABC, BaseModel):
     @cached_property
     def template_dir(self) -> PathExisting:
         return (Path(__file__).parent.parent.parent / "yaml_template").absolute().resolve()
-
-    # @abstractmethod #tdk:rm
-    # def create_control_configs(self) -> None:
-    #     """Create all configuration files and other artifacts necessary for running the MM
-    #     evaluation.
-    #
-    #     Returns
-    #     -------
-    #     None
-    #     """
-    #     ...
