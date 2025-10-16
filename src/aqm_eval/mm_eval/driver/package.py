@@ -554,46 +554,46 @@ class AQS_PM_EvalPackage(AbstractEvalPackage):
                         #     'pm25_no3@long_name="PM25 Nitrate"; pm25_no3@units="ug/m3"',
                         #     str(f_out),
                         # ],  # Unit = ug/m3
-                        # calculate PM2.5 Ammonium for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        [
-                            "-A",
-                            "-v",
-                            "-s",
-                            "pm25_nh4 = 0.001*(anh4i*pm25at+anh4j*pm25ac+anh4k*pm25co)*air_density",
-                            "-s",
-                            'pm25_nh4@long_name="PM25 Ammonium"; pm25_nh4@units="ug/m3"',
-                            str(f_out),
-                        ],  # Unit = ug/m3
-                        # calculate PM2.5 Elemental Carbon for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        [
-                            "-A",
-                            "-v",
-                            "-s",
-                            "pm25_ec = 0.001*(aeci*pm25at+aecj*pm25ac)*air_density",
-                            "-s",
-                            'pm25_ec@long_name="PM25 Elemental Carbon"; pm25_ec@units="ug/m3"',
-                            str(f_out),
-                        ],  # Unit = ug/m3
-                        # calculate POC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        [
-                            "-A",
-                            "-v",
-                            "-s",
-                            "poci = 0.001*(alvpo1i/1.39+asvpo1i/1.32+asvpo2i/1.26+apoci)*air_density",
-                            "-s",
-                            'poci@long_name="Primary Organic Carbon i-mode"; poci@units="ug/m3"',
-                            str(f_out),
-                        ],  # Unit = ug/m3
-                        # calculate POC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        [
-                            "-A",
-                            "-v",
-                            "-s",
-                            "pocj = 0.001*(alvpo1j/1.39+asvpo1j/1.32+asvpo2j/1.26+asvpo3j/1.21+aivpo1j/1.17+apocj)*air_density",
-                            "-s",
-                            'pocj@long_name="Primary Organic Carbon j-mode"; pocj@units="ug/m3"',
-                            str(f_out),
-                        ],  # Unit = ug/m3
+                        # # calculate PM2.5 Ammonium for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+                        # [
+                        #     "-A",
+                        #     "-v",
+                        #     "-s",
+                        #     "pm25_nh4 = 0.001*(anh4i*pm25at+anh4j*pm25ac+anh4k*pm25co)*air_density",
+                        #     "-s",
+                        #     'pm25_nh4@long_name="PM25 Ammonium"; pm25_nh4@units="ug/m3"',
+                        #     str(f_out),
+                        # ],  # Unit = ug/m3
+                        # # calculate PM2.5 Elemental Carbon for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+                        # [
+                        #     "-A",
+                        #     "-v",
+                        #     "-s",
+                        #     "pm25_ec = 0.001*(aeci*pm25at+aecj*pm25ac)*air_density",
+                        #     "-s",
+                        #     'pm25_ec@long_name="PM25 Elemental Carbon"; pm25_ec@units="ug/m3"',
+                        #     str(f_out),
+                        # ],  # Unit = ug/m3
+                        # # calculate POC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+                        # [
+                        #     "-A",
+                        #     "-v",
+                        #     "-s",
+                        #     "poci = 0.001*(alvpo1i/1.39+asvpo1i/1.32+asvpo2i/1.26+apoci)*air_density",
+                        #     "-s",
+                        #     'poci@long_name="Primary Organic Carbon i-mode"; poci@units="ug/m3"',
+                        #     str(f_out),
+                        # ],  # Unit = ug/m3
+                        # # calculate POC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+                        # [
+                        #     "-A",
+                        #     "-v",
+                        #     "-s",
+                        #     "pocj = 0.001*(alvpo1j/1.39+asvpo1j/1.32+asvpo2j/1.26+asvpo3j/1.21+aivpo1j/1.17+apocj)*air_density",
+                        #     "-s",
+                        #     'pocj@long_name="Primary Organic Carbon j-mode"; pocj@units="ug/m3"',
+                        #     str(f_out),
+                        # ],  # Unit = ug/m3
                         # calculate POC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
                         [
                             "-A",

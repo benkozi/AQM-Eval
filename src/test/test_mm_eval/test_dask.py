@@ -35,7 +35,7 @@ class ContextForTest(BaseModel):
     y_shp: int = 20
     x_shp: int = 10
 
-    derived_varnames: tuple[str, ...] = ("air_density", "pm25_so4", "pm25_no3", "pm25_nh4")
+    derived_varnames: tuple[str, ...] = ("air_density", "pm25_so4", "pm25_no3", "pm25_nh4", "pm25_ec", "poci", "pocj", "poc")
 
     @computed_field
     @cached_property
@@ -111,6 +111,26 @@ def pm_prep(ctx: PM_PrepContext) -> xr.Dataset:
     ds["pm25_nh4"] = 0.001 * (ds["anh4i"] * ds["pm25at"] + ds["anh4j"] * ds["pm25ac"] + ds["anh4k"] * ds["pm25co"]) * ds["air_density"]
     ds["pm25_nh4"].attrs["long_name"] = "PM25 Ammonium"
     ds["pm25_nh4"].attrs["units"] = "ug/m3"
+
+    # Calculate PM2.5 Elemental Carbon for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    ds["pm25_ec"] = 0.001 * (ds["aeci"] * ds["pm25at"] + ds["aecj"] * ds["pm25ac"]) * ds["air_density"]
+    ds["pm25_ec"].attrs["long_name"] = "PM25 Elemental Carbon"
+    ds["pm25_ec"].attrs["units"] = "ug/m3"
+
+    # Calculate POC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    ds["poci"] = 0.001 * (ds["alvpo1i"]/ 1.39 + ds["asvpo1i"] / 1.32 + ds["asvpo2i"] / 1.26 + ds["apoci"] )* ds["air_density"]
+    ds["poci"].attrs["long_name"] = "Primary Organic Carbon i-mode"
+    ds["poci"].attrs["units"] = "ug/m3"
+
+    # Calculate POC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    ds["pocj"] = 0.001 * (ds["alvpo1j"]/ 1.39 + ds["asvpo1j"] / 1.32 + ds["asvpo2j"] / 1.26 + ds["asvpo3j"] / 1.21 + ds["aivpo1j"] / 1.17 + ds["apocj"]) * ds["air_density"]
+    ds["pocj"].attrs["long_name"] = "Primary Organic Carbon j-mode"
+    ds["pocj"].attrs["units"] = "ug/m3"
+
+    # Calculate POC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    ds["poc"] = ds["poci"] + ds["pocj"]
+    ds["poc"].attrs["long_name"] = "Primary Organic Carbon (i+j)"
+    ds["poc"].attrs["units"] = "ug/m3"
 
     return ds
 
