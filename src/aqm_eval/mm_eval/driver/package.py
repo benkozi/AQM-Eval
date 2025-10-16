@@ -495,42 +495,42 @@ class AQS_PM_EvalPackage(AbstractEvalPackage):
 
                     # Define ncap2 commands to run
                     ncap2_commands_pre = (
-                        # Initial ncap2 call (creates output file)
-                        ["-v", "-s", "time_iso = time_iso", str(f_dyn), str(f_out)],
-                        # Subsequent ncap2 calls with -A flag (append mode)
-                        ["-A", "-v", "-s", "lat = lat", str(f_dyn), str(f_out)],
-                        ["-A", "-v", "-s", "lon = lon", str(f_dyn), str(f_out)],
-                        ["-A", "-v", "-s", "pfull = pfull", str(f_dyn), str(f_out)],
-                        ["-A", "-v", "-s", "phalf = phalf", str(f_dyn), str(f_out)],
-                        ["-A", "-v", "-s", "delz = delz", str(f_dyn), str(f_out)],
-                        ["-A", "-v", "-s", "dpres = dpres", str(f_dyn), str(f_out)],
-                        ["-A", "-v", "-s", "hgtsfc = hgtsfc", str(f_dyn), str(f_out)],
-                        ["-A", "-v", "-s", "pressfc = pressfc", str(f_dyn), str(f_out)],  # Unit=Pa
-                        ["-A", "-v", "-s", "tmp = tmp", str(f_dyn), str(f_out)],  # Unit=K
-                        ["-A", "-v", "-s", "tmp2m = tmp2m", str(f_phy), str(f_out)],  # Unit=K
-                        # Calculate Air Density near surface
-                        [
-                            "-A",
-                            "-v",
-                            "-s",
-                            "air_density = (28.97*(pressfc-dpres))/(8.314*tmp)",
-                            "-s",
-                            'air_density@long_name="air density"; air_density@units="g/m3"',
-                            str(f_out),
-                        ],  # Unit = g/m3
+                        # # Initial ncap2 call (creates output file)
+                        # ["-v", "-s", "time_iso = time_iso", str(f_dyn), str(f_out)],
+                        # # Subsequent ncap2 calls with -A flag (append mode)
+                        # ["-A", "-v", "-s", "lat = lat", str(f_dyn), str(f_out)],
+                        # ["-A", "-v", "-s", "lon = lon", str(f_dyn), str(f_out)],
+                        # ["-A", "-v", "-s", "pfull = pfull", str(f_dyn), str(f_out)],
+                        # ["-A", "-v", "-s", "phalf = phalf", str(f_dyn), str(f_out)],
+                        # ["-A", "-v", "-s", "delz = delz", str(f_dyn), str(f_out)],
+                        # ["-A", "-v", "-s", "dpres = dpres", str(f_dyn), str(f_out)],
+                        # ["-A", "-v", "-s", "hgtsfc = hgtsfc", str(f_dyn), str(f_out)],
+                        # ["-A", "-v", "-s", "pressfc = pressfc", str(f_dyn), str(f_out)],  # Unit=Pa
+                        # ["-A", "-v", "-s", "tmp = tmp", str(f_dyn), str(f_out)],  # Unit=K
+                        # ["-A", "-v", "-s", "tmp2m = tmp2m", str(f_phy), str(f_out)],  # Unit=K
+                        # # Calculate Air Density near surface
+                        # [
+                        #     "-A",
+                        #     "-v",
+                        #     "-s",
+                        #     "air_density = (28.97*(pressfc-dpres))/(8.314*tmp)",
+                        #     "-s",
+                        #     'air_density@long_name="air density"; air_density@units="g/m3"',
+                        #     str(f_out),
+                        # ],  # Unit = g/m3
                     )
 
-                    # Append all PM2.5 species from Modes for AQS file out
-                    ncks_cmd = [
-                        "-A",
-                        "-v",
-                        "aso4i,aso4j,aso4k,ano3i,ano3j,ano3k,anh4i,anh4j,anh4k,aeci,aecj,aorgcj,aothri,aothrj,alvpo1i,alvpo1j,asvpo1i,asvpo1j,asvpo2i,asvpo2j,asvpo3j,aivpo1j,apoci,apocj,alvoo1i,alvoo2i,asvoo1i,asvoo2i,aiso1j,aiso2j,aiso3j,amt1j,amt2j,amt3j,amt4j,amt5j,amt6j,amtno3j,amthydj,aglyj,asqtj,aorgcj,aolgbj,aolgaj,alvoo1j,alvoo2j,asvoo1j,asvoo2j,asvoo3j,aavb1j,aavb2j,aavb3j,aavb4j,apcsoj",
-                        str(f_dyn),
-                        str(f_out),
-                    ]
-
-                    # Append all total PM2.5 fractions for AQS file out
-                    ncks_cmd2 = ["-A", "-v", "pm25at,pm25ac,pm25co", str(f_dyn), str(f_out)]
+                    # # Append all PM2.5 species from Modes for AQS file out
+                    # ncks_cmd = [
+                    #     "-A",
+                    #     "-v",
+                    #     "aso4i,aso4j,aso4k,ano3i,ano3j,ano3k,anh4i,anh4j,anh4k,aeci,aecj,aorgcj,aothri,aothrj,alvpo1i,alvpo1j,asvpo1i,asvpo1j,asvpo2i,asvpo2j,asvpo3j,aivpo1j,apoci,apocj,alvoo1i,alvoo2i,asvoo1i,asvoo2i,aiso1j,aiso2j,aiso3j,amt1j,amt2j,amt3j,amt4j,amt5j,amt6j,amtno3j,amthydj,aglyj,asqtj,aorgcj,aolgbj,aolgaj,alvoo1j,alvoo2j,asvoo1j,asvoo2j,asvoo3j,aavb1j,aavb2j,aavb3j,aavb4j,apcsoj",
+                    #     str(f_dyn),
+                    #     str(f_out),
+                    # ]
+                    #
+                    # # Append all total PM2.5 fractions for AQS file out
+                    # ncks_cmd2 = ["-A", "-v", "pm25at,pm25ac,pm25co", str(f_dyn), str(f_out)]
 
                     # Additional ncap2 commands for PM2.5 species calculations (based on CB6-AERO7 in AQMv8/CMAQv5.4)
                     ncap2_commands_post = (
