@@ -438,7 +438,7 @@ class ISH_EvalPackage(AbstractEvalPackage):
                         self._run_ncap2_cmd_(cmd)
 
 
-class AQS_PMEvalPackage(AbstractEvalPackage):
+class AQS_PM_EvalPackage(AbstractEvalPackage):
     """Defines a AQS PM evaluation package."""
 
     key: PackageKey = PackageKey.AQS_PM
@@ -659,7 +659,7 @@ class AQS_PMEvalPackage(AbstractEvalPackage):
                         self._run_ncap2_cmd_(cmd)
 
 
-class AQS_VOCEvalPackage(AbstractEvalPackage):
+class AQS_VOC_EvalPackage(AbstractEvalPackage):
     """Defines a AQS VOC evaluation package."""
 
     key: PackageKey = PackageKey.AQS_VOC
@@ -698,7 +698,7 @@ def package_key_to_class(key: PackageKey) -> type[AbstractEvalPackage]:
     mapping = {
         PackageKey.CHEM: ChemEvalPackage,
         PackageKey.ISH: ISH_EvalPackage,
-        PackageKey.AQS_PM: AQS_PMEvalPackage,
-        PackageKey.AQS_VOC: AQS_VOCEvalPackage,
+        PackageKey.AQS_PM: AQS_PM_EvalPackage,
+        PackageKey.AQS_VOC: AQS_VOC_EvalPackage,
     }
     return mapping[key]
