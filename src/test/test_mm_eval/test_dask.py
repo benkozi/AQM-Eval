@@ -35,7 +35,7 @@ class ContextForTest(BaseModel):
     y_shp: int = 20
     x_shp: int = 10
 
-    derived_varnames: tuple[str, ...] = ("air_density", "pm25_so4")
+    derived_varnames: tuple[str, ...] = ("air_density", "pm25_so4", "pm25_no3", "pm25_nh4")
 
     @computed_field
     @cached_property
@@ -80,23 +80,37 @@ class ContextForTestFactory(ModelFactory[ContextForTest]):
 @dask.delayed
 def pm_prep(ctx: PM_PrepContext) -> xr.Dataset:
 
-    dyn_dataset = xr.open_dataset(ctx.dyn_path, chunks=ctx.chunks)
-    dyn_dataset = dyn_dataset.isel(t=slice(0, 1))
+    # Load the physics and dynamics output from file
     phy_dataset = xr.open_dataset(ctx.phy_path, chunks=ctx.chunks)
     phy_dataset = phy_dataset.isel(t=slice(0, 1))
+    dyn_dataset = xr.open_dataset(ctx.dyn_path, chunks=ctx.chunks)
+    dyn_dataset = dyn_dataset.isel(t=slice(0, 1))
 
+    # Create the combined dataset from physics and dynamics
     new_fields_dyn = {ii: dyn_dataset[ii] for ii in ctx.dyn_varnames}
     new_fields_phy = {ii: phy_dataset[ii] for ii in ctx.phy_varnames}
     new_fields = {**new_fields_dyn, **new_fields_phy}
     ds = xr.Dataset(new_fields)
 
+    # Calculate Air Density near surface
     ds["air_density"] = (28.97 * (ds["pressfc"] - ds["dpres"])) / (8.314 * ds["tmp"])
     ds["air_density"].attrs["long_name"] = "air density"
     ds["air_density"].attrs["units"] = "g/m3"
 
+    # Calculate PM2.5 Sulfate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
     ds["pm25_so4"] = 0.001 * (ds["aso4i"] * ds["pm25at"] + ds["aso4j"] * ds["pm25ac"] + ds["aso4k"] * ds["pm25co"]) * ds["air_density"]
     ds["pm25_so4"].attrs["long_name"] = "PM25 Sulfate"
     ds["pm25_so4"].attrs["units"] = "ug/m3"
+
+    # Calculate PM2.5 Nitrate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    ds["pm25_no3"] = 0.001 * (ds["ano3i"] * ds["pm25at"] + ds["ano3j"] * ds["pm25ac"] + ds["ano3k"] * ds["pm25co"]) * ds["air_density"]
+    ds["pm25_no3"].attrs["long_name"] = "PM25 Nitrate"
+    ds["pm25_no3"].attrs["units"] = "ug/m3"
+
+    # Calculate PM2.5 Ammonium for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    ds["pm25_nh4"] = 0.001 * (ds["anh4i"] * ds["pm25at"] + ds["anh4j"] * ds["pm25ac"] + ds["anh4k"] * ds["pm25co"]) * ds["air_density"]
+    ds["pm25_nh4"].attrs["long_name"] = "PM25 Ammonium"
+    ds["pm25_nh4"].attrs["units"] = "ug/m3"
 
     return ds
 

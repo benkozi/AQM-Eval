@@ -534,26 +534,26 @@ class AQS_PM_EvalPackage(AbstractEvalPackage):
 
                     # Additional ncap2 commands for PM2.5 species calculations (based on CB6-AERO7 in AQMv8/CMAQv5.4)
                     ncap2_commands_post = (
-                        # calculate PM2.5 Sulfate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        [
-                            "-A",
-                            "-v",
-                            "-s",
-                            "pm25_so4 = 0.001*(aso4i*pm25at+aso4j*pm25ac+aso4k*pm25co)*air_density",
-                            "-s",
-                            'pm25_so4@long_name="PM25 Sulfate"; pm25_so4@units="ug/m3"',
-                            str(f_out),
-                        ],  # Unit = ug/m3
-                        # calculate PM2.5 Nitrate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        [
-                            "-A",
-                            "-v",
-                            "-s",
-                            "pm25_no3 = 0.001*(ano3i*pm25at+ano3j*pm25ac+ano3k*pm25co)*air_density",
-                            "-s",
-                            'pm25_no3@long_name="PM25 Nitrate"; pm25_no3@units="ug/m3"',
-                            str(f_out),
-                        ],  # Unit = ug/m3
+                        # # calculate PM2.5 Sulfate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+                        # [
+                        #     "-A",
+                        #     "-v",
+                        #     "-s",
+                        #     "pm25_so4 = 0.001*(aso4i*pm25at+aso4j*pm25ac+aso4k*pm25co)*air_density",
+                        #     "-s",
+                        #     'pm25_so4@long_name="PM25 Sulfate"; pm25_so4@units="ug/m3"',
+                        #     str(f_out),
+                        # ],  # Unit = ug/m3
+                        # # calculate PM2.5 Nitrate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+                        # [
+                        #     "-A",
+                        #     "-v",
+                        #     "-s",
+                        #     "pm25_no3 = 0.001*(ano3i*pm25at+ano3j*pm25ac+ano3k*pm25co)*air_density",
+                        #     "-s",
+                        #     'pm25_no3@long_name="PM25 Nitrate"; pm25_no3@units="ug/m3"',
+                        #     str(f_out),
+                        # ],  # Unit = ug/m3
                         # calculate PM2.5 Ammonium for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
                         [
                             "-A",
