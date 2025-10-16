@@ -6,7 +6,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, computed_field
 
-from aqm_eval.mm_eval.driver.helpers import PathExisting
+from aqm_eval.shared import PathExisting
 
 
 class AbstractDriverContext(ABC, BaseModel):
@@ -15,9 +15,6 @@ class AbstractDriverContext(ABC, BaseModel):
     """
 
     model_config = {"frozen": True}
-
-    # @abstractmethod
-    # def expt_dir(self) -> PathExisting: ...
 
     @computed_field
     @cached_property

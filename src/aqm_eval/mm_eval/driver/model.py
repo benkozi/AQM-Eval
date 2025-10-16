@@ -7,7 +7,8 @@ from pathlib import Path
 from pydantic import BaseModel, Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
-from aqm_eval.mm_eval.driver.helpers import PathExisting, create_symlinks
+from aqm_eval.mm_eval.driver.helpers import create_symlinks
+from aqm_eval.shared import PathExisting
 
 
 @unique

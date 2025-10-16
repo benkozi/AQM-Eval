@@ -8,15 +8,8 @@ import yaml
 from pydantic import Field, computed_field
 
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
-from aqm_eval.mm_eval.driver.helpers import PathExisting
 from aqm_eval.mm_eval.driver.package import PackageKey
-
-
-def _get_or_create_path_(path: str | Path) -> PathExisting:
-    path = Path(path)
-    if not path.exists():
-        path.mkdir(exist_ok=True, parents=True)
-    return PathExisting(path)
+from aqm_eval.shared import PathExisting, assert_directory_exists, get_or_create_path
 
 
 class YAMLContext(AbstractDriverContext):
@@ -27,12 +20,12 @@ class YAMLContext(AbstractDriverContext):
     @computed_field
     @cached_property
     def mm_base_model_expt_dir(self) -> PathExisting:
-        return PathExisting(self._config_data["link_base_path"])
+        return assert_directory_exists(self._config_data["link_base_path"])
 
     @computed_field
     @cached_property
     def mm_eval_model_expt_dir(self) -> PathExisting:
-        return PathExisting(self._config_data["link_eval_path"])
+        return assert_directory_exists(self._config_data["link_eval_path"])
 
     @computed_field
     @cached_property
@@ -53,7 +46,7 @@ class YAMLContext(AbstractDriverContext):
     @computed_field
     @cached_property
     def cartopy_data_dir(self) -> PathExisting:
-        return PathExisting(self._config_data["cartopy_data_dir"])
+        return assert_directory_exists(self._config_data["cartopy_data_dir"])
 
     @cached_property
     def mm_package_key(self) -> PackageKey:
@@ -62,12 +55,12 @@ class YAMLContext(AbstractDriverContext):
     @computed_field
     @cached_property
     def link_alldays_path(self) -> PathExisting:
-        return _get_or_create_path_(self._config_data["link_Alldays_path"])
+        return get_or_create_path(self._config_data["link_Alldays_path"])
 
     @computed_field
     @cached_property
     def mm_run_dir(self) -> PathExisting:
-        return _get_or_create_path_(self._config_data["run_dir"])
+        return get_or_create_path(self._config_data["run_dir"])
 
     @computed_field
     @cached_property
@@ -77,17 +70,12 @@ class YAMLContext(AbstractDriverContext):
     @computed_field
     @cached_property
     def mm_output_dir(self) -> PathExisting:
-        return _get_or_create_path_(self._config_data["output_dir"])
+        return get_or_create_path(self._config_data["output_dir"])
 
     @computed_field
     @cached_property
     def template_dir(self) -> PathExisting:
         return (Path(__file__).parent.parent.parent / "yaml_template").absolute().resolve()
-
-    @computed_field
-    @cached_property
-    def conda_bin(self) -> Path:
-        return Path(self._config_data["conda_bin"])
 
     @cached_property
     def _config_data(self) -> dict[str, Any]:

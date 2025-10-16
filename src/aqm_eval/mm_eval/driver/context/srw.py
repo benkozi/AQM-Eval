@@ -10,10 +10,10 @@ from pydantic import Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
-from aqm_eval.mm_eval.driver.helpers import PathExisting
 from aqm_eval.mm_eval.driver.package import (
     PackageKey,
 )
+from aqm_eval.shared import PathExisting, assert_directory_exists, assert_file_exists
 
 try:
     from uwtools.api.config import YAMLConfig, get_yaml_config
@@ -37,17 +37,17 @@ class SRWContext(AbstractDriverContext):
     @computed_field
     @cached_property
     def config_path_user(self) -> PathExisting:
-        return self.expt_dir / "config.yaml"
+        return assert_file_exists(self.expt_dir / "config.yaml")
 
     @computed_field
     @cached_property
     def config_path_rocoto(self) -> PathExisting:
-        return self.expt_dir / "rocoto_defns.yaml"
+        return assert_file_exists(self.expt_dir / "rocoto_defns.yaml")
 
     @computed_field
     @cached_property
     def config_path_var_defns(self) -> PathExisting:
-        return self.expt_dir / "var_defns.yaml"
+        return assert_file_exists(self.expt_dir / "var_defns.yaml")
 
     @computed_field
     @cached_property
@@ -71,20 +71,16 @@ class SRWContext(AbstractDriverContext):
 
     @computed_field
     @cached_property
-    def mm_output_dir(self) -> PathExisting:
+    def mm_output_dir(self) -> Path:
         config_path = self.find_nested_key(("task_mm_prep", "MM_OUTPUT_DIR"))
         if config_path is None:
             config_path = self.expt_dir / "mm_output"
-        if not config_path.exists():
-            config_path.mkdir(exist_ok=True, parents=True)
         return config_path
 
     @computed_field
     @cached_property
-    def mm_run_dir(self) -> PathExisting:
-        ret = self.expt_dir / "mm_run"
-        ret.mkdir(exist_ok=True, parents=True)
-        return ret
+    def mm_run_dir(self) -> Path:
+        return self.expt_dir / "mm_run"
 
     @computed_field
     @cached_property
@@ -119,12 +115,15 @@ class SRWContext(AbstractDriverContext):
     @computed_field
     @cached_property
     def mm_base_model_expt_dir(self) -> PathExisting | None:
-        return self.find_nested_key(("task_mm_prep", "MM_BASE_MODEL_EXPT_DIR"))
+        ret = self.find_nested_key(("task_mm_prep", "MM_BASE_MODEL_EXPT_DIR"))
+        if ret is not None:
+            ret = assert_directory_exists(ret)
+        return ret
 
     @computed_field
     @cached_property
     def cartopy_data_dir(self) -> PathExisting:
-        return PathExisting(self.find_nested_key(("platform", "FIXshp"))).absolute().resolve(strict=True)
+        return assert_directory_exists(self.find_nested_key(("platform", "FIXshp"))).absolute().resolve(strict=True)
 
     @cached_property
     def datetime_first_cycl(self) -> datetime:
