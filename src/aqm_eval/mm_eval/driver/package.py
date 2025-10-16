@@ -594,16 +594,16 @@ class AQS_PM_EvalPackage(AbstractEvalPackage):
                         #     'pocj@long_name="Primary Organic Carbon j-mode"; pocj@units="ug/m3"',
                         #     str(f_out),
                         # ],  # Unit = ug/m3
-                        # calculate POC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        [
-                            "-A",
-                            "-v",
-                            "-s",
-                            "poc = poci + pocj",
-                            "-s",
-                            'poc@long_name="Primary Organic Carbon (i+j)"; poc@units="ug/m3"',
-                            str(f_out),
-                        ],  # Unit = ug/m3
+                        # # calculate POC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+                        # [
+                        #     "-A",
+                        #     "-v",
+                        #     "-s",
+                        #     "poc = poci + pocj",
+                        #     "-s",
+                        #     'poc@long_name="Primary Organic Carbon (i+j)"; poc@units="ug/m3"',
+                        #     str(f_out),
+                        # ],  # Unit = ug/m3
                         # calculate SOC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
                         [
                             "-A",
