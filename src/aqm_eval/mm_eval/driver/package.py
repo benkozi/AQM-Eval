@@ -665,6 +665,21 @@ class AQS_VOCEvalPackage(AbstractEvalPackage):
     key: PackageKey = PackageKey.AQS_VOC
     namelist_template: str = "namelist.aqs.voc.j2"
 
+    @computed_field(description="Tasks that the package will run.")
+    @cached_property
+    def tasks(self) -> tuple[TaskKey, ...]:
+        return (
+            TaskKey.SAVE_PAIRED,
+            TaskKey.TIMESERIES,
+            TaskKey.TAYLOR,
+            TaskKey.SPATIAL_BIAS,
+            TaskKey.SPATIAL_OVERLAY,
+            TaskKey.BOXPLOT,
+            TaskKey.MULTI_BOXPLOT,
+            TaskKey.CSI,
+            TaskKey.STATS,
+        )
+
     @log_it
     def initialize(self) -> None:
         super().initialize()

@@ -253,28 +253,6 @@ multi_boxplot_data_proc:
   rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
   set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
 
-
-# ==== pg7 - scorecard ====
-scorecard_fig_kwargs:
-  figsize: [18, 10]
-scorecard_text_kwargs:
-  fontsize: 24
-scorecard_domain_type: ["all"]
-scorecard_domain_name: ["CONUS"]
-scorecard_region_type: ["epa_region"]
-scorecard_region_name: ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10"]
-scorecard_urban_rural_name: ["msa_name"]
-scorecard_urban_rural_value: '""'
-scorecard_eval_method: '"RMSE"'  # support 'RMSE', 'IOA' ,' NMB', 'NME'
-scorecard_dataset: {{ package.mm_model_labels }}
-scorecard_dataset_label: ["AQS", {{ package.mm_model_titles_j2 }}]
-
-
-scorecard_data_proc:
-  rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
-  set_axis: False  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
-
-
 # ==== pg8 - csi ====
 csi_fig_kwargs:
   figsize: [8, 6]
