@@ -1,11 +1,7 @@
 """Helper utilities for the MM evaluation driver."""
 
-import logging
 import platform
 from pathlib import Path
-from typing import Annotated
-
-from pydantic import BeforeValidator
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
 
@@ -51,14 +47,3 @@ def create_symlinks(
                             dst_file.symlink_to(src_file)
                         ctr += 1
     LOGGER(f"created {ctr} symlinks")
-
-
-def _format_path_existing_(value: Path | str) -> Path:
-    LOGGER(f"formatting {value}", level=logging.DEBUG)
-    ret = Path(value)
-    if not ret.exists():
-        raise ValueError(f"path does not exist: {ret}")
-    return ret
-
-
-PathExisting = Annotated[Path, BeforeValidator(_format_path_existing_)]

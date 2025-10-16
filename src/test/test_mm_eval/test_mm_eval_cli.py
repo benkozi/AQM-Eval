@@ -4,8 +4,7 @@ from pytest_mock import MockerFixture
 from typer.testing import CliRunner
 
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
-from aqm_eval.mm_eval.driver.package import PackageKey, TaskKey
-from aqm_eval.mm_eval.driver.runner import MMEvalRunner
+from aqm_eval.mm_eval.driver.package import AbstractEvalPackage
 from aqm_eval.mm_eval.mm_eval_cli import app
 
 
@@ -19,7 +18,7 @@ def test_help() -> None:
 
 
 def test_srw_run_package_and_task_selector(tmp_path: Path, srw_context: SRWContext, mocker: MockerFixture) -> None:
-    mock = mocker.patch.object(MMEvalRunner, "run")
+    mock_run = mocker.patch.object(AbstractEvalPackage, "run")
     runner = CliRunner()
     result = runner.invoke(
         app,
@@ -27,18 +26,16 @@ def test_srw_run_package_and_task_selector(tmp_path: Path, srw_context: SRWConte
             "srw-run",
             "--expt-dir",
             str(tmp_path),
-            "--task-selector",
+            "--task",
             "save_paired",
-            "--task-selector",
-            "timeseries",
-            "--package-selector",
+            "--package",
             "chem",
         ],
         catch_exceptions=False,
     )
     print(result.output)
     assert result.exit_code == 0
-    mock.assert_called_once_with(task_selector=(TaskKey.SAVE_PAIRED, TaskKey.TIMESERIES), package_selector=(PackageKey.CHEM,))
+    mock_run.assert_called_once()
 
 
 def test_yaml_init(namelist_chem_yaml_config: Path) -> None:

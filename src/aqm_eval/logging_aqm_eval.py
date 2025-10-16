@@ -44,7 +44,7 @@ class LoggerWrapper:
 
     def __call__(
         self,
-        msg: str,
+        msg: str | None = None,
         level: int = logging.INFO,
         exc_info: Exception | None = None,
         stacklevel: int = 2,
@@ -66,6 +66,10 @@ class LoggerWrapper:
         """
         if exc_info is not None:
             level = logging.ERROR
+            if msg is None:
+                msg = str(exc_info)
+        if msg is None:
+            raise ValueError("msg required if exc_info is not provided")
         self._get_logger_().log(level, msg, exc_info=exc_info, stacklevel=stacklevel)
         if exc_info is not None and self.exit_on_error:
             raise exc_info
