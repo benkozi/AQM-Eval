@@ -604,39 +604,39 @@ class AQS_PM_EvalPackage(AbstractEvalPackage):
                         #     'poc@long_name="Primary Organic Carbon (i+j)"; poc@units="ug/m3"',
                         #     str(f_out),
                         # ],  # Unit = ug/m3
-                        # calculate SOC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        [
-                            "-A",
-                            "-v",
-                            "-s",
-                            "soci = 0.001*(alvoo1i/2.27+alvoo2i/2.06+asvoo1i/1.88+asvoo2i/1.73)*air_density",
-                            "-s",
-                            'soci@long_name="Secondary Organic Carbon i-mode"; soci@units="ug/m3"',
-                            str(f_out),
-                        ],  # Unit = ug/m3
-                        # calculate SOC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        [
-                            "-A",
-                            "-v",
-                            "-s",
-                            "socj = 0.001*(aiso1j/2.20+aiso2j/2.23+aiso3j/2.80+amt1j/1.67+amt2j/1.67+amt3j/1.72+"
-                            "amt4j/1.53+amt5j/1.57+amt6j/1.40+amtno3j/1.90+amthydj/1.54+aglyj/2.13+asqtj/1.52+"
-                            "aorgcj/2.00+aolgbj/2.10+aolgaj/2.50+alvoo1j/2.27+alvoo2j/2.06+asvoo1j/1.88+asvoo2j/1.73+"
-                            "asvoo3j/1.60+aavb1j/2.70+aavb2j/2.35+aavb3j/2.17+aavb4j/1.99+apcsoj/2.00)*air_density",
-                            "-s",
-                            'socj@long_name="Secondary Organic Carbon j-mode"; socj@units="ug/m3"',
-                            str(f_out),
-                        ],  # Unit = ug/m3
-                        # calculate SOC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        [
-                            "-A",
-                            "-v",
-                            "-s",
-                            "soc  = soci + socj",
-                            "-s",
-                            'soc@long_name="Secondary Organic Carbon (i+j)"; soc@units="ug/m3"',
-                            str(f_out),
-                        ],  # Unit = ug/m3
+                        # # calculate SOC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+                        # [
+                        #     "-A",
+                        #     "-v",
+                        #     "-s",
+                        #     "soci = 0.001*(alvoo1i/2.27+alvoo2i/2.06+asvoo1i/1.88+asvoo2i/1.73)*air_density",
+                        #     "-s",
+                        #     'soci@long_name="Secondary Organic Carbon i-mode"; soci@units="ug/m3"',
+                        #     str(f_out),
+                        # ],  # Unit = ug/m3
+                        # # calculate SOC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+                        # [
+                        #     "-A",
+                        #     "-v",
+                        #     "-s",
+                        #     "socj = 0.001*(aiso1j/2.20+aiso2j/2.23+aiso3j/2.80+amt1j/1.67+amt2j/1.67+amt3j/1.72+"
+                        #     "amt4j/1.53+amt5j/1.57+amt6j/1.40+amtno3j/1.90+amthydj/1.54+aglyj/2.13+asqtj/1.52+"
+                        #     "aorgcj/2.00+aolgbj/2.10+aolgaj/2.50+alvoo1j/2.27+alvoo2j/2.06+asvoo1j/1.88+asvoo2j/1.73+"
+                        #     "asvoo3j/1.60+aavb1j/2.70+aavb2j/2.35+aavb3j/2.17+aavb4j/1.99+apcsoj/2.00)*air_density",
+                        #     "-s",
+                        #     'socj@long_name="Secondary Organic Carbon j-mode"; socj@units="ug/m3"',
+                        #     str(f_out),
+                        # ],  # Unit = ug/m3
+                        # # calculate SOC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+                        # [
+                        #     "-A",
+                        #     "-v",
+                        #     "-s",
+                        #     "soc  = soci + socj",
+                        #     "-s",
+                        #     'soc@long_name="Secondary Organic Carbon (i+j)"; soc@units="ug/m3"',
+                        #     str(f_out),
+                        # ],  # Unit = ug/m3
                         # calculate PM2.5 OC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
                         [
                             "-A",

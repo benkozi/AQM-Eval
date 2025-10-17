@@ -1,3 +1,4 @@
+import subprocess
 import time
 from functools import cached_property
 from pathlib import Path
@@ -35,7 +36,7 @@ class ContextForTest(BaseModel):
     y_shp: int = 20
     x_shp: int = 10
 
-    derived_varnames: tuple[str, ...] = ("air_density", "pm25_so4", "pm25_no3", "pm25_nh4", "pm25_ec", "poci", "pocj", "poc")
+    derived_varnames: tuple[str, ...] = ("air_density", "pm25_so4", "pm25_no3", "pm25_nh4", "pm25_ec", "poci", "pocj", "poc", "soc", "soci", "socj", "pm25_oc")
 
     @computed_field
     @cached_property
@@ -132,8 +133,37 @@ def pm_prep(ctx: PM_PrepContext) -> xr.Dataset:
     ds["poc"].attrs["long_name"] = "Primary Organic Carbon (i+j)"
     ds["poc"].attrs["units"] = "ug/m3"
 
+    # Calculate SOC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    ds["soci"] = 0.001 * (ds["alvoo1i"]/2.27+ds["alvoo2i"]/2.06+ds["asvoo1i"]/1.88+ds["asvoo2i"]/1.73)*ds["air_density"]
+    ds["soci"].attrs["long_name"] = "Secondary Organic Carbon i-mode"
+    ds["soci"].attrs["units"] = "ug/m3"
+
+    # Calculate SOC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    ds["socj"] = 0.001*(ds["aiso1j"]/2.20+ds["aiso2j"]/2.23+ds["aiso3j"]/2.80+ds["amt1j"]/1.67+ds["amt2j"]/1.67+ds["amt3j"]/1.72+ds["amt4j"]/1.53+ds["amt5j"]/1.57+ds["amt6j"]/1.40+ds["amtno3j"]/1.90+ds["amthydj"]/1.54+ds["aglyj"]/2.13+ds["asqtj"]/1.52+ds["aorgcj"]/2.00+ds["aolgbj"]/2.10+ds["aolgaj"]/2.50+ds["alvoo1j"]/2.27+ds["alvoo2j"]/2.06+ds["asvoo1j"]/1.88+ds["asvoo2j"]/1.73+ds["asvoo3j"]/1.60+ds["aavb1j"]/2.70+ds["aavb2j"]/2.35+ds["aavb3j"]/2.17+ds["aavb4j"]/1.99+ds["apcsoj"]/2.00)*ds["air_density"]
+    ds["socj"].attrs["long_name"] = "Secondary Organic Carbon j-mode"
+    ds["socj"].attrs["units"] = "ug/m3"
+
+    # Calculate SOC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    ds["soc"] = ds["soci"] + ds["socj"]
+    ds["soc"].attrs["long_name"] = "Secondary Organic Carbon (i+j)"
+    ds["soc"].attrs["units"] = "ug/m3"
+
+    # Calculate PM2.5 OC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    ds["pm25_oc"] = (ds["poci"] + ds["soci"])*ds["pm25at"]+(ds["pocj"] + ds["socj"])*ds["pm25ac"]
+    ds["pm25_oc"].attrs["long_name"] = "PM25 Organic Carbon (i+j)"
+    ds["pm25_oc"].attrs["units"] = "ug/m3"
+
+    ds = ds.compute()
+
+    dyn_dataset.close()
+    phy_dataset.close()
+
     return ds
 
+
+def ncdump(path: Path) -> None:
+    result = subprocess.check_output(["ncdump", "-h", str(path)])
+    print(result.decode())
 
 
 def test(tmp_path: Path) -> None:
@@ -147,13 +177,17 @@ def test(tmp_path: Path) -> None:
 
     dask.config.set(scheduler="processes", num_workers=2)
 
-    processed = pm_prep(test_ctx.pm_prep_ctx)
-
-    result = processed.compute()
+    result = pm_prep(test_ctx.pm_prep_ctx).compute()
 
     assert result.dims == {'t': 1, 'y': test_ctx.y_shp, 'x': test_ctx.x_shp}
 
     assert set(result.data_vars) == set(test_ctx.pm_prep_ctx.dyn_varnames + test_ctx.pm_prep_ctx.phy_varnames + test_ctx.derived_varnames)
+
+    print(result)
+
+    result.to_netcdf(test_ctx.pm_prep_ctx.out_path)
+
+    ncdump(test_ctx.pm_prep_ctx.out_path)
 
 
     # actual = ContextForTestFactory.build()
