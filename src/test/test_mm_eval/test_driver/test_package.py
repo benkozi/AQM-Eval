@@ -207,7 +207,8 @@ def test_run_pm_preprocess_computation_gc6(tmp_path: Path) -> None:
     pm_prep_ctx = PM_PrepContext(out_path=Path("/autofs/ncrc-svm1_home2/Benjamin.Koziol/htmp") / "out.nc",
                           dyn_path=dyn_path,
                           phy_path=Path("/gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/sandbox/srw/benkozi/mm-pkgs2/expt_dirs/aqm_AQMNA13km_AEROMMA_success/2023060112/phyf000.nc"),
-                          dask_num_workers=100, )
+                          dask_num_workers=100,
+                                 chunks={"grid_xt": 100, "grid_yt": 100})
 
     result = run_pm_preprocess_computation(pm_prep_ctx)
     result.to_netcdf(pm_prep_ctx.out_path)
