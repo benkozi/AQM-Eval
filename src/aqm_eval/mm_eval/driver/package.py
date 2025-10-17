@@ -637,16 +637,16 @@ class AQS_PM_EvalPackage(AbstractEvalPackage):
                         #     'soc@long_name="Secondary Organic Carbon (i+j)"; soc@units="ug/m3"',
                         #     str(f_out),
                         # ],  # Unit = ug/m3
-                        # calculate PM2.5 OC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        [
-                            "-A",
-                            "-v",
-                            "-s",
-                            "pm25_oc   = (poci + soci)*pm25at+(pocj + socj)*pm25ac",
-                            "-s",
-                            'pm25_oc@long_name="PM25 Organic Carbon (i+j)"; pm25_oc@units="ug/m3"',
-                            str(f_out),
-                        ],  # Unit = ug/m3
+                        # # calculate PM2.5 OC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+                        # [
+                        #     "-A",
+                        #     "-v",
+                        #     "-s",
+                        #     "pm25_oc   = (poci + soci)*pm25at+(pocj + socj)*pm25ac",
+                        #     "-s",
+                        #     'pm25_oc@long_name="PM25 Organic Carbon (i+j)"; pm25_oc@units="ug/m3"',
+                        #     str(f_out),
+                        # ],  # Unit = ug/m3
                     )
 
                     # Execute all ncap2 commands

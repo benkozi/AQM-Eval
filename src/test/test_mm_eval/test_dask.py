@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, computed_field
 import xarray as xr
 import numpy as np
 
-from aqm_eval.logging_aqm_eval import log_it
+from aqm_eval.logging_aqm_eval import log_it, LOGGER
 from aqm_eval.shared import PathExisting
 
 np.random.seed(0)
@@ -81,74 +81,74 @@ class ContextForTestFactory(ModelFactory[ContextForTest]):
 @dask.delayed
 def pm_prep(ctx: PM_PrepContext) -> xr.Dataset:
 
-    # Load the physics and dynamics output from file
+    LOGGER("Load the physics and dynamics output from file")
     phy_dataset = xr.open_dataset(ctx.phy_path, chunks=ctx.chunks)
     phy_dataset = phy_dataset.isel(t=slice(0, 1))
     dyn_dataset = xr.open_dataset(ctx.dyn_path, chunks=ctx.chunks)
     dyn_dataset = dyn_dataset.isel(t=slice(0, 1))
 
-    # Create the combined dataset from physics and dynamics
+    LOGGER("Create the combined dataset from physics and dynamics")
     new_fields_dyn = {ii: dyn_dataset[ii] for ii in ctx.dyn_varnames}
     new_fields_phy = {ii: phy_dataset[ii] for ii in ctx.phy_varnames}
     new_fields = {**new_fields_dyn, **new_fields_phy}
     ds = xr.Dataset(new_fields)
 
-    # Calculate Air Density near surface
+    LOGGER("Calculate Air Density near surface")
     ds["air_density"] = (28.97 * (ds["pressfc"] - ds["dpres"])) / (8.314 * ds["tmp"])
     ds["air_density"].attrs["long_name"] = "air density"
     ds["air_density"].attrs["units"] = "g/m3"
 
-    # Calculate PM2.5 Sulfate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    LOGGER("Calculate PM2.5 Sulfate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
     ds["pm25_so4"] = 0.001 * (ds["aso4i"] * ds["pm25at"] + ds["aso4j"] * ds["pm25ac"] + ds["aso4k"] * ds["pm25co"]) * ds["air_density"]
     ds["pm25_so4"].attrs["long_name"] = "PM25 Sulfate"
     ds["pm25_so4"].attrs["units"] = "ug/m3"
 
-    # Calculate PM2.5 Nitrate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    LOGGER("Calculate PM2.5 Nitrate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
     ds["pm25_no3"] = 0.001 * (ds["ano3i"] * ds["pm25at"] + ds["ano3j"] * ds["pm25ac"] + ds["ano3k"] * ds["pm25co"]) * ds["air_density"]
     ds["pm25_no3"].attrs["long_name"] = "PM25 Nitrate"
     ds["pm25_no3"].attrs["units"] = "ug/m3"
 
-    # Calculate PM2.5 Ammonium for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    LOGGER("Calculate PM2.5 Ammonium for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
     ds["pm25_nh4"] = 0.001 * (ds["anh4i"] * ds["pm25at"] + ds["anh4j"] * ds["pm25ac"] + ds["anh4k"] * ds["pm25co"]) * ds["air_density"]
     ds["pm25_nh4"].attrs["long_name"] = "PM25 Ammonium"
     ds["pm25_nh4"].attrs["units"] = "ug/m3"
 
-    # Calculate PM2.5 Elemental Carbon for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    LOGGER("Calculate PM2.5 Elemental Carbon for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
     ds["pm25_ec"] = 0.001 * (ds["aeci"] * ds["pm25at"] + ds["aecj"] * ds["pm25ac"]) * ds["air_density"]
     ds["pm25_ec"].attrs["long_name"] = "PM25 Elemental Carbon"
     ds["pm25_ec"].attrs["units"] = "ug/m3"
 
-    # Calculate POC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    LOGGER("Calculate POC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
     ds["poci"] = 0.001 * (ds["alvpo1i"]/ 1.39 + ds["asvpo1i"] / 1.32 + ds["asvpo2i"] / 1.26 + ds["apoci"] )* ds["air_density"]
     ds["poci"].attrs["long_name"] = "Primary Organic Carbon i-mode"
     ds["poci"].attrs["units"] = "ug/m3"
 
-    # Calculate POC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    LOGGER("Calculate POC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
     ds["pocj"] = 0.001 * (ds["alvpo1j"]/ 1.39 + ds["asvpo1j"] / 1.32 + ds["asvpo2j"] / 1.26 + ds["asvpo3j"] / 1.21 + ds["aivpo1j"] / 1.17 + ds["apocj"]) * ds["air_density"]
     ds["pocj"].attrs["long_name"] = "Primary Organic Carbon j-mode"
     ds["pocj"].attrs["units"] = "ug/m3"
 
-    # Calculate POC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    LOGGER("Calculate POC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
     ds["poc"] = ds["poci"] + ds["pocj"]
     ds["poc"].attrs["long_name"] = "Primary Organic Carbon (i+j)"
     ds["poc"].attrs["units"] = "ug/m3"
 
-    # Calculate SOC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    LOGGER("Calculate SOC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
     ds["soci"] = 0.001 * (ds["alvoo1i"]/2.27+ds["alvoo2i"]/2.06+ds["asvoo1i"]/1.88+ds["asvoo2i"]/1.73)*ds["air_density"]
     ds["soci"].attrs["long_name"] = "Secondary Organic Carbon i-mode"
     ds["soci"].attrs["units"] = "ug/m3"
 
-    # Calculate SOC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    LOGGER("Calculate SOC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
     ds["socj"] = 0.001*(ds["aiso1j"]/2.20+ds["aiso2j"]/2.23+ds["aiso3j"]/2.80+ds["amt1j"]/1.67+ds["amt2j"]/1.67+ds["amt3j"]/1.72+ds["amt4j"]/1.53+ds["amt5j"]/1.57+ds["amt6j"]/1.40+ds["amtno3j"]/1.90+ds["amthydj"]/1.54+ds["aglyj"]/2.13+ds["asqtj"]/1.52+ds["aorgcj"]/2.00+ds["aolgbj"]/2.10+ds["aolgaj"]/2.50+ds["alvoo1j"]/2.27+ds["alvoo2j"]/2.06+ds["asvoo1j"]/1.88+ds["asvoo2j"]/1.73+ds["asvoo3j"]/1.60+ds["aavb1j"]/2.70+ds["aavb2j"]/2.35+ds["aavb3j"]/2.17+ds["aavb4j"]/1.99+ds["apcsoj"]/2.00)*ds["air_density"]
     ds["socj"].attrs["long_name"] = "Secondary Organic Carbon j-mode"
     ds["socj"].attrs["units"] = "ug/m3"
 
-    # Calculate SOC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    LOGGER("Calculate SOC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
     ds["soc"] = ds["soci"] + ds["socj"]
     ds["soc"].attrs["long_name"] = "Secondary Organic Carbon (i+j)"
     ds["soc"].attrs["units"] = "ug/m3"
 
-    # Calculate PM2.5 OC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+    LOGGER("Calculate PM2.5 OC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
     ds["pm25_oc"] = (ds["poci"] + ds["soci"])*ds["pm25at"]+(ds["pocj"] + ds["socj"])*ds["pm25ac"]
     ds["pm25_oc"].attrs["long_name"] = "PM25 Organic Carbon (i+j)"
     ds["pm25_oc"].attrs["units"] = "ug/m3"
@@ -175,7 +175,8 @@ def test(tmp_path: Path) -> None:
 
     test_ctx = ContextForTest(root_dir=tmp_path)
 
-    dask.config.set(scheduler="processes", num_workers=2)
+    # dask.config.set(scheduler="processes", num_workers=2)
+    dask.config.set(num_workers=2)
 
     result = pm_prep(test_ctx.pm_prep_ctx).compute()
 
