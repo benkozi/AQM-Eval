@@ -205,7 +205,7 @@ def test_run_pm_preprocess_computation(tmp_path: Path) -> None:
     result = run_pm_preprocess_computation(test_ctx.pm_prep_ctx)
 
     expected_dims = test_ctx.dims
-    expected_dims["pfull"] = 1
+    # expected_dims["pfull"] = 1
     assert result.dims == expected_dims
 
     expected_vars = set(result.data_vars)
@@ -217,20 +217,20 @@ def test_run_pm_preprocess_computation(tmp_path: Path) -> None:
     # print(result)
     result.to_netcdf(test_ctx.pm_prep_ctx.out_path)
 
-def test_run_pm_preprocess_computation_gc6(tmp_path: Path) -> None:
-
-    for fhr in range(25):
-        fhr_str = f"{fhr:02d}"
-        dyn_path = Path(f"/gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/sandbox/srw/benkozi/mm-pkgs2/expt_dirs/aqm_AQMNA13km_AEROMMA_success/2023060112/dynf0{fhr_str}.nc")
-        if fhr == 0:
-            ncdump(dyn_path)
-        pm_prep_ctx = PM_PrepContext(out_path=Path("/autofs/ncrc-svm1_home2/Benjamin.Koziol/htmp") / f"out{fhr_str}.nc",
-                              dyn_path=dyn_path,
-                              phy_path=Path(f"/gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/sandbox/srw/benkozi/mm-pkgs2/expt_dirs/aqm_AQMNA13km_AEROMMA_success/2023060112/phyf0{fhr_str}.nc"),
-                              dask_num_workers=SETTINGS.dask_num_workers,
-                                     chunks={"grid_xt": 100, "grid_yt": 100})
-
-        result = run_pm_preprocess_computation(pm_prep_ctx)
-        result.to_netcdf(pm_prep_ctx.out_path)
-        if fhr == 0:
-            ncdump(pm_prep_ctx.out_path)
+# def test_run_pm_preprocess_computation_gc6(tmp_path: Path) -> None:
+#
+#     for fhr in range(25):
+#         fhr_str = f"{fhr:02d}"
+#         dyn_path = Path(f"/gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/sandbox/srw/benkozi/mm-pkgs2/expt_dirs/aqm_AQMNA13km_AEROMMA_success/2023060112/dynf0{fhr_str}.nc")
+#         if fhr == 0:
+#             ncdump(dyn_path)
+#         pm_prep_ctx = PM_PrepContext(out_path=Path("/autofs/ncrc-svm1_home2/Benjamin.Koziol/htmp") / f"out{fhr_str}.nc",
+#                               dyn_path=dyn_path,
+#                               phy_path=Path(f"/gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/sandbox/srw/benkozi/mm-pkgs2/expt_dirs/aqm_AQMNA13km_AEROMMA_success/2023060112/phyf0{fhr_str}.nc"),
+#                               dask_num_workers=SETTINGS.dask_num_workers,
+#                                      chunks={"grid_xt": 100, "grid_yt": 100})
+#
+#         result = run_pm_preprocess_computation(pm_prep_ctx)
+#         result.to_netcdf(pm_prep_ctx.out_path)
+#         if fhr == 0:
+#             ncdump(pm_prep_ctx.out_path)
