@@ -16,7 +16,7 @@ from aqm_eval.mm_eval.driver.package import (
     TaskKey,
     package_key_to_class, PM_PrepContext, run_pm_preprocess_computation,
 )
-from aqm_eval.shared import PathExisting
+from aqm_eval.shared import PathExisting, ncdump
 
 
 class MMEvalRunnerTestData(BaseModel):
@@ -199,29 +199,14 @@ def test_run_pm_preprocess_computation(tmp_path: Path) -> None:
     assert set(result.data_vars) == set(test_ctx.pm_prep_ctx.dyn_varnames + test_ctx.pm_prep_ctx.phy_varnames + test_ctx.derived_varnames)
     # print(result)
     result.to_netcdf(test_ctx.pm_prep_ctx.out_path)
-    # ncdump(test_ctx.pm_prep_ctx.out_path)
 
+def test_run_pm_preprocess_computation_gc6(tmp_path: Path) -> None:
 
-    # actual = ContextForTestFactory.build()
+    pm_prep_ctx = PM_PrepContext(out_path=Path("/autofs/ncrc-svm1_home2/Benjamin.Koziol/htmp") / "out.nc",
+                          dyn_path=Path("/gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/sandbox/srw/benkozi/mm-pkgs2/expt_dirs/aqm_AQMNA13km_AEROMMA_success/2023060112/dynf000.nc"),
+                          phy_path=Path("/gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/sandbox/srw/benkozi/mm-pkgs2/expt_dirs/aqm_AQMNA13km_AEROMMA_success/2023060112/phyf000.nc"),
+                          dask_num_workers=100, )
 
-    # actual = ContextForTest()
-    #
-    # # print(actual.field_array)
-    # # print(actual.dataset)
-    #
-    # actual.dataset.to_netcdf(path)
-    #
-    # dask.config.set(scheduler="processes", num_workers=8)
-    #
-    # ds = xr.open_dataset(path, chunks={"y":10, "x": 5})
-    # print(ds)
-    #
-    # # added = ds["field"] + 1
-    # # print(added)
-    #
-    # lazy = func(ds)
-    #
-    # print(lazy)
-    #
-    # result = lazy.compute()
-    # print(result)
+    result = run_pm_preprocess_computation(pm_prep_ctx)
+    result.to_netcdf(pm_prep_ctx.out_path)
+    ncdump(pm_prep_ctx.out_path)
