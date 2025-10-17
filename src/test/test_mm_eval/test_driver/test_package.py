@@ -16,6 +16,7 @@ from aqm_eval.mm_eval.driver.package import (
     TaskKey,
     package_key_to_class, PM_PrepContext, run_pm_preprocess_computation,
 )
+from aqm_eval.settings import SETTINGS
 from aqm_eval.shared import PathExisting, ncdump
 
 
@@ -210,7 +211,7 @@ def test_run_pm_preprocess_computation_gc6(tmp_path: Path) -> None:
         pm_prep_ctx = PM_PrepContext(out_path=Path("/autofs/ncrc-svm1_home2/Benjamin.Koziol/htmp") / f"out{fhr_str}.nc",
                               dyn_path=dyn_path,
                               phy_path=Path(f"/gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/sandbox/srw/benkozi/mm-pkgs2/expt_dirs/aqm_AQMNA13km_AEROMMA_success/2023060112/phyf0{fhr_str}"),
-                              dask_num_workers=100,
+                              dask_num_workers=SETTINGS.dask_num_workers,
                                      chunks={"grid_xt": 100, "grid_yt": 100})
 
         result = run_pm_preprocess_computation(pm_prep_ctx)
