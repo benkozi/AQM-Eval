@@ -807,9 +807,10 @@ def open_dataset(ctx: PM_PrepContext, target: str) -> xr.Dataset:
     path = getattr(ctx, target)
     LOGGER(f"Load {path}")
     ds = xr.open_dataset(path, chunks=ctx.chunks)
-    ds = ds.isel(time=slice(0, 1))
+    ds = ds.isel(pfull=slice(0, 1))
+    LOGGER(f"{ds.dims=}")
     if ctx.chunks == "auto":
-        ds.chunk(ctx.chunks)
+        ds = ds.chunk(ctx.chunks)
     return ds
 
 
