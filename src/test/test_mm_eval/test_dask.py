@@ -2,6 +2,7 @@ import subprocess
 import time
 from functools import cached_property
 from pathlib import Path
+from typing import Literal
 
 import dask
 from polyfactory.factories.pydantic_factory import ModelFactory
@@ -21,7 +22,8 @@ class PM_PrepContext(BaseModel):
     out_path: Path
     dyn_path: PathExisting
     phy_path: PathExisting
-    chunks: dict[str, int]
+    dask_num_workers: int
+    chunks: dict[str, int] | Literal["auto"] = "auto"
 
     dyn_varnames: tuple[str, ...] = ("time_iso", "lat", "lon", "pfull", "phalf", "delz", "dpres", "hgtsfc", "pressfc", "tmp", "aso4i","aso4j","aso4k","ano3i","ano3j","ano3k","anh4i","anh4j","anh4k","aeci","aecj","aorgcj","aothri","aothrj","alvpo1i","alvpo1j","asvpo1i","asvpo1j","asvpo2i","asvpo2j","asvpo3j","aivpo1j","apoci","apocj","alvoo1i","alvoo2i","asvoo1i","asvoo2i","aiso1j","aiso2j","aiso3j","amt1j","amt2j","amt3j","amt4j","amt5j","amt6j","amtno3j","amthydj","aglyj","asqtj","aorgcj","aolgbj","aolgaj","alvoo1j","alvoo2j","asvoo1j","asvoo2j","asvoo3j","aavb1j","aavb2j","aavb3j","aavb4j","apcsoj", "pm25at", "pm25ac", "pm25co")
     phy_varnames: tuple[str, ...] = ("tmp2m",)
@@ -38,10 +40,10 @@ class ContextForTest(BaseModel):
 
     derived_varnames: tuple[str, ...] = ("air_density", "pm25_so4", "pm25_no3", "pm25_nh4", "pm25_ec", "poci", "pocj", "poc", "soc", "soci", "socj", "pm25_oc")
 
-    @computed_field
-    @cached_property
-    def chunk(self) -> int:
-        return int(self.x_shp / 2)
+    # @computed_field
+    # @cached_property
+    # def chunk(self) -> int:
+    #     return int(self.x_shp / 2)
 
     # @cached_property
     # def field_array(self) -> xr.DataArray:
@@ -60,7 +62,7 @@ class ContextForTest(BaseModel):
         return PM_PrepContext(out_path=self.root_dir / "out.nc",
                               dyn_path=dyn_path,
                               phy_path=phy_path,
-                              chunks={"y": self.chunk, "x": self.chunk})
+                              dask_num_workers=2,)
 
     @cached_property
     def dataset_dyn(self) -> xr.Dataset:
@@ -81,11 +83,8 @@ class ContextForTestFactory(ModelFactory[ContextForTest]):
 @dask.delayed
 def pm_prep(ctx: PM_PrepContext) -> xr.Dataset:
 
-    LOGGER("Load the physics and dynamics output from file")
-    phy_dataset = xr.open_dataset(ctx.phy_path, chunks=ctx.chunks)
-    phy_dataset = phy_dataset.isel(t=slice(0, 1))
-    dyn_dataset = xr.open_dataset(ctx.dyn_path, chunks=ctx.chunks)
-    dyn_dataset = dyn_dataset.isel(t=slice(0, 1))
+    phy_dataset = open_dataset(ctx, "phy_path")
+    dyn_dataset = open_dataset(ctx, "dyn_path")
 
     LOGGER("Create the combined dataset from physics and dynamics")
     new_fields_dyn = {ii: dyn_dataset[ii] for ii in ctx.dyn_varnames}
@@ -161,6 +160,16 @@ def pm_prep(ctx: PM_PrepContext) -> xr.Dataset:
     return ds
 
 
+def open_dataset(ctx: PM_PrepContext, target: str) -> xr.Dataset:
+    path = getattr(ctx, target)
+    LOGGER(f"Load {path}")
+    ds = xr.open_dataset(path, chunks=ctx.chunks)
+    ds = ds.isel(t=slice(0, 1))
+    if ctx.chunks == "auto":
+        ds.chunk(ctx.chunks)
+    return ds
+
+
 def ncdump(path: Path) -> None:
     result = subprocess.check_output(["ncdump", "-h", str(path)])
     print(result.decode())
@@ -176,7 +185,10 @@ def test(tmp_path: Path) -> None:
     test_ctx = ContextForTest(root_dir=tmp_path)
 
     # dask.config.set(scheduler="processes", num_workers=2)
-    dask.config.set(num_workers=2)
+    dask.config.set(scheduler="threads", num_workers=test_ctx.pm_prep_ctx.dask_num_workers)
+    # LOGGER(f"{dask.config.get('scheduler', default='not set')=}")
+    # LOGGER(f"{dask.config.get('num_workers', default='not set')=}")
+    # LOGGER(f"{dask.config.get('num_threads', default='not set')=}")
 
     result = pm_prep(test_ctx.pm_prep_ctx).compute()
 
