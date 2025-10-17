@@ -511,7 +511,8 @@ class AQS_PM_EvalPackage(AbstractEvalPackage):
                     pm_prep_ctx = PM_PrepContext(out_path=f_out,
                               dyn_path=f_dyn,
                               phy_path=f_phy,
-                              dask_num_workers=SETTINGS.dask_num_workers,)
+                              dask_num_workers=SETTINGS.dask_num_workers,
+                                                 chunks={"grid_xt": 100, "grid_yt": 100})
                     result = run_pm_preprocess_computation(pm_prep_ctx)
                     LOGGER(f"writing processed PM file: {pm_prep_ctx.out_path}")
                     result.to_netcdf(pm_prep_ctx.out_path)
