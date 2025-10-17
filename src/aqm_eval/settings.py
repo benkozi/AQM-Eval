@@ -39,13 +39,8 @@ class AQM_EvalSettings(BaseSettings):
 
     @field_validator("aqm_eval_log_level", mode="before")
     @classmethod
-    def _validate_aqm_eval_log_level_(cls, value: str | None) -> LogLevel:
-        if isinstance(value, str):
-            return LogLevel(value.lower())
-        elif value is None:
-            return LogLevel.INFO
-        else:
-            raise ValueError(value)
+    def _validate_aqm_eval_log_level_(cls, value: str) -> LogLevel:
+        return LogLevel(value.lower())
 
 SETTINGS = AQM_EvalSettings()
 
