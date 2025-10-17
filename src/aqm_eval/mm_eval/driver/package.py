@@ -736,6 +736,8 @@ def pm_prep(ctx: PM_PrepContext) -> xr.Dataset:
     new_fields = {**new_fields_dyn, **new_fields_phy}
     ds = xr.Dataset(new_fields)
 
+    ds.attrs = dyn_dataset.attrs
+
     LOGGER("Calculate Air Density near surface")
     ds["air_density"] = (28.97 * (ds["pressfc"] - ds["dpres"])) / (8.314 * ds["tmp"])
     ds["air_density"].attrs["long_name"] = "air density"
@@ -808,7 +810,7 @@ def open_dataset(ctx: PM_PrepContext, target: str) -> xr.Dataset:
     path = getattr(ctx, target)
     LOGGER(f"Load {path}")
     ds = xr.open_dataset(path, chunks=ctx.chunks)
-    ds = ds.isel(pfull=slice(0, 1), phalf=slice(0, 1))
+    ds = ds.isel(pfull=slice(0, 1))
     LOGGER(f"{ds.dims=}")
     if ctx.chunks == "auto":
         ds = ds.chunk(ctx.chunks)

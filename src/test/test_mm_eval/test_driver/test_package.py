@@ -132,11 +132,9 @@ class ContextForTest(BaseModel):
 
     root_dir: PathExisting
 
-    t_shp: int = 10
-    y_shp: int = 20
-    x_shp: int = 10
-
+    dims: dict[str, int] = {"time": 1, "pfull": 64, "grid_yt": 20, "grid_xt": 10}
     derived_varnames: tuple[str, ...] = ("air_density", "pm25_so4", "pm25_no3", "pm25_nh4", "pm25_ec", "poci", "pocj", "poc", "soc", "soci", "socj", "pm25_oc")
+    global_attrs: dict[str, str] = {"foo": "bar", "bar": "foo"}
 
     # @computed_field
     # @cached_property
@@ -164,16 +162,26 @@ class ContextForTest(BaseModel):
 
     @cached_property
     def dataset_dyn(self) -> xr.Dataset:
-        return xr.Dataset({ii: self.create_data_array(ii) for ii in PM_PrepContext.model_fields["dyn_varnames"].default})
+        fields = {ii: self.create_data_array(ii, self.dims) for ii in PM_PrepContext.model_fields["dyn_varnames"].default}
+        ret = xr.Dataset(fields)
+        for k,v in self.global_attrs.items():
+            ret.attrs[k] = v
+        return ret
 
     @cached_property
     def dataset_phy(self) -> xr.Dataset:
-        return xr.Dataset({ii: self.create_data_array(ii) for ii in PM_PrepContext.model_fields["phy_varnames"].default})
+        fields = {ii: self.create_data_array(ii, self.dims) for ii in PM_PrepContext.model_fields["phy_varnames"].default}
+        ret = xr.Dataset(fields)
+        for k, v in self.global_attrs.items():
+            ret.attrs[k] = v
+        return ret
 
-    def create_data_array(self, name: str) -> xr.DataArray:
-        shape = (self.t_shp, self.y_shp, self.x_shp)
+    @staticmethod
+    def create_data_array(name: str, dims: dict[str, int]) -> xr.DataArray:
+        shape = tuple(ii for ii in dims.values())
         data = np.random.random(shape)
-        return xr.DataArray(data, name=name, dims=("time", "y", "x"))
+        return xr.DataArray(data, name=name, dims=tuple(ii for ii in dims.keys()))
+
 
 
 def test_run_pm_preprocess_computation(tmp_path: Path) -> None:
@@ -196,8 +204,16 @@ def test_run_pm_preprocess_computation(tmp_path: Path) -> None:
 
     result = run_pm_preprocess_computation(test_ctx.pm_prep_ctx)
 
-    assert result.dims == {'time': 1, 'y': test_ctx.y_shp, 'x': test_ctx.x_shp}
-    assert set(result.data_vars) == set(test_ctx.pm_prep_ctx.dyn_varnames + test_ctx.pm_prep_ctx.phy_varnames + test_ctx.derived_varnames)
+    expected_dims = test_ctx.dims
+    expected_dims["pfull"] = 1
+    assert result.dims == expected_dims
+
+    expected_vars = set(result.data_vars)
+    expected_vars.update({"pfull"})
+    assert expected_vars == set(test_ctx.pm_prep_ctx.dyn_varnames + test_ctx.pm_prep_ctx.phy_varnames + test_ctx.derived_varnames)
+
+    assert result.attrs == test_ctx.global_attrs
+
     # print(result)
     result.to_netcdf(test_ctx.pm_prep_ctx.out_path)
 
