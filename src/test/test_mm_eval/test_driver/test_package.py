@@ -172,7 +172,7 @@ class ContextForTest(BaseModel):
     def create_data_array(self, name: str) -> xr.DataArray:
         shape = (self.t_shp, self.y_shp, self.x_shp)
         data = np.random.random(shape)
-        return xr.DataArray(data, name=name, dims=("t", "y", "x"))
+        return xr.DataArray(data, name=name, dims=("time", "y", "x"))
 
 
 def test_run_pm_preprocess_computation(tmp_path: Path) -> None:
