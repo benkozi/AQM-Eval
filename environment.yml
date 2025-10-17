@@ -9,6 +9,7 @@ dependencies:
   - nco=5.3.*
   - pre-commit=4.3.* # dev only
   - pydantic=2.11.*
+  - pydantic-settings=2.11.*
   - pytest=8.4.* # dev only
   - pytest-mock=3.14.* # dev only
   - python=3.11

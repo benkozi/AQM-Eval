@@ -6,10 +6,12 @@ from abc import ABC
 from enum import StrEnum, unique
 from functools import cached_property
 from pathlib import Path
+from typing import Literal
 
 import cartopy  # type: ignore[import-untyped]
 import dask
 import matplotlib
+import xarray as xr
 import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from melodies_monet import driver  # type: ignore[import-untyped]
@@ -19,7 +21,8 @@ from pydantic import BaseModel, Field, computed_field
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.model import Model, ModelRole
-from aqm_eval.shared import assert_file_exists, get_or_create_path
+from aqm_eval.settings import SETTINGS
+from aqm_eval.shared import assert_file_exists, get_or_create_path, PathExisting
 
 
 @unique
@@ -440,6 +443,18 @@ class ISH_EvalPackage(AbstractEvalPackage):
                     for cmd in ncap2_commands:
                         self._run_ncap2_cmd_(cmd)
 
+class PM_PrepContext(BaseModel):
+    model_config = {"frozen": True}
+
+    out_path: Path
+    dyn_path: PathExisting
+    phy_path: PathExisting
+    dask_num_workers: int
+    chunks: dict[str, int] | Literal["auto"] = "auto"
+
+    dyn_varnames: tuple[str, ...] = ("time_iso", "lat", "lon", "pfull", "phalf", "delz", "dpres", "hgtsfc", "pressfc", "tmp", "aso4i","aso4j","aso4k","ano3i","ano3j","ano3k","anh4i","anh4j","anh4k","aeci","aecj","aorgcj","aothri","aothrj","alvpo1i","alvpo1j","asvpo1i","asvpo1j","asvpo2i","asvpo2j","asvpo3j","aivpo1j","apoci","apocj","alvoo1i","alvoo2i","asvoo1i","asvoo2i","aiso1j","aiso2j","aiso3j","amt1j","amt2j","amt3j","amt4j","amt5j","amt6j","amtno3j","amthydj","aglyj","asqtj","aorgcj","aolgbj","aolgaj","alvoo1j","alvoo2j","asvoo1j","asvoo2j","asvoo3j","aavb1j","aavb2j","aavb3j","aavb4j","apcsoj", "pm25at", "pm25ac", "pm25co")
+    phy_varnames: tuple[str, ...] = ("tmp2m",)
+
 
 class AQS_PM_EvalPackage(AbstractEvalPackage):
     """Defines a AQS PM evaluation package."""
@@ -493,8 +508,16 @@ class AQS_PM_EvalPackage(AbstractEvalPackage):
                     assert_file_exists(f_dyn)
                     f_out = out_dir / f"{prefix}_{dir_name}_f0{fhr_str}.nc"
 
+                    pm_prep_ctx = PM_PrepContext(out_path=f_out,
+                              dyn_path=f_dyn,
+                              phy_path=f_phy,
+                              dask_num_workers=SETTINGS.dask_num_workers,)
+                    result = run_pm_preprocess_computation(pm_prep_ctx)
+                    LOGGER(f"writing processed PM file: {pm_prep_ctx.out_path}")
+                    result.to_netcdf(pm_prep_ctx.out_path)
+
                     # Define ncap2 commands to run
-                    ncap2_commands_pre = (
+                    # ncap2_commands_pre = (
                         # # Initial ncap2 call (creates output file)
                         # ["-v", "-s", "time_iso = time_iso", str(f_dyn), str(f_out)],
                         # # Subsequent ncap2 calls with -A flag (append mode)
@@ -518,7 +541,7 @@ class AQS_PM_EvalPackage(AbstractEvalPackage):
                         #     'air_density@long_name="air density"; air_density@units="g/m3"',
                         #     str(f_out),
                         # ],  # Unit = g/m3
-                    )
+                    # )
 
                     # # Append all PM2.5 species from Modes for AQS file out
                     # ncks_cmd = [
@@ -533,7 +556,7 @@ class AQS_PM_EvalPackage(AbstractEvalPackage):
                     # ncks_cmd2 = ["-A", "-v", "pm25at,pm25ac,pm25co", str(f_dyn), str(f_out)]
 
                     # Additional ncap2 commands for PM2.5 species calculations (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                    ncap2_commands_post = (
+                    # ncap2_commands_post = (
                         # # calculate PM2.5 Sulfate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
                         # [
                         #     "-A",
@@ -647,19 +670,19 @@ class AQS_PM_EvalPackage(AbstractEvalPackage):
                         #     'pm25_oc@long_name="PM25 Organic Carbon (i+j)"; pm25_oc@units="ug/m3"',
                         #     str(f_out),
                         # ],  # Unit = ug/m3
-                    )
+                    # )/
 
-                    # Execute all ncap2 commands
-                    for cmd in ncap2_commands_pre:
-                        self._run_ncap2_cmd_(cmd)
-
-                    # Execute ncks commands
-                    self._run_ncks_cmd_(ncks_cmd)
-                    self._run_ncks_cmd_(ncks_cmd2)
-
-                    # Execute PM species calculation commands
-                    for cmd in ncap2_commands_post:
-                        self._run_ncap2_cmd_(cmd)
+                    # # Execute all ncap2 commands
+                    # for cmd in ncap2_commands_pre:
+                    #     self._run_ncap2_cmd_(cmd)
+                    #
+                    # # Execute ncks commands
+                    # self._run_ncks_cmd_(ncks_cmd)
+                    # self._run_ncks_cmd_(ncks_cmd2)
+                    #
+                    # # Execute PM species calculation commands
+                    # for cmd in ncap2_commands_post:
+                    #     self._run_ncap2_cmd_(cmd)
 
 
 class AQS_VOC_EvalPackage(AbstractEvalPackage):
@@ -698,3 +721,99 @@ def package_key_to_class(key: PackageKey) -> type[AbstractEvalPackage]:
         PackageKey.AQS_VOC: AQS_VOC_EvalPackage,
     }
     return mapping[key]
+
+
+@dask.delayed
+def pm_prep(ctx: PM_PrepContext) -> xr.Dataset:
+
+    phy_dataset = open_dataset(ctx, "phy_path")
+    dyn_dataset = open_dataset(ctx, "dyn_path")
+
+    LOGGER("Create the combined dataset from physics and dynamics")
+    new_fields_dyn = {ii: dyn_dataset[ii] for ii in ctx.dyn_varnames}
+    new_fields_phy = {ii: phy_dataset[ii] for ii in ctx.phy_varnames}
+    new_fields = {**new_fields_dyn, **new_fields_phy}
+    ds = xr.Dataset(new_fields)
+
+    LOGGER("Calculate Air Density near surface")
+    ds["air_density"] = (28.97 * (ds["pressfc"] - ds["dpres"])) / (8.314 * ds["tmp"])
+    ds["air_density"].attrs["long_name"] = "air density"
+    ds["air_density"].attrs["units"] = "g/m3"
+
+    LOGGER("Calculate PM2.5 Sulfate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
+    ds["pm25_so4"] = 0.001 * (ds["aso4i"] * ds["pm25at"] + ds["aso4j"] * ds["pm25ac"] + ds["aso4k"] * ds["pm25co"]) * ds["air_density"]
+    ds["pm25_so4"].attrs["long_name"] = "PM25 Sulfate"
+    ds["pm25_so4"].attrs["units"] = "ug/m3"
+
+    LOGGER("Calculate PM2.5 Nitrate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
+    ds["pm25_no3"] = 0.001 * (ds["ano3i"] * ds["pm25at"] + ds["ano3j"] * ds["pm25ac"] + ds["ano3k"] * ds["pm25co"]) * ds["air_density"]
+    ds["pm25_no3"].attrs["long_name"] = "PM25 Nitrate"
+    ds["pm25_no3"].attrs["units"] = "ug/m3"
+
+    LOGGER("Calculate PM2.5 Ammonium for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
+    ds["pm25_nh4"] = 0.001 * (ds["anh4i"] * ds["pm25at"] + ds["anh4j"] * ds["pm25ac"] + ds["anh4k"] * ds["pm25co"]) * ds["air_density"]
+    ds["pm25_nh4"].attrs["long_name"] = "PM25 Ammonium"
+    ds["pm25_nh4"].attrs["units"] = "ug/m3"
+
+    LOGGER("Calculate PM2.5 Elemental Carbon for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
+    ds["pm25_ec"] = 0.001 * (ds["aeci"] * ds["pm25at"] + ds["aecj"] * ds["pm25ac"]) * ds["air_density"]
+    ds["pm25_ec"].attrs["long_name"] = "PM25 Elemental Carbon"
+    ds["pm25_ec"].attrs["units"] = "ug/m3"
+
+    LOGGER("Calculate POC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
+    ds["poci"] = 0.001 * (ds["alvpo1i"]/ 1.39 + ds["asvpo1i"] / 1.32 + ds["asvpo2i"] / 1.26 + ds["apoci"] )* ds["air_density"]
+    ds["poci"].attrs["long_name"] = "Primary Organic Carbon i-mode"
+    ds["poci"].attrs["units"] = "ug/m3"
+
+    LOGGER("Calculate POC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
+    ds["pocj"] = 0.001 * (ds["alvpo1j"]/ 1.39 + ds["asvpo1j"] / 1.32 + ds["asvpo2j"] / 1.26 + ds["asvpo3j"] / 1.21 + ds["aivpo1j"] / 1.17 + ds["apocj"]) * ds["air_density"]
+    ds["pocj"].attrs["long_name"] = "Primary Organic Carbon j-mode"
+    ds["pocj"].attrs["units"] = "ug/m3"
+
+    LOGGER("Calculate POC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
+    ds["poc"] = ds["poci"] + ds["pocj"]
+    ds["poc"].attrs["long_name"] = "Primary Organic Carbon (i+j)"
+    ds["poc"].attrs["units"] = "ug/m3"
+
+    LOGGER("Calculate SOC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
+    ds["soci"] = 0.001 * (ds["alvoo1i"]/2.27+ds["alvoo2i"]/2.06+ds["asvoo1i"]/1.88+ds["asvoo2i"]/1.73)*ds["air_density"]
+    ds["soci"].attrs["long_name"] = "Secondary Organic Carbon i-mode"
+    ds["soci"].attrs["units"] = "ug/m3"
+
+    LOGGER("Calculate SOC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
+    ds["socj"] = 0.001*(ds["aiso1j"]/2.20+ds["aiso2j"]/2.23+ds["aiso3j"]/2.80+ds["amt1j"]/1.67+ds["amt2j"]/1.67+ds["amt3j"]/1.72+ds["amt4j"]/1.53+ds["amt5j"]/1.57+ds["amt6j"]/1.40+ds["amtno3j"]/1.90+ds["amthydj"]/1.54+ds["aglyj"]/2.13+ds["asqtj"]/1.52+ds["aorgcj"]/2.00+ds["aolgbj"]/2.10+ds["aolgaj"]/2.50+ds["alvoo1j"]/2.27+ds["alvoo2j"]/2.06+ds["asvoo1j"]/1.88+ds["asvoo2j"]/1.73+ds["asvoo3j"]/1.60+ds["aavb1j"]/2.70+ds["aavb2j"]/2.35+ds["aavb3j"]/2.17+ds["aavb4j"]/1.99+ds["apcsoj"]/2.00)*ds["air_density"]
+    ds["socj"].attrs["long_name"] = "Secondary Organic Carbon j-mode"
+    ds["socj"].attrs["units"] = "ug/m3"
+
+    LOGGER("Calculate SOC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
+    ds["soc"] = ds["soci"] + ds["socj"]
+    ds["soc"].attrs["long_name"] = "Secondary Organic Carbon (i+j)"
+    ds["soc"].attrs["units"] = "ug/m3"
+
+    LOGGER("Calculate PM2.5 OC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)")
+    ds["pm25_oc"] = (ds["poci"] + ds["soci"])*ds["pm25at"]+(ds["pocj"] + ds["socj"])*ds["pm25ac"]
+    ds["pm25_oc"].attrs["long_name"] = "PM25 Organic Carbon (i+j)"
+    ds["pm25_oc"].attrs["units"] = "ug/m3"
+
+    ds = ds.compute()
+
+    dyn_dataset.close()
+    phy_dataset.close()
+
+    return ds
+
+
+def open_dataset(ctx: PM_PrepContext, target: str) -> xr.Dataset:
+    path = getattr(ctx, target)
+    LOGGER(f"Load {path}")
+    ds = xr.open_dataset(path, chunks=ctx.chunks)
+    ds = ds.isel(t=slice(0, 1))
+    if ctx.chunks == "auto":
+        ds.chunk(ctx.chunks)
+    return ds
+
+
+def run_pm_preprocess_computation(pm_prep_ctx) -> xr.Dataset:
+    dask.config.set(scheduler="threads", num_workers=pm_prep_ctx.dask_num_workers)
+    result = pm_prep(pm_prep_ctx).compute()
+    return result

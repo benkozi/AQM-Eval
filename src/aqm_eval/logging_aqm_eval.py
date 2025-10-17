@@ -7,23 +7,12 @@ import time
 from enum import StrEnum, unique
 from typing import Callable, ParamSpec, TypeVar
 
+from aqm_eval.settings import SETTINGS, LogLevel
+
 _PROJECT_NAME = "aqm-eval"
 
 
-@unique
-class LogLevel(StrEnum):
-    """Log level enum. Used to wrap standard `logging` levels.
 
-    Attributes
-    ----------
-    INFO : str
-        Equivalent to `logging.INFO`.
-    DEBUG : str
-        Equivalent to `logging.DEBUG`.
-    """
-
-    INFO = "info"
-    DEBUG = "debug"
 
 
 class LoggerWrapper:
@@ -136,7 +125,8 @@ class LoggerWrapper:
 
 
 LOGGER = LoggerWrapper()
-LOGGER.initialize(log_level=LogLevel.DEBUG)
+LOGGER.initialize(log_level=SETTINGS.aqm_eval_log_level)
+LOGGER(f"{SETTINGS=}")
 
 
 P = ParamSpec("P")

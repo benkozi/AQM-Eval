@@ -1,4 +1,5 @@
 import logging
+import subprocess
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -47,3 +48,8 @@ def assert_directory_exists(path: Path | str) -> PathExisting:
     if not path.is_dir():
         LOGGER(exc_info=ValueError(f"path is not a directory: {path}"))
     return path
+
+
+def ncdump(path: Path) -> None:
+    result = subprocess.check_output(["ncdump", "-h", str(path)])
+    print(result.decode())

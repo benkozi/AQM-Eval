@@ -1,8 +1,11 @@
+from functools import cached_property
 from pathlib import Path
 from unittest.mock import Mock
 
 import melodies_monet  # type: ignore[import-untyped]
+import numpy as np
 import pytest
+import xarray as xr
 from pydantic import BaseModel
 from pytest_mock import MockerFixture
 
@@ -11,8 +14,9 @@ from aqm_eval.mm_eval.driver.package import (
     AbstractEvalPackage,
     PackageKey,
     TaskKey,
-    package_key_to_class,
+    package_key_to_class, PM_PrepContext, run_pm_preprocess_computation,
 )
+from aqm_eval.shared import PathExisting
 
 
 class MMEvalRunnerTestData(BaseModel):
@@ -120,3 +124,104 @@ def test_all_packages(mm_eval_runner_test_data: MMEvalRunnerTestData, mocker: Mo
     m_analysis.open_obs.assert_called_once()
     m_analysis.pair_data.assert_called_once()
     m_analysis.save_analysis.assert_called_once()
+
+
+class ContextForTest(BaseModel):
+    model_config = {"frozen": True}
+
+    root_dir: PathExisting
+
+    t_shp: int = 10
+    y_shp: int = 20
+    x_shp: int = 10
+
+    derived_varnames: tuple[str, ...] = ("air_density", "pm25_so4", "pm25_no3", "pm25_nh4", "pm25_ec", "poci", "pocj", "poc", "soc", "soci", "socj", "pm25_oc")
+
+    # @computed_field
+    # @cached_property
+    # def chunk(self) -> int:
+    #     return int(self.x_shp / 2)
+
+    # @cached_property
+    # def field_array(self) -> xr.DataArray:
+    #     shape = (self.y_shp, self.x_shp)
+    #     data = np.random.random(shape)
+    #     return xr.DataArray(data, dims=("y", "x"))
+
+    @cached_property
+    def pm_prep_ctx(self) -> PM_PrepContext:
+        dyn_path = self.root_dir / "dyn.nc"
+        self.dataset_dyn.to_netcdf(dyn_path)
+
+        phy_path = self.root_dir / "phy.nc"
+        self.dataset_phy.to_netcdf(phy_path)
+
+        return PM_PrepContext(out_path=self.root_dir / "out.nc",
+                              dyn_path=dyn_path,
+                              phy_path=phy_path,
+                              dask_num_workers=2, )
+
+    @cached_property
+    def dataset_dyn(self) -> xr.Dataset:
+        return xr.Dataset({ii: self.create_data_array(ii) for ii in PM_PrepContext.model_fields["dyn_varnames"].default})
+
+    @cached_property
+    def dataset_phy(self) -> xr.Dataset:
+        return xr.Dataset({ii: self.create_data_array(ii) for ii in PM_PrepContext.model_fields["phy_varnames"].default})
+
+    def create_data_array(self, name: str) -> xr.DataArray:
+        shape = (self.t_shp, self.y_shp, self.x_shp)
+        data = np.random.random(shape)
+        return xr.DataArray(data, name=name, dims=("t", "y", "x"))
+
+
+def test_run_pm_preprocess_computation(tmp_path: Path) -> None:
+    # kwds = dict(out_path = tmp_path / "out.nc",
+    # dyn_path = tmp_path / "dyn.nc",
+    # phy_path = tmp_path / "phy.nc",
+    #             chunks={"y": 500, "x": 500})
+    # pm_prep_ctx = PM_PrepContext.model_validate(kwds)
+    np.random.seed(0)
+
+    test_ctx = ContextForTest(root_dir=tmp_path)
+
+    # dask.config.set(scheduler="processes", num_workers=2)
+    # dask.config.set(scheduler="threads", num_workers=test_ctx.pm_prep_ctx.dask_num_workers)
+    # LOGGER(f"{dask.config.get('scheduler', default='not set')=}")
+    # LOGGER(f"{dask.config.get('num_workers', default='not set')=}")
+    # LOGGER(f"{dask.config.get('num_threads', default='not set')=}")
+
+    # result = pm_prep(test_ctx.pm_prep_ctx).compute()
+
+    result = run_pm_preprocess_computation(test_ctx.pm_prep_ctx)
+
+    assert result.dims == {'t': 1, 'y': test_ctx.y_shp, 'x': test_ctx.x_shp}
+    assert set(result.data_vars) == set(test_ctx.pm_prep_ctx.dyn_varnames + test_ctx.pm_prep_ctx.phy_varnames + test_ctx.derived_varnames)
+    # print(result)
+    result.to_netcdf(test_ctx.pm_prep_ctx.out_path)
+    # ncdump(test_ctx.pm_prep_ctx.out_path)
+
+
+    # actual = ContextForTestFactory.build()
+
+    # actual = ContextForTest()
+    #
+    # # print(actual.field_array)
+    # # print(actual.dataset)
+    #
+    # actual.dataset.to_netcdf(path)
+    #
+    # dask.config.set(scheduler="processes", num_workers=8)
+    #
+    # ds = xr.open_dataset(path, chunks={"y":10, "x": 5})
+    # print(ds)
+    #
+    # # added = ds["field"] + 1
+    # # print(added)
+    #
+    # lazy = func(ds)
+    #
+    # print(lazy)
+    #
+    # result = lazy.compute()
+    # print(result)
