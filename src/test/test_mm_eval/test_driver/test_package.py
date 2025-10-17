@@ -195,15 +195,17 @@ def test_run_pm_preprocess_computation(tmp_path: Path) -> None:
 
     result = run_pm_preprocess_computation(test_ctx.pm_prep_ctx)
 
-    assert result.dims == {'t': 1, 'y': test_ctx.y_shp, 'x': test_ctx.x_shp}
+    assert result.dims == {'time': 1, 'y': test_ctx.y_shp, 'x': test_ctx.x_shp}
     assert set(result.data_vars) == set(test_ctx.pm_prep_ctx.dyn_varnames + test_ctx.pm_prep_ctx.phy_varnames + test_ctx.derived_varnames)
     # print(result)
     result.to_netcdf(test_ctx.pm_prep_ctx.out_path)
 
 def test_run_pm_preprocess_computation_gc6(tmp_path: Path) -> None:
 
+    dyn_path = Path("/gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/sandbox/srw/benkozi/mm-pkgs2/expt_dirs/aqm_AQMNA13km_AEROMMA_success/2023060112/dynf000.nc")
+    ncdump(dyn_path)
     pm_prep_ctx = PM_PrepContext(out_path=Path("/autofs/ncrc-svm1_home2/Benjamin.Koziol/htmp") / "out.nc",
-                          dyn_path=Path("/gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/sandbox/srw/benkozi/mm-pkgs2/expt_dirs/aqm_AQMNA13km_AEROMMA_success/2023060112/dynf000.nc"),
+                          dyn_path=dyn_path,
                           phy_path=Path("/gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/sandbox/srw/benkozi/mm-pkgs2/expt_dirs/aqm_AQMNA13km_AEROMMA_success/2023060112/phyf000.nc"),
                           dask_num_workers=100, )
 
