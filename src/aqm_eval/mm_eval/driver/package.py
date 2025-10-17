@@ -813,6 +813,7 @@ def open_dataset(ctx: PM_PrepContext, target: str) -> xr.Dataset:
     return ds
 
 
+@log_it
 def run_pm_preprocess_computation(pm_prep_ctx) -> xr.Dataset:
     dask.config.set(scheduler="threads", num_workers=pm_prep_ctx.dask_num_workers)
     result = pm_prep(pm_prep_ctx).compute()
