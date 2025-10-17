@@ -202,14 +202,18 @@ def test_run_pm_preprocess_computation(tmp_path: Path) -> None:
 
 def test_run_pm_preprocess_computation_gc6(tmp_path: Path) -> None:
 
-    dyn_path = Path("/gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/sandbox/srw/benkozi/mm-pkgs2/expt_dirs/aqm_AQMNA13km_AEROMMA_success/2023060112/dynf000.nc")
-    ncdump(dyn_path)
-    pm_prep_ctx = PM_PrepContext(out_path=Path("/autofs/ncrc-svm1_home2/Benjamin.Koziol/htmp") / "out.nc",
-                          dyn_path=dyn_path,
-                          phy_path=Path("/gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/sandbox/srw/benkozi/mm-pkgs2/expt_dirs/aqm_AQMNA13km_AEROMMA_success/2023060112/phyf000.nc"),
-                          dask_num_workers=100,
-                                 chunks={"grid_xt": 100, "grid_yt": 100})
+    for fhr in range(25):
+        fhr_str = f"{fhr:02d}"
+        dyn_path = Path(f"/gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/sandbox/srw/benkozi/mm-pkgs2/expt_dirs/aqm_AQMNA13km_AEROMMA_success/2023060112/dynf0{fhr_str}.nc")
+        if fhr == 0:
+            ncdump(dyn_path)
+        pm_prep_ctx = PM_PrepContext(out_path=Path("/autofs/ncrc-svm1_home2/Benjamin.Koziol/htmp") / f"out{fhr_str}.nc",
+                              dyn_path=dyn_path,
+                              phy_path=Path(f"/gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/sandbox/srw/benkozi/mm-pkgs2/expt_dirs/aqm_AQMNA13km_AEROMMA_success/2023060112/phyf0{fhr_str}"),
+                              dask_num_workers=100,
+                                     chunks={"grid_xt": 100, "grid_yt": 100})
 
-    result = run_pm_preprocess_computation(pm_prep_ctx)
-    result.to_netcdf(pm_prep_ctx.out_path)
-    ncdump(pm_prep_ctx.out_path)
+        result = run_pm_preprocess_computation(pm_prep_ctx)
+        result.to_netcdf(pm_prep_ctx.out_path)
+        if fhr == 0:
+            ncdump(pm_prep_ctx.out_path)
