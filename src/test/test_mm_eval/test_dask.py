@@ -2,7 +2,7 @@ import subprocess
 import time
 from functools import cached_property
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Any
 
 import dask
 from polyfactory.factories.pydantic_factory import ModelFactory
@@ -174,6 +174,11 @@ def ncdump(path: Path) -> None:
     result = subprocess.check_output(["ncdump", "-h", str(path)])
     print(result.decode())
 
+def run_pm_preprocess_computation(pm_prep_ctx) -> xr.Dataset:
+    dask.config.set(scheduler="threads", num_workers=pm_prep_ctx.dask_num_workers)
+    result = pm_prep(pm_prep_ctx).compute()
+    return result
+
 
 def test(tmp_path: Path) -> None:
     # kwds = dict(out_path = tmp_path / "out.nc",
@@ -185,22 +190,20 @@ def test(tmp_path: Path) -> None:
     test_ctx = ContextForTest(root_dir=tmp_path)
 
     # dask.config.set(scheduler="processes", num_workers=2)
-    dask.config.set(scheduler="threads", num_workers=test_ctx.pm_prep_ctx.dask_num_workers)
+    # dask.config.set(scheduler="threads", num_workers=test_ctx.pm_prep_ctx.dask_num_workers)
     # LOGGER(f"{dask.config.get('scheduler', default='not set')=}")
     # LOGGER(f"{dask.config.get('num_workers', default='not set')=}")
     # LOGGER(f"{dask.config.get('num_threads', default='not set')=}")
 
-    result = pm_prep(test_ctx.pm_prep_ctx).compute()
+    # result = pm_prep(test_ctx.pm_prep_ctx).compute()
+
+    result = run_pm_preprocess_computation(test_ctx.pm_prep_ctx)
 
     assert result.dims == {'t': 1, 'y': test_ctx.y_shp, 'x': test_ctx.x_shp}
-
     assert set(result.data_vars) == set(test_ctx.pm_prep_ctx.dyn_varnames + test_ctx.pm_prep_ctx.phy_varnames + test_ctx.derived_varnames)
-
-    print(result)
-
+    # print(result)
     result.to_netcdf(test_ctx.pm_prep_ctx.out_path)
-
-    ncdump(test_ctx.pm_prep_ctx.out_path)
+    # ncdump(test_ctx.pm_prep_ctx.out_path)
 
 
     # actual = ContextForTestFactory.build()
