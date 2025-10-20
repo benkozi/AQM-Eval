@@ -2,18 +2,18 @@ from unittest.mock import Mock
 
 import melodies_monet  # type: ignore[import-untyped]
 import pytest
+import xarray as xr
 from pydantic import BaseModel
 from pytest_mock import MockerFixture
 
-import aqm_eval
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
 from aqm_eval.mm_eval.driver.package.core import (
+    AbstractDaskOperation,
     AbstractEvalPackage,
     PackageKey,
     TaskKey,
     package_key_to_class,
 )
-from test.test_mm_eval.test_driver.test_package.test_aqs_pm import fake_run_pm_preprocess_computation
 
 
 class MMEvalRunnerTestData(BaseModel):
@@ -21,6 +21,7 @@ class MMEvalRunnerTestData(BaseModel):
     ctx: SRWContext
     package_class: type[AbstractEvalPackage]
     expected_n_links: int
+    expected_n_dask_run_calls: int
 
 
 @pytest.fixture(params=tuple(PackageKey))
@@ -32,35 +33,42 @@ def package_key(request: pytest.FixtureRequest) -> PackageKey:
 def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool, package_key: PackageKey) -> MMEvalRunnerTestData:
     package_class = package_key_to_class(package_key)
     expected_n_links = 25 * 2  # 25 dynf hourly files * 2 cycle directories
+    expected_n_dask_run_calls = 0
 
     match package_key:
         case PackageKey.ISH:
             expected_n_links = 24 * 2  # 24 dynf hourly files * 2 cycle directories
+            expected_n_dask_run_calls = 24 * 2  # 24 dynf/phyf hourly files * 2 cycle directories
         case PackageKey.AQS_PM:
             expected_n_links = 24 * 2  # 24 dynf hourly files * 2 cycle directories
+            expected_n_dask_run_calls = 24 * 2  # 24 dynf/phyf hourly files * 2 cycle directories
 
     if use_base_model:
         # Two model adjustment
         expected_n_links *= 2
+        expected_n_dask_run_calls *= 2
 
     return MMEvalRunnerTestData(
         expected_n_links=expected_n_links,
         ctx=srw_context,
         package_class=package_class,
+        expected_n_dask_run_calls=expected_n_dask_run_calls,
     )
+
+
+def fake_run(self: AbstractDaskOperation) -> xr.Dataset:
+    assert not self.ctx.out_path.exists()
+    self.ctx.out_path.touch()
+    return xr.Dataset()
 
 
 def test_all_packages(mm_eval_runner_test_data: MMEvalRunnerTestData, mocker: MockerFixture) -> None:
     package = mm_eval_runner_test_data.package_class.model_validate(dict(ctx=mm_eval_runner_test_data.ctx))
 
-    # Mock for AQS PM --------------------------------------------------------------------------
+    # Mock for dask operations -----------------------------------------------------------------
 
-    _ = mocker.patch.object(
-        aqm_eval.mm_eval.driver.package.aqs_pm, "run_pm_preprocess_computation", fake_run_pm_preprocess_computation
-    )
-    _ = mocker.patch.object(
-        aqm_eval.mm_eval.driver.package.ish, "run_ish_preprocess_computation", fake_run_pm_preprocess_computation
-    )
+    m_dask_op_run = mocker.patch.object(AbstractDaskOperation, "run", fake_run)
+    spy_m_dask_op_run = mocker.spy(AbstractDaskOperation, "run")
 
     # Test initialize --------------------------------------------------------------------------
 
@@ -95,6 +103,8 @@ def test_all_packages(mm_eval_runner_test_data: MMEvalRunnerTestData, mocker: Mo
     m_analysis.open_obs.assert_called_once()
     m_analysis.pair_data.assert_called_once()
     m_analysis.save_analysis.assert_called_once()
+
+    assert spy_m_dask_op_run.call_count == mm_eval_runner_test_data.expected_n_dask_run_calls
 
 
 # def test_run_pm_preprocess_computation_gc6(tmp_path: Path) -> None:

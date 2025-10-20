@@ -5,7 +5,7 @@ import numpy as np
 import xarray as xr
 from pydantic import BaseModel
 
-from aqm_eval.mm_eval.driver.package.ish import ISH_PrepContext, run_ish_preprocess_computation
+from aqm_eval.mm_eval.driver.package.ish import ISH_PrepContext, ISH_PreprocessDaskOperation
 from aqm_eval.shared import PathExisting
 
 
@@ -59,7 +59,9 @@ class ContextForTest(BaseModel):
 def test_run_ish_preprocess_computation(tmp_path: Path) -> None:
     np.random.seed(0)
     test_ctx = ContextForTest(root_dir=tmp_path)
-    result = run_ish_preprocess_computation(test_ctx.prep_ctx)
+    op = ISH_PreprocessDaskOperation(ctx=test_ctx.prep_ctx)
+    result = op.run()
+    # result = run_ish_preprocess_computation(test_ctx.prep_ctx)
     expected_dims = test_ctx.dims
     assert result.dims == expected_dims
     expected_vars = set(result.data_vars)

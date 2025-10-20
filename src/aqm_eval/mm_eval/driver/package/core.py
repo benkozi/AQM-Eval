@@ -2,7 +2,7 @@
 
 import logging
 import subprocess
-from abc import ABC
+from abc import ABC, abstractmethod
 from enum import StrEnum, unique
 from functools import cached_property
 from pathlib import Path
@@ -355,6 +355,56 @@ class AbstractDaskOperationContext(ABC, BaseModel):
     phy_varnames: tuple[str, ...]
 
 
+class AbstractDaskOperation(ABC, BaseModel):
+    model_config = {"frozen": True}
+
+    ctx: AbstractDaskOperationContext
+
+    def run(self) -> xr.Dataset:
+        ctx = self.ctx
+        dask.config.set(scheduler="threads", num_workers=ctx.dask_num_workers)
+        local_log_level = logging.DEBUG
+
+        phy_dataset = self._open_dataset_("phy_path")
+        dyn_dataset = self._open_dataset_("dyn_path")
+
+        try:
+            LOGGER("Create the combined dataset from physics and dynamics", level=local_log_level)
+            new_fields_dyn = {ii: dyn_dataset[ii] for ii in ctx.dyn_varnames}
+            new_fields_phy = {ii: phy_dataset[ii] for ii in ctx.phy_varnames}
+            new_fields = {**new_fields_dyn, **new_fields_phy}
+            ds = xr.Dataset(new_fields)
+
+            ds.attrs = dyn_dataset.attrs
+
+            ds = self._compute_derived_fields_(ds)
+
+            ds = ds.compute()
+        finally:
+            dyn_dataset.close()
+            phy_dataset.close()
+
+        LOGGER(f"Save the combined dataset: {ctx.out_path}", level=local_log_level)
+        ds.to_netcdf(ctx.out_path)
+
+        return ds
+
+    @dask.delayed
+    @abstractmethod
+    def _compute_derived_fields_(self, ds: xr.Dataset) -> xr.Dataset: ...
+
+    def _open_dataset_(self, target: str) -> xr.Dataset:
+        ctx = self.ctx
+        path = getattr(ctx, target)
+        LOGGER(f"Load {path}", level=logging.DEBUG)
+        ds = xr.open_dataset(path, chunks=ctx.chunks)
+        # ds = ds.isel(pfull=slice(0, 1))
+        LOGGER(f"{ds.dims=}", level=logging.DEBUG)
+        if ctx.chunks == "auto":
+            ds = ds.chunk(ctx.chunks)
+        return ds
+
+
 def package_key_to_class(key: PackageKey) -> type[AbstractEvalPackage]:
     from .aqs_pm import AQS_PM_EvalPackage
     from .aqs_voc import AQS_VOC_EvalPackage
@@ -368,14 +418,3 @@ def package_key_to_class(key: PackageKey) -> type[AbstractEvalPackage]:
         PackageKey.AQS_VOC: AQS_VOC_EvalPackage,
     }
     return mapping[key]
-
-
-def open_dataset(ctx: AbstractDaskOperationContext, target: str) -> xr.Dataset:
-    path = getattr(ctx, target)
-    LOGGER(f"Load {path}", level=logging.DEBUG)
-    ds = xr.open_dataset(path, chunks=ctx.chunks)
-    # ds = ds.isel(pfull=slice(0, 1))
-    LOGGER(f"{ds.dims=}", level=logging.DEBUG)
-    if ctx.chunks == "auto":
-        ds = ds.chunk(ctx.chunks)
-    return ds
