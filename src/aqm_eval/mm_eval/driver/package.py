@@ -391,93 +391,73 @@ class ISH_EvalPackage(AbstractEvalPackage):
             https://library.wmo.int/records/item/41650-guide-to-instruments-and-methods-of-observation
             https://sgichuki.github.io/Atmo/
         """
-        for model in self.mm_models:
-            prefix = model.prefix
-            out_dir = model.link_alldays_path
-            expt_dir = model.expt_dir
+        for spec in self.iter_forecast_file_specs():
+            f_dyn = spec.dyn_path
+            f_phy = spec.phy_path
+            f_out = spec.out_path
 
-            # Get directory list
-            dirlist = []
-            for dir_pattern in model.cycle_dir_template:
-                dirlist += sorted([d for d in expt_dir.glob(dir_pattern) if d.is_dir()])
+            # Define ncap2 commands to run
+            ncap2_commands = (
+                # Initial ncap2 call (creates output file)
+                ["-v", "-s", "time_iso = time_iso", str(f_dyn), str(f_out)],
+                # Subsequent ncap2 calls with -A flag (append mode)
+                ["-A", "-v", "-s", "lat = lat", str(f_dyn), str(f_out)],
+                ["-A", "-v", "-s", "lon = lon", str(f_dyn), str(f_out)],
+                ["-A", "-v", "-s", "pfull = pfull", str(f_dyn), str(f_out)],
+                ["-A", "-v", "-s", "phalf = phalf", str(f_dyn), str(f_out)],
+                ["-A", "-v", "-s", "delz = delz", str(f_dyn), str(f_out)],
+                ["-A", "-v", "-s", "dpres = dpres", str(f_dyn), str(f_out)],
+                ["-A", "-v", "-s", "hgtsfc = hgtsfc", str(f_dyn), str(f_out)],
+                ["-A", "-v", "-s", "pressfc = pressfc", str(f_dyn), str(f_out)],
+                ["-A", "-v", "-s", "tmp = tmp", str(f_dyn), str(f_out)],
+                ["-A", "-v", "-s", "tmp2m = tmp2m", str(f_phy), str(f_out)],
+                [
+                    "-A",
+                    "-v",
+                    "-s",
+                    "vapor = (spfh2m / (1 - spfh2m)) * pressfc / (0.622 + spfh2m / (1 - spfh2m))",
+                    "-s",
+                    'vapor@long_name="2 meter water vapor pressure"; vapor@units="Pa"',
+                    str(f_phy),
+                    str(f_out),
+                ],
+                [
+                    "-A",
+                    "-v",
+                    "-s",
+                    "dew_temp = (243.5 * ln((vapor / 100) / 6.112)) / (17.269 - ln((vapor / 100) / 6.112))",
+                    "-s",
+                    'dew_temp@long_name="2 meter dew point temperature"; dew_temp@units="C"',
+                    str(f_out),
+                    str(f_out),
+                ],
+                [
+                    "-A",
+                    "-v",
+                    "-s",
+                    "ws10m = sqrt(ugrd10m * ugrd10m + vgrd10m * vgrd10m)",
+                    "-s",
+                    'ws10m@long_name="10 meter wind speed"; ws10m@units="m/s"',
+                    str(f_phy),
+                    str(f_out),
+                ],
+                [
+                    "-A",
+                    "-v",
+                    "-s",
+                    "wd10m = 270 - (atan2(vgrd10m, ugrd10m) * 180 / 3.1415)",
+                    "-s",
+                    "where(wd10m > 360) wd10m = wd10m - 360",
+                    "-s",
+                    'wd10m@long_name="10 meter wind direction"; wd10m@units="degree"',
+                    str(f_phy),
+                    str(f_out),
+                ],
+            )
 
-            if len(dirlist) == 0:
-                msg = f"no cycle directories found in {expt_dir=}"
-                LOGGER(msg, exc_info=ValueError(msg))
-
-            for dir_path in dirlist:
-                dir_name = dir_path.name
-
-                for fhr in range(1, 25):
-                    fhr_str = f"{fhr:02d}"
-                    f_phy = dir_path / f"phyf0{fhr_str}.nc"
-                    assert_file_exists(f_phy)
-                    f_dyn = dir_path / f"dynf0{fhr_str}.nc"
-                    assert_file_exists(f_dyn)
-                    f_out = out_dir / f"{prefix}_{dir_name}_f0{fhr_str}.nc"
-
-                    # Define ncap2 commands to run
-                    ncap2_commands = (
-                        # Initial ncap2 call (creates output file)
-                        ["-v", "-s", "time_iso = time_iso", str(f_dyn), str(f_out)],
-                        # Subsequent ncap2 calls with -A flag (append mode)
-                        ["-A", "-v", "-s", "lat = lat", str(f_dyn), str(f_out)],
-                        ["-A", "-v", "-s", "lon = lon", str(f_dyn), str(f_out)],
-                        ["-A", "-v", "-s", "pfull = pfull", str(f_dyn), str(f_out)],
-                        ["-A", "-v", "-s", "phalf = phalf", str(f_dyn), str(f_out)],
-                        ["-A", "-v", "-s", "delz = delz", str(f_dyn), str(f_out)],
-                        ["-A", "-v", "-s", "dpres = dpres", str(f_dyn), str(f_out)],
-                        ["-A", "-v", "-s", "hgtsfc = hgtsfc", str(f_dyn), str(f_out)],
-                        ["-A", "-v", "-s", "pressfc = pressfc", str(f_dyn), str(f_out)],
-                        ["-A", "-v", "-s", "tmp = tmp", str(f_dyn), str(f_out)],
-                        ["-A", "-v", "-s", "tmp2m = tmp2m", str(f_phy), str(f_out)],
-                        [
-                            "-A",
-                            "-v",
-                            "-s",
-                            "vapor = (spfh2m / (1 - spfh2m)) * pressfc / (0.622 + spfh2m / (1 - spfh2m))",
-                            "-s",
-                            'vapor@long_name="2 meter water vapor pressure"; vapor@units="Pa"',
-                            str(f_phy),
-                            str(f_out),
-                        ],
-                        [
-                            "-A",
-                            "-v",
-                            "-s",
-                            "dew_temp = (243.5 * ln((vapor / 100) / 6.112)) / (17.269 - ln((vapor / 100) / 6.112))",
-                            "-s",
-                            'dew_temp@long_name="2 meter dew point temperature"; dew_temp@units="C"',
-                            str(f_out),
-                            str(f_out),
-                        ],
-                        [
-                            "-A",
-                            "-v",
-                            "-s",
-                            "ws10m = sqrt(ugrd10m * ugrd10m + vgrd10m * vgrd10m)",
-                            "-s",
-                            'ws10m@long_name="10 meter wind speed"; ws10m@units="m/s"',
-                            str(f_phy),
-                            str(f_out),
-                        ],
-                        [
-                            "-A",
-                            "-v",
-                            "-s",
-                            "wd10m = 270 - (atan2(vgrd10m, ugrd10m) * 180 / 3.1415)",
-                            "-s",
-                            "where(wd10m > 360) wd10m = wd10m - 360",
-                            "-s",
-                            'wd10m@long_name="10 meter wind direction"; wd10m@units="degree"',
-                            str(f_phy),
-                            str(f_out),
-                        ],
-                    )
-
-                    # Execute all ncap2 commands
-                    for cmd in ncap2_commands:
-                        self._run_ncap2_cmd_(cmd)
+            # Execute all ncap2 commands
+            for cmd in ncap2_commands:
+                self._run_ncap2_cmd_(cmd)
 
 class PM_PrepContext(BaseModel):
     model_config = {"frozen": True}
