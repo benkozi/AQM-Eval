@@ -1,7 +1,6 @@
 """Defines package objects used when generating MM files. A package is a collection of tasks specfiic to an evaluation type."""
 
 import logging
-import subprocess
 from abc import ABC, abstractmethod
 from enum import StrEnum, unique
 from functools import cached_property
@@ -330,18 +329,6 @@ class AbstractEvalPackage(ABC, BaseModel):
             with open(curr_control_path, "w") as f:
                 f.write(config_yaml)
 
-    @staticmethod
-    def _run_ncap2_cmd_(cmd: list[str]) -> None:
-        local_cmd = ["ncap2"] + cmd
-        LOGGER(f"running ncap2 command: {local_cmd}")
-        subprocess.check_call(local_cmd)
-
-    @staticmethod
-    def _run_ncks_cmd_(cmd: list[str]) -> None:
-        local_cmd = ["ncks"] + cmd
-        LOGGER(f"running ncks command: {local_cmd}")
-        subprocess.check_call(local_cmd)
-
 
 class AbstractDaskOperation(ABC, BaseModel):
     model_config = {"frozen": True}
@@ -354,6 +341,7 @@ class AbstractDaskOperation(ABC, BaseModel):
 
     dyn_varnames: tuple[str, ...]
     phy_varnames: tuple[str, ...]
+    derived_varnames: tuple[str, ...]
 
     def run(self) -> xr.Dataset:
         dask.config.set(scheduler="threads", num_workers=self.dask_num_workers)
@@ -410,13 +398,16 @@ class AbstractDaskEvalPackage(AbstractEvalPackage):
     def _run_dask_operations_(self) -> None:
         for spec in self.iter_forecast_file_specs():
             op = self.klass_dask_operation.model_validate(
-                dict(out_path=spec.out_path,
-                dyn_path=spec.dyn_path,
-                phy_path=spec.phy_path,
-                dask_num_workers=SETTINGS.dask_num_workers,
-                chunks={"grid_xt": 100, "grid_yt": 100},)
+                dict(
+                    out_path=spec.out_path,
+                    dyn_path=spec.dyn_path,
+                    phy_path=spec.phy_path,
+                    dask_num_workers=SETTINGS.dask_num_workers,
+                    chunks={"grid_xt": 100, "grid_yt": 100},
+                )
             )
             op.run()
+
 
 def package_key_to_class(key: PackageKey) -> type[AbstractEvalPackage]:
     from .aqs_pm import AQS_PM_EvalPackage
@@ -424,7 +415,7 @@ def package_key_to_class(key: PackageKey) -> type[AbstractEvalPackage]:
     from .chem import ChemEvalPackage
     from .ish import ISH_EvalPackage
 
-    mapping = {
+    mapping: dict[PackageKey, type[AbstractEvalPackage]] = {
         PackageKey.CHEM: ChemEvalPackage,
         PackageKey.ISH: ISH_EvalPackage,
         PackageKey.AQS_PM: AQS_PM_EvalPackage,

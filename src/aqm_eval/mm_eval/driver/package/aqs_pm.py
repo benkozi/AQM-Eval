@@ -5,14 +5,13 @@ import dask
 import xarray as xr
 from pydantic import computed_field
 
-from aqm_eval.logging_aqm_eval import LOGGER, log_it
+from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.model import ModelRole
 from aqm_eval.mm_eval.driver.package.core import (
+    AbstractDaskEvalPackage,
     AbstractDaskOperation,
-    AbstractEvalPackage,
-    PackageKey, AbstractDaskEvalPackage,
+    PackageKey,
 )
-from aqm_eval.settings import SETTINGS
 
 
 class AQS_PM_PreprocessDaskOperation(AbstractDaskOperation):
@@ -86,6 +85,20 @@ class AQS_PM_PreprocessDaskOperation(AbstractDaskOperation):
         "pm25co",
     )
     phy_varnames: tuple[str, ...] = ("tmp2m",)
+    derived_varnames: tuple[str, ...] = (
+        "air_density",
+        "pm25_so4",
+        "pm25_no3",
+        "pm25_nh4",
+        "pm25_ec",
+        "poci",
+        "pocj",
+        "poc",
+        "soc",
+        "soci",
+        "socj",
+        "pm25_oc",
+    )
 
     @dask.delayed
     def _compute_derived_fields_(self, ds: xr.Dataset) -> xr.Dataset:

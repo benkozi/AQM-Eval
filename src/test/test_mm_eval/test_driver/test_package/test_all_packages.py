@@ -67,7 +67,7 @@ def test_all_packages(mm_eval_runner_test_data: MMEvalRunnerTestData, mocker: Mo
 
     # Mock for dask operations -----------------------------------------------------------------
 
-    m_dask_op_run = mocker.patch.object(AbstractDaskOperation, "run", fake_run)
+    _ = mocker.patch.object(AbstractDaskOperation, "run", fake_run)
     spy_m_dask_op_run = mocker.spy(AbstractDaskOperation, "run")
 
     # Test initialize --------------------------------------------------------------------------

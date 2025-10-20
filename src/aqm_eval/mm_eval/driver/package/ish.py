@@ -5,20 +5,19 @@ import dask.array
 import xarray as xr
 from pydantic import computed_field
 
-from aqm_eval.logging_aqm_eval import log_it
 from aqm_eval.mm_eval.driver.model import ModelRole
 from aqm_eval.mm_eval.driver.package.core import (
+    AbstractDaskEvalPackage,
     AbstractDaskOperation,
     PackageKey,
-    TaskKey, AbstractDaskEvalPackage,
+    TaskKey,
 )
 
 
-
 class ISH_PreprocessDaskOperation(AbstractDaskOperation):
-    dyn_varnames: tuple[str, ...] = ("time_iso", "lat", "lon", "pfull", "phalf", "delz", "dpres",
-                                     "hgtsfc", "pressfc", "tmp")
+    dyn_varnames: tuple[str, ...] = ("time_iso", "lat", "lon", "pfull", "phalf", "delz", "dpres", "hgtsfc", "pressfc", "tmp")
     phy_varnames: tuple[str, ...] = ("tmp2m", "spfh2m", "ugrd10m", "vgrd10m")
+    derived_varnames: tuple[str, ...] = ("vapor", "dew_temp", "ws10m", "wd10m")
 
     @dask.delayed
     def _compute_derived_fields_(self, ds: xr.Dataset) -> xr.Dataset:
@@ -80,11 +79,9 @@ class ISH_EvalPackage(AbstractDaskEvalPackage):
             TaskKey.STATS,
         )
 
-
-
-            # result = run_ish_preprocess_computation(ctx)
-            # LOGGER(f"writing processed file: {ctx.out_path}")
-            # result.to_netcdf(ctx.out_path)
+        # result = run_ish_preprocess_computation(ctx)
+        # LOGGER(f"writing processed file: {ctx.out_path}")
+        # result.to_netcdf(ctx.out_path)
 
 
 # @dask.delayed
