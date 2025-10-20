@@ -38,7 +38,7 @@ model_{{ mm_model.role.value }}_mapping:
   pm25_no3: 'NO3f'
   pm25_nh4: 'NH4+f'
   pm25_ec: 'ECf'
-  pm25_oc: 'OC_PM2.5_LC_TOT'
+  pm25_oc: 'OCPM2.5LCTOT'
 model_{{ mm_model.role.value }}_variables: "~"
 model_{{ mm_model.role.value }}_projection: "~"
 model_{{ mm_model.role.value }}_plot_kwargs:
@@ -98,7 +98,7 @@ obs_variables:
     vmax_plot: 5.0 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
     vdiff_plot: 1.0 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
     nlevels_plot: 20 #Opt number of levels used in colorbar for contourf plot.
-  OC_PM2.5_LC_TOT:
+  OCPM2.5LCTOT:
     unit_scale: 1 #Opt Scaling factor
     unit_scale_method: "*" # Multiply = '*' , Add = '+', subtract = '-', divide = '/'
     nan_value: -1.0 # Set this value to NaN
