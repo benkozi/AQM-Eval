@@ -195,8 +195,8 @@ class AbstractEvalPackage(ABC, BaseModel):
             for dir_pattern in model.cycle_dir_template:
                 dirlist += sorted([d for d in expt_dir.glob(dir_pattern) if d.is_dir()])
             if len(dirlist) == 0:
-                msg = f"no cycle directories found in {expt_dir=}"
-                LOGGER(msg, exc_info=ValueError(msg))
+
+                LOGGER(exc_info=ValueError(f"no cycle directories found in {expt_dir=}"))
             for dir_path in dirlist:
                 dir_name = dir_path.name
                 for fhr in range(1, 25):
