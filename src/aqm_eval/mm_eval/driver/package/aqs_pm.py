@@ -9,14 +9,13 @@ from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.model import ModelRole
 from aqm_eval.mm_eval.driver.package.core import (
     AbstractDaskOperation,
-    AbstractDaskOperationContext,
     AbstractEvalPackage,
-    PackageKey,
+    PackageKey, AbstractDaskEvalPackage,
 )
 from aqm_eval.settings import SETTINGS
 
 
-class PM_PrepContext(AbstractDaskOperationContext):
+class AQS_PM_PreprocessDaskOperation(AbstractDaskOperation):
     dyn_varnames: tuple[str, ...] = (
         "time_iso",
         "lat",
@@ -88,10 +87,18 @@ class PM_PrepContext(AbstractDaskOperationContext):
     )
     phy_varnames: tuple[str, ...] = ("tmp2m",)
 
-
-class AQS_PM_PreprocessDaskOperation(AbstractDaskOperation):
     @dask.delayed
     def _compute_derived_fields_(self, ds: xr.Dataset) -> xr.Dataset:
+        """
+        Extract/calculate PM variables from phy and dyn files.
+
+        References:
+            https://nco.sourceforge.net/nco.html#Examples-ncap2
+            https://unidata.github.io/MetPy/latest/api/generated/metpy.calc.dewpoint_from_specific_humidity.html
+            https://library.wmo.int/records/item/41650-guide-to-instruments-and-methods-of-observation
+            https://sgichuki.github.io/Atmo/
+        """
+
         local_log_level = logging.DEBUG
 
         LOGGER("Calculate Air Density near surface", level=local_log_level)
@@ -207,11 +214,12 @@ class AQS_PM_PreprocessDaskOperation(AbstractDaskOperation):
         return ds
 
 
-class AQS_PM_EvalPackage(AbstractEvalPackage):
+class AQS_PM_EvalPackage(AbstractDaskEvalPackage):
     """Defines a AQS PM evaluation package."""
 
     key: PackageKey = PackageKey.AQS_PM
     namelist_template: str = "namelist.aqs.pm.j2"
+    klass_dask_operation: type[AbstractDaskOperation] = AQS_PM_PreprocessDaskOperation
 
     @computed_field(description="Prefix for each model role.")
     @cached_property
@@ -219,31 +227,23 @@ class AQS_PM_EvalPackage(AbstractEvalPackage):
         # We need to differentiate these model prefixes due to transformations required for meteorological variables.
         return {ii: ii.value + "_pm" for ii in ModelRole}
 
-    def initialize(self) -> None:
-        super().initialize()
-        self._pm_conversion_()
-
-    @log_it
-    def _pm_conversion_(self) -> None:
-        """
-        Extract/calculate PM variables from phy and dyn files.
-
-        References:
-            https://nco.sourceforge.net/nco.html#Examples-ncap2
-            https://unidata.github.io/MetPy/latest/api/generated/metpy.calc.dewpoint_from_specific_humidity.html
-            https://library.wmo.int/records/item/41650-guide-to-instruments-and-methods-of-observation
-            https://sgichuki.github.io/Atmo/
-        """
-        for spec in self.iter_forecast_file_specs():
-            ctx = PM_PrepContext(
-                out_path=spec.out_path,
-                dyn_path=spec.dyn_path,
-                phy_path=spec.phy_path,
-                dask_num_workers=SETTINGS.dask_num_workers,
-                chunks={"grid_xt": 100, "grid_yt": 100},
-            )
-            op = AQS_PM_PreprocessDaskOperation(ctx=ctx)
-            op.run()
+    # def initialize(self) -> None:
+    #     super().initialize()
+    #     self._pm_conversion_()
+    #
+    # @log_it
+    # def _pm_conversion_(self) -> None:
+    #
+    #     for spec in self.iter_forecast_file_specs():
+    #         ctx = PM_PrepContext(
+    #             out_path=spec.out_path,
+    #             dyn_path=spec.dyn_path,
+    #             phy_path=spec.phy_path,
+    #             dask_num_workers=SETTINGS.dask_num_workers,
+    #             chunks={"grid_xt": 100, "grid_yt": 100},
+    #         )
+    #         op = AQS_PM_PreprocessDaskOperation(ctx=ctx)
+    #         op.run()
 
 
 # @dask.delayed

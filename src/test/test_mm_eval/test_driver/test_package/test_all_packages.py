@@ -57,8 +57,8 @@ def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool, pack
 
 
 def fake_run(self: AbstractDaskOperation) -> xr.Dataset:
-    assert not self.ctx.out_path.exists()
-    self.ctx.out_path.touch()
+    assert not self.out_path.exists()
+    self.out_path.touch()
     return xr.Dataset()
 
 

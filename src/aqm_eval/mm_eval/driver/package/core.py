@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field, computed_field
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.model import Model, ModelRole
+from aqm_eval.settings import SETTINGS
 from aqm_eval.shared import PathExisting, assert_file_exists, get_or_create_path
 
 
@@ -342,7 +343,7 @@ class AbstractEvalPackage(ABC, BaseModel):
         subprocess.check_call(local_cmd)
 
 
-class AbstractDaskOperationContext(ABC, BaseModel):
+class AbstractDaskOperation(ABC, BaseModel):
     model_config = {"frozen": True}
 
     out_path: Path
@@ -354,15 +355,8 @@ class AbstractDaskOperationContext(ABC, BaseModel):
     dyn_varnames: tuple[str, ...]
     phy_varnames: tuple[str, ...]
 
-
-class AbstractDaskOperation(ABC, BaseModel):
-    model_config = {"frozen": True}
-
-    ctx: AbstractDaskOperationContext
-
     def run(self) -> xr.Dataset:
-        ctx = self.ctx
-        dask.config.set(scheduler="threads", num_workers=ctx.dask_num_workers)
+        dask.config.set(scheduler="threads", num_workers=self.dask_num_workers)
         local_log_level = logging.DEBUG
 
         phy_dataset = self._open_dataset_("phy_path")
@@ -370,8 +364,8 @@ class AbstractDaskOperation(ABC, BaseModel):
 
         try:
             LOGGER("Create the combined dataset from physics and dynamics", level=local_log_level)
-            new_fields_dyn = {ii: dyn_dataset[ii] for ii in ctx.dyn_varnames}
-            new_fields_phy = {ii: phy_dataset[ii] for ii in ctx.phy_varnames}
+            new_fields_dyn = {ii: dyn_dataset[ii] for ii in self.dyn_varnames}
+            new_fields_phy = {ii: phy_dataset[ii] for ii in self.phy_varnames}
             new_fields = {**new_fields_dyn, **new_fields_phy}
             ds = xr.Dataset(new_fields)
 
@@ -384,8 +378,8 @@ class AbstractDaskOperation(ABC, BaseModel):
             dyn_dataset.close()
             phy_dataset.close()
 
-        LOGGER(f"Save the combined dataset: {ctx.out_path}", level=local_log_level)
-        ds.to_netcdf(ctx.out_path)
+        LOGGER(f"Save the combined dataset: {self.out_path}", level=local_log_level)
+        ds.to_netcdf(self.out_path)
 
         return ds
 
@@ -394,16 +388,35 @@ class AbstractDaskOperation(ABC, BaseModel):
     def _compute_derived_fields_(self, ds: xr.Dataset) -> xr.Dataset: ...
 
     def _open_dataset_(self, target: str) -> xr.Dataset:
-        ctx = self.ctx
-        path = getattr(ctx, target)
+        path = getattr(self, target)
         LOGGER(f"Load {path}", level=logging.DEBUG)
-        ds = xr.open_dataset(path, chunks=ctx.chunks)
+        ds = xr.open_dataset(path, chunks=self.chunks)
         # ds = ds.isel(pfull=slice(0, 1))
         LOGGER(f"{ds.dims=}", level=logging.DEBUG)
-        if ctx.chunks == "auto":
-            ds = ds.chunk(ctx.chunks)
+        if self.chunks == "auto":
+            ds = ds.chunk(self.chunks)
         return ds
 
+
+class AbstractDaskEvalPackage(AbstractEvalPackage):
+    klass_dask_operation: type[AbstractDaskOperation]
+
+    @log_it
+    def initialize(self) -> None:
+        super().initialize()
+        self._run_dask_operations_()
+
+    @log_it
+    def _run_dask_operations_(self) -> None:
+        for spec in self.iter_forecast_file_specs():
+            op = self.klass_dask_operation.model_validate(
+                dict(out_path=spec.out_path,
+                dyn_path=spec.dyn_path,
+                phy_path=spec.phy_path,
+                dask_num_workers=SETTINGS.dask_num_workers,
+                chunks={"grid_xt": 100, "grid_yt": 100},)
+            )
+            op.run()
 
 def package_key_to_class(key: PackageKey) -> type[AbstractEvalPackage]:
     from .aqs_pm import AQS_PM_EvalPackage

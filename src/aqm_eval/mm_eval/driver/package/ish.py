@@ -9,22 +9,29 @@ from aqm_eval.logging_aqm_eval import log_it
 from aqm_eval.mm_eval.driver.model import ModelRole
 from aqm_eval.mm_eval.driver.package.core import (
     AbstractDaskOperation,
-    AbstractDaskOperationContext,
-    AbstractEvalPackage,
     PackageKey,
-    TaskKey,
+    TaskKey, AbstractDaskEvalPackage,
 )
-from aqm_eval.settings import SETTINGS
 
-
-class ISH_PrepContext(AbstractDaskOperationContext):
-    dyn_varnames: tuple[str, ...] = ("time_iso", "lat", "lon", "pfull", "phalf", "delz", "dpres", "hgtsfc", "pressfc", "tmp")
-    phy_varnames: tuple[str, ...] = ("tmp2m", "spfh2m", "ugrd10m", "vgrd10m")
 
 
 class ISH_PreprocessDaskOperation(AbstractDaskOperation):
+    dyn_varnames: tuple[str, ...] = ("time_iso", "lat", "lon", "pfull", "phalf", "delz", "dpres",
+                                     "hgtsfc", "pressfc", "tmp")
+    phy_varnames: tuple[str, ...] = ("tmp2m", "spfh2m", "ugrd10m", "vgrd10m")
+
     @dask.delayed
     def _compute_derived_fields_(self, ds: xr.Dataset) -> xr.Dataset:
+        """
+        Extract/calculate necessary variables from phy files for ISH meteorological evaluation.
+
+        References:
+            https://nco.sourceforge.net/nco.html#Examples-ncap2
+            https://unidata.github.io/MetPy/latest/api/generated/metpy.calc.dewpoint_from_specific_humidity.html
+            https://library.wmo.int/records/item/41650-guide-to-instruments-and-methods-of-observation
+            https://sgichuki.github.io/Atmo/
+        """
+
         ds["vapor"] = (ds["spfh2m"] / (1 - ds["spfh2m"])) * ds["pressfc"] / (0.622 + ds["spfh2m"] / (1 - ds["spfh2m"]))
         ds["vapor"].attrs["long_name"] = "2 meter water vapor pressure"
         ds["vapor"].attrs["units"] = "Pa"
@@ -48,11 +55,12 @@ class ISH_PreprocessDaskOperation(AbstractDaskOperation):
         return ds
 
 
-class ISH_EvalPackage(AbstractEvalPackage):
+class ISH_EvalPackage(AbstractDaskEvalPackage):
     """Defines an ISH (Integrated Surface Hourly) meteorological evaluation package."""
 
     key: PackageKey = PackageKey.ISH
     namelist_template: str = "namelist.ish.j2"
+    klass_dask_operation: type[AbstractDaskOperation] = ISH_PreprocessDaskOperation
 
     @computed_field(description="Prefix for each model role.")
     @cached_property
@@ -72,31 +80,8 @@ class ISH_EvalPackage(AbstractEvalPackage):
             TaskKey.STATS,
         )
 
-    def initialize(self) -> None:
-        super().initialize()
-        self._ish_conversion_()
 
-    @log_it
-    def _ish_conversion_(self) -> None:
-        """
-        Extract/calculate necessary variables from phy files for ISH meteorological evaluation.
 
-        References:
-            https://nco.sourceforge.net/nco.html#Examples-ncap2
-            https://unidata.github.io/MetPy/latest/api/generated/metpy.calc.dewpoint_from_specific_humidity.html
-            https://library.wmo.int/records/item/41650-guide-to-instruments-and-methods-of-observation
-            https://sgichuki.github.io/Atmo/
-        """
-        for spec in self.iter_forecast_file_specs():
-            ctx = ISH_PrepContext(
-                out_path=spec.out_path,
-                dyn_path=spec.dyn_path,
-                phy_path=spec.phy_path,
-                dask_num_workers=SETTINGS.dask_num_workers,
-                chunks={"grid_xt": 100, "grid_yt": 100},
-            )
-            op = ISH_PreprocessDaskOperation(ctx=ctx)
-            op.run()
             # result = run_ish_preprocess_computation(ctx)
             # LOGGER(f"writing processed file: {ctx.out_path}")
             # result.to_netcdf(ctx.out_path)
