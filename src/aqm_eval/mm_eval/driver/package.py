@@ -6,7 +6,7 @@ from abc import ABC
 from enum import StrEnum, unique
 from functools import cached_property
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Iterator
 
 import cartopy  # type: ignore[import-untyped]
 import dask
@@ -52,6 +52,28 @@ class PackageKey(StrEnum):
     ISH = "ish"
     AQS_PM = "aqs_pm"
     AQS_VOC = "aqs_voc"
+
+
+class ForecastFileSpec(BaseModel):
+    src_dir: PathExisting
+    out_dir: PathExisting
+    out_prefix: str
+    forecast_hour: int = Field(ge=0, le=24)
+
+    @computed_field
+    @cached_property
+    def dyn_path(self) -> PathExisting:
+        return assert_file_exists(self.src_dir / f"dynf0{self.forecast_hour:02d}.nc")
+
+    @computed_field
+    @cached_property
+    def phy_path(self) -> PathExisting:
+        return assert_file_exists(self.src_dir / f"phyf0{self.forecast_hour:02d}.nc")
+
+    @computed_field
+    @cached_property
+    def out_path(self) -> Path:
+        return self.out_dir / f"{self.out_prefix}_f0{self.forecast_hour:02d}.nc"
 
 
 class AbstractEvalPackage(ABC, BaseModel):
@@ -165,6 +187,20 @@ class AbstractEvalPackage(ABC, BaseModel):
             loader=FileSystemLoader(searchpath=searchpath),
             undefined=StrictUndefined,
         )
+
+    def iter_forecast_file_specs(self) -> Iterator[ForecastFileSpec]:
+        for model in self.mm_models:
+            expt_dir = model.expt_dir
+            dirlist = []
+            for dir_pattern in model.cycle_dir_template:
+                dirlist += sorted([d for d in expt_dir.glob(dir_pattern) if d.is_dir()])
+            if len(dirlist) == 0:
+                msg = f"no cycle directories found in {expt_dir=}"
+                LOGGER(msg, exc_info=ValueError(msg))
+            for dir_path in dirlist:
+                dir_name = dir_path.name
+                for fhr in range(1, 25):
+                    yield ForecastFileSpec(src_dir=dir_path, out_dir=model.link_alldays_path, out_prefix=f"{model.prefix}_{dir_name}", forecast_hour=fhr)
 
     @log_it
     def initialize(self) -> None:
@@ -483,39 +519,16 @@ class AQS_PM_EvalPackage(AbstractEvalPackage):
             https://library.wmo.int/records/item/41650-guide-to-instruments-and-methods-of-observation
             https://sgichuki.github.io/Atmo/
         """
-        for model in self.mm_models:
-            prefix = model.prefix
-            out_dir = model.link_alldays_path
-            expt_dir = model.expt_dir
+        for spec in self.iter_forecast_file_specs():
 
-            # Get directory list
-            dirlist = []
-            for dir_pattern in model.cycle_dir_template:
-                dirlist += sorted([d for d in expt_dir.glob(dir_pattern) if d.is_dir()])
-
-            if len(dirlist) == 0:
-                msg = f"no cycle directories found in {expt_dir=}"
-                LOGGER(msg, exc_info=ValueError(msg))
-
-            for dir_path in dirlist:
-                dir_name = dir_path.name
-
-                for fhr in range(1, 25):
-                    fhr_str = f"{fhr:02d}"
-                    f_phy = dir_path / f"phyf0{fhr_str}.nc"
-                    assert_file_exists(f_phy)
-                    f_dyn = dir_path / f"dynf0{fhr_str}.nc"
-                    assert_file_exists(f_dyn)
-                    f_out = out_dir / f"{prefix}_{dir_name}_f0{fhr_str}.nc"
-
-                    pm_prep_ctx = PM_PrepContext(out_path=f_out,
-                              dyn_path=f_dyn,
-                              phy_path=f_phy,
-                              dask_num_workers=SETTINGS.dask_num_workers,
-                                                 chunks={"grid_xt": 100, "grid_yt": 100})
-                    result = run_pm_preprocess_computation(pm_prep_ctx)
-                    LOGGER(f"writing processed PM file: {pm_prep_ctx.out_path}")
-                    result.to_netcdf(pm_prep_ctx.out_path)
+            pm_prep_ctx = PM_PrepContext(out_path=spec.out_path,
+                      dyn_path=spec.dyn_path,
+                      phy_path=spec.phy_path,
+                      dask_num_workers=SETTINGS.dask_num_workers,
+                                         chunks={"grid_xt": 100, "grid_yt": 100})
+            result = run_pm_preprocess_computation(pm_prep_ctx)
+            LOGGER(f"writing processed PM file: {pm_prep_ctx.out_path}")
+            result.to_netcdf(pm_prep_ctx.out_path)
 
                     # Define ncap2 commands to run
                     # ncap2_commands_pre = (
