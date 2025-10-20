@@ -5,7 +5,7 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
-from aqm_eval.mm_eval.driver.package import PackageKey
+from aqm_eval.mm_eval.driver.package.core import PackageKey
 
 
 @pytest.fixture(params=[True, False], ids=lambda x: f"use_base_model={x}")
