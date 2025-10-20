@@ -9,6 +9,7 @@ import xarray as xr
 from pydantic import BaseModel
 from pytest_mock import MockerFixture
 
+import aqm_eval
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
 from aqm_eval.mm_eval.driver.package import (
     AbstractEvalPackage,
@@ -47,8 +48,8 @@ def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool, pack
             expected_ncap2_calls = 15 * 24 * 2  # 15 ncap2 calls * 24 hours * 2 cycle directories
         case PackageKey.AQS_PM:
             expected_n_links = 24 * 2  # 24 dynf hourly files * 2 cycle directories
-            expected_ncap2_calls = 23 * 24 * 2  # 15 ncap2 calls * 24 hours * 2 cycle directories
-            expected_ncks_calls = 2 * 24 * 2  # 2 ncks calls * 24 hours * 2 cycle directories
+            # expected_ncap2_calls = 23 * 24 * 2  # 15 ncap2 calls * 24 hours * 2 cycle directories
+            # expected_ncks_calls = 2 * 24 * 2  # 2 ncks calls * 24 hours * 2 cycle directories
 
     if use_base_model:
         # Two model adjustment
@@ -80,9 +81,18 @@ def fake_run_ncks_cmd(self: AbstractEvalPackage, cmd: list[str]) -> None:
     else:
         assert out_file.exists()
 
+def fake_run_pm_preprocess_computation(mm_prep_ctx: PM_PrepContext) -> xr.Dataset:
+    assert not mm_prep_ctx.out_path.exists()
+    mm_prep_ctx.out_path.touch()
+    return xr.Dataset()
+
 
 def test_all_packages(mm_eval_runner_test_data: MMEvalRunnerTestData, mocker: MockerFixture) -> None:
     package = mm_eval_runner_test_data.package_class.model_validate(dict(ctx=mm_eval_runner_test_data.ctx))
+
+    # Mock for AQS PM --------------------------------------------------------------------------
+
+    _ = mocker.patch.object(aqm_eval.mm_eval.driver.package, "run_pm_preprocess_computation", fake_run_pm_preprocess_computation)
 
     # Test initialize --------------------------------------------------------------------------
 
