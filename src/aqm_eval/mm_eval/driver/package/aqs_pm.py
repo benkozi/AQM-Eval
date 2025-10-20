@@ -112,16 +112,16 @@ class AQS_PM_EvalPackage(AbstractEvalPackage):
             https://sgichuki.github.io/Atmo/
         """
         for spec in self.iter_forecast_file_specs():
-            pm_prep_ctx = PM_PrepContext(
+            ctx = PM_PrepContext(
                 out_path=spec.out_path,
                 dyn_path=spec.dyn_path,
                 phy_path=spec.phy_path,
                 dask_num_workers=SETTINGS.dask_num_workers,
                 chunks={"grid_xt": 100, "grid_yt": 100},
             )
-            result = run_pm_preprocess_computation(pm_prep_ctx)
-            LOGGER(f"writing processed PM file: {pm_prep_ctx.out_path}")
-            result.to_netcdf(pm_prep_ctx.out_path)
+            result = run_pm_preprocess_computation(ctx)
+            LOGGER(f"writing processed file: {ctx.out_path}")
+            result.to_netcdf(ctx.out_path)
 
 
 @dask.delayed

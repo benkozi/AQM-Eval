@@ -1,10 +1,26 @@
+import logging
 from functools import cached_property
 
+import dask
+import dask.array
+import xarray as xr
 from pydantic import computed_field
 
-from aqm_eval.logging_aqm_eval import log_it
+from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.model import ModelRole
-from aqm_eval.mm_eval.driver.package.core import AbstractEvalPackage, PackageKey, TaskKey
+from aqm_eval.mm_eval.driver.package.core import (
+    AbstractDaskOperationContext,
+    AbstractEvalPackage,
+    PackageKey,
+    TaskKey,
+    open_dataset,
+)
+from aqm_eval.settings import SETTINGS
+
+
+class ISH_PrepContext(AbstractDaskOperationContext):
+    dyn_varnames: tuple[str, ...] = ("time_iso", "lat", "lon", "pfull", "phalf", "delz", "dpres", "hgtsfc", "pressfc", "tmp")
+    phy_varnames: tuple[str, ...] = ("tmp2m", "spfh2m", "ugrd10m", "vgrd10m")
 
 
 class ISH_EvalPackage(AbstractEvalPackage):
@@ -47,69 +63,61 @@ class ISH_EvalPackage(AbstractEvalPackage):
             https://sgichuki.github.io/Atmo/
         """
         for spec in self.iter_forecast_file_specs():
-            f_dyn = spec.dyn_path
-            f_phy = spec.phy_path
-            f_out = spec.out_path
-
-            # Define ncap2 commands to run
-            ncap2_commands = (
-                # Initial ncap2 call (creates output file)
-                ["-v", "-s", "time_iso = time_iso", str(f_dyn), str(f_out)],
-                # Subsequent ncap2 calls with -A flag (append mode)
-                ["-A", "-v", "-s", "lat = lat", str(f_dyn), str(f_out)],
-                ["-A", "-v", "-s", "lon = lon", str(f_dyn), str(f_out)],
-                ["-A", "-v", "-s", "pfull = pfull", str(f_dyn), str(f_out)],
-                ["-A", "-v", "-s", "phalf = phalf", str(f_dyn), str(f_out)],
-                ["-A", "-v", "-s", "delz = delz", str(f_dyn), str(f_out)],
-                ["-A", "-v", "-s", "dpres = dpres", str(f_dyn), str(f_out)],
-                ["-A", "-v", "-s", "hgtsfc = hgtsfc", str(f_dyn), str(f_out)],
-                ["-A", "-v", "-s", "pressfc = pressfc", str(f_dyn), str(f_out)],
-                ["-A", "-v", "-s", "tmp = tmp", str(f_dyn), str(f_out)],
-                ["-A", "-v", "-s", "tmp2m = tmp2m", str(f_phy), str(f_out)],
-                [
-                    "-A",
-                    "-v",
-                    "-s",
-                    "vapor = (spfh2m / (1 - spfh2m)) * pressfc / (0.622 + spfh2m / (1 - spfh2m))",
-                    "-s",
-                    'vapor@long_name="2 meter water vapor pressure"; vapor@units="Pa"',
-                    str(f_phy),
-                    str(f_out),
-                ],
-                [
-                    "-A",
-                    "-v",
-                    "-s",
-                    "dew_temp = (243.5 * ln((vapor / 100) / 6.112)) / (17.269 - ln((vapor / 100) / 6.112))",
-                    "-s",
-                    'dew_temp@long_name="2 meter dew point temperature"; dew_temp@units="C"',
-                    str(f_out),
-                    str(f_out),
-                ],
-                [
-                    "-A",
-                    "-v",
-                    "-s",
-                    "ws10m = sqrt(ugrd10m * ugrd10m + vgrd10m * vgrd10m)",
-                    "-s",
-                    'ws10m@long_name="10 meter wind speed"; ws10m@units="m/s"',
-                    str(f_phy),
-                    str(f_out),
-                ],
-                [
-                    "-A",
-                    "-v",
-                    "-s",
-                    "wd10m = 270 - (atan2(vgrd10m, ugrd10m) * 180 / 3.1415)",
-                    "-s",
-                    "where(wd10m > 360) wd10m = wd10m - 360",
-                    "-s",
-                    'wd10m@long_name="10 meter wind direction"; wd10m@units="degree"',
-                    str(f_phy),
-                    str(f_out),
-                ],
+            ctx = ISH_PrepContext(
+                out_path=spec.out_path,
+                dyn_path=spec.dyn_path,
+                phy_path=spec.phy_path,
+                dask_num_workers=SETTINGS.dask_num_workers,
+                chunks={"grid_xt": 100, "grid_yt": 100},
             )
+            result = run_ish_preprocess_computation(ctx)
+            LOGGER(f"writing processed file: {ctx.out_path}")
+            result.to_netcdf(ctx.out_path)
 
-            # Execute all ncap2 commands
-            for cmd in ncap2_commands:
-                self._run_ncap2_cmd_(cmd)
+
+@dask.delayed
+def ish_prep(ctx: AbstractDaskOperationContext) -> xr.Dataset:
+    local_log_level = logging.DEBUG
+
+    phy_dataset = open_dataset(ctx, "phy_path")
+    dyn_dataset = open_dataset(ctx, "dyn_path")
+
+    LOGGER("Create the combined dataset from physics and dynamics", level=local_log_level)
+    new_fields_dyn = {ii: dyn_dataset[ii] for ii in ctx.dyn_varnames}
+    new_fields_phy = {ii: phy_dataset[ii] for ii in ctx.phy_varnames}
+    new_fields = {**new_fields_dyn, **new_fields_phy}
+    ds = xr.Dataset(new_fields)
+
+    ds.attrs = dyn_dataset.attrs
+
+    ds["vapor"] = (ds["spfh2m"] / (1 - ds["spfh2m"])) * ds["pressfc"] / (0.622 + ds["spfh2m"] / (1 - ds["spfh2m"]))
+    ds["vapor"].attrs["long_name"] = "2 meter water vapor pressure"
+    ds["vapor"].attrs["units"] = "Pa"
+
+    ds["dew_temp"] = (243.5 * dask.array.log((ds["vapor"] / 100) / 6.112)) / (17.269 - dask.array.log((ds["vapor"] / 100) / 6.112))
+    ds["dew_temp"].attrs["long_name"] = "2 meter dew point temperature"
+    ds["dew_temp"].attrs["units"] = "C"
+
+    ds["ws10m"] = dask.array.sqrt(ds["ugrd10m"] * ds["ugrd10m"] + ds["vgrd10m"] * ds["vgrd10m"])
+    ds["ws10m"].attrs["long_name"] = "10 meter wind speed"
+    ds["ws10m"].attrs["units"] = "m/s"
+
+    ds["wd10m"] = 270 - (dask.array.arctan2(ds["vgrd10m"], ds["ugrd10m"]) * 180 / 3.1415)
+    ds["wd10m"].attrs["long_name"] = "10 meter wind direction"
+    ds["wd10m"].attrs["units"] = "degree"
+
+    ds["wd10m"] = xr.where(ds["wd10m"] > 360, ds["wd10m"] - 360, ds["wd10m"])
+
+    ds = ds.compute()
+
+    dyn_dataset.close()
+    phy_dataset.close()
+
+    return ds
+
+
+@log_it
+def run_ish_preprocess_computation(ctx: AbstractDaskOperationContext) -> xr.Dataset:
+    dask.config.set(scheduler="threads", num_workers=ctx.dask_num_workers)
+    result = ish_prep(ctx).compute()
+    return result
