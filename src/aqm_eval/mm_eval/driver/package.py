@@ -6,7 +6,7 @@ from abc import ABC
 from enum import StrEnum, unique
 from functools import cached_property
 from pathlib import Path
-from typing import Literal, Iterator
+from typing import Iterator, Literal
 
 import cartopy  # type: ignore[import-untyped]
 import dask
@@ -22,7 +22,7 @@ from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.model import Model, ModelRole
 from aqm_eval.settings import SETTINGS
-from aqm_eval.shared import assert_file_exists, get_or_create_path, PathExisting
+from aqm_eval.shared import PathExisting, assert_file_exists, get_or_create_path
 
 
 @unique
@@ -195,12 +195,16 @@ class AbstractEvalPackage(ABC, BaseModel):
             for dir_pattern in model.cycle_dir_template:
                 dirlist += sorted([d for d in expt_dir.glob(dir_pattern) if d.is_dir()])
             if len(dirlist) == 0:
-
                 LOGGER(exc_info=ValueError(f"no cycle directories found in {expt_dir=}"))
             for dir_path in dirlist:
                 dir_name = dir_path.name
                 for fhr in range(1, 25):
-                    yield ForecastFileSpec(src_dir=dir_path, out_dir=model.link_alldays_path, out_prefix=f"{model.prefix}_{dir_name}", forecast_hour=fhr)
+                    yield ForecastFileSpec(
+                        src_dir=dir_path,
+                        out_dir=model.link_alldays_path,
+                        out_prefix=f"{model.prefix}_{dir_name}",
+                        forecast_hour=fhr,
+                    )
 
     @log_it
     def initialize(self) -> None:
@@ -459,7 +463,8 @@ class ISH_EvalPackage(AbstractEvalPackage):
             for cmd in ncap2_commands:
                 self._run_ncap2_cmd_(cmd)
 
-class PM_PrepContext(BaseModel):
+
+class AbstractDaskOperationContext(ABC, BaseModel):
     model_config = {"frozen": True}
 
     out_path: Path
@@ -468,7 +473,80 @@ class PM_PrepContext(BaseModel):
     dask_num_workers: int
     chunks: dict[str, int] | Literal["auto"] = "auto"
 
-    dyn_varnames: tuple[str, ...] = ("time_iso", "lat", "lon", "pfull", "phalf", "delz", "dpres", "hgtsfc", "pressfc", "tmp", "aso4i","aso4j","aso4k","ano3i","ano3j","ano3k","anh4i","anh4j","anh4k","aeci","aecj","aorgcj","aothri","aothrj","alvpo1i","alvpo1j","asvpo1i","asvpo1j","asvpo2i","asvpo2j","asvpo3j","aivpo1j","apoci","apocj","alvoo1i","alvoo2i","asvoo1i","asvoo2i","aiso1j","aiso2j","aiso3j","amt1j","amt2j","amt3j","amt4j","amt5j","amt6j","amtno3j","amthydj","aglyj","asqtj","aorgcj","aolgbj","aolgaj","alvoo1j","alvoo2j","asvoo1j","asvoo2j","asvoo3j","aavb1j","aavb2j","aavb3j","aavb4j","apcsoj", "pm25at", "pm25ac", "pm25co")
+    dyn_varnames: tuple[str, ...]
+    phy_varnames: tuple[str, ...]
+
+
+class PM_PrepContext(AbstractDaskOperationContext):
+    dyn_varnames: tuple[str, ...] = (
+        "time_iso",
+        "lat",
+        "lon",
+        "pfull",
+        "phalf",
+        "delz",
+        "dpres",
+        "hgtsfc",
+        "pressfc",
+        "tmp",
+        "aso4i",
+        "aso4j",
+        "aso4k",
+        "ano3i",
+        "ano3j",
+        "ano3k",
+        "anh4i",
+        "anh4j",
+        "anh4k",
+        "aeci",
+        "aecj",
+        "aorgcj",
+        "aothri",
+        "aothrj",
+        "alvpo1i",
+        "alvpo1j",
+        "asvpo1i",
+        "asvpo1j",
+        "asvpo2i",
+        "asvpo2j",
+        "asvpo3j",
+        "aivpo1j",
+        "apoci",
+        "apocj",
+        "alvoo1i",
+        "alvoo2i",
+        "asvoo1i",
+        "asvoo2i",
+        "aiso1j",
+        "aiso2j",
+        "aiso3j",
+        "amt1j",
+        "amt2j",
+        "amt3j",
+        "amt4j",
+        "amt5j",
+        "amt6j",
+        "amtno3j",
+        "amthydj",
+        "aglyj",
+        "asqtj",
+        "aorgcj",
+        "aolgbj",
+        "aolgaj",
+        "alvoo1j",
+        "alvoo2j",
+        "asvoo1j",
+        "asvoo2j",
+        "asvoo3j",
+        "aavb1j",
+        "aavb2j",
+        "aavb3j",
+        "aavb4j",
+        "apcsoj",
+        "pm25at",
+        "pm25ac",
+        "pm25co",
+    )
     phy_varnames: tuple[str, ...] = ("tmp2m",)
 
 
@@ -500,183 +578,184 @@ class AQS_PM_EvalPackage(AbstractEvalPackage):
             https://sgichuki.github.io/Atmo/
         """
         for spec in self.iter_forecast_file_specs():
-
-            pm_prep_ctx = PM_PrepContext(out_path=spec.out_path,
-                      dyn_path=spec.dyn_path,
-                      phy_path=spec.phy_path,
-                      dask_num_workers=SETTINGS.dask_num_workers,
-                                         chunks={"grid_xt": 100, "grid_yt": 100})
+            pm_prep_ctx = PM_PrepContext(
+                out_path=spec.out_path,
+                dyn_path=spec.dyn_path,
+                phy_path=spec.phy_path,
+                dask_num_workers=SETTINGS.dask_num_workers,
+                chunks={"grid_xt": 100, "grid_yt": 100},
+            )
             result = run_pm_preprocess_computation(pm_prep_ctx)
             LOGGER(f"writing processed PM file: {pm_prep_ctx.out_path}")
             result.to_netcdf(pm_prep_ctx.out_path)
 
-                    # Define ncap2 commands to run
-                    # ncap2_commands_pre = (
-                        # # Initial ncap2 call (creates output file)
-                        # ["-v", "-s", "time_iso = time_iso", str(f_dyn), str(f_out)],
-                        # # Subsequent ncap2 calls with -A flag (append mode)
-                        # ["-A", "-v", "-s", "lat = lat", str(f_dyn), str(f_out)],
-                        # ["-A", "-v", "-s", "lon = lon", str(f_dyn), str(f_out)],
-                        # ["-A", "-v", "-s", "pfull = pfull", str(f_dyn), str(f_out)],
-                        # ["-A", "-v", "-s", "phalf = phalf", str(f_dyn), str(f_out)],
-                        # ["-A", "-v", "-s", "delz = delz", str(f_dyn), str(f_out)],
-                        # ["-A", "-v", "-s", "dpres = dpres", str(f_dyn), str(f_out)],
-                        # ["-A", "-v", "-s", "hgtsfc = hgtsfc", str(f_dyn), str(f_out)],
-                        # ["-A", "-v", "-s", "pressfc = pressfc", str(f_dyn), str(f_out)],  # Unit=Pa
-                        # ["-A", "-v", "-s", "tmp = tmp", str(f_dyn), str(f_out)],  # Unit=K
-                        # ["-A", "-v", "-s", "tmp2m = tmp2m", str(f_phy), str(f_out)],  # Unit=K
-                        # # Calculate Air Density near surface
-                        # [
-                        #     "-A",
-                        #     "-v",
-                        #     "-s",
-                        #     "air_density = (28.97*(pressfc-dpres))/(8.314*tmp)",
-                        #     "-s",
-                        #     'air_density@long_name="air density"; air_density@units="g/m3"',
-                        #     str(f_out),
-                        # ],  # Unit = g/m3
-                    # )
+            # Define ncap2 commands to run
+            # ncap2_commands_pre = (
+            # # Initial ncap2 call (creates output file)
+            # ["-v", "-s", "time_iso = time_iso", str(f_dyn), str(f_out)],
+            # # Subsequent ncap2 calls with -A flag (append mode)
+            # ["-A", "-v", "-s", "lat = lat", str(f_dyn), str(f_out)],
+            # ["-A", "-v", "-s", "lon = lon", str(f_dyn), str(f_out)],
+            # ["-A", "-v", "-s", "pfull = pfull", str(f_dyn), str(f_out)],
+            # ["-A", "-v", "-s", "phalf = phalf", str(f_dyn), str(f_out)],
+            # ["-A", "-v", "-s", "delz = delz", str(f_dyn), str(f_out)],
+            # ["-A", "-v", "-s", "dpres = dpres", str(f_dyn), str(f_out)],
+            # ["-A", "-v", "-s", "hgtsfc = hgtsfc", str(f_dyn), str(f_out)],
+            # ["-A", "-v", "-s", "pressfc = pressfc", str(f_dyn), str(f_out)],  # Unit=Pa
+            # ["-A", "-v", "-s", "tmp = tmp", str(f_dyn), str(f_out)],  # Unit=K
+            # ["-A", "-v", "-s", "tmp2m = tmp2m", str(f_phy), str(f_out)],  # Unit=K
+            # # Calculate Air Density near surface
+            # [
+            #     "-A",
+            #     "-v",
+            #     "-s",
+            #     "air_density = (28.97*(pressfc-dpres))/(8.314*tmp)",
+            #     "-s",
+            #     'air_density@long_name="air density"; air_density@units="g/m3"',
+            #     str(f_out),
+            # ],  # Unit = g/m3
+            # )
 
-                    # # Append all PM2.5 species from Modes for AQS file out
-                    # ncks_cmd = [
-                    #     "-A",
-                    #     "-v",
-                    #     "aso4i,aso4j,aso4k,ano3i,ano3j,ano3k,anh4i,anh4j,anh4k,aeci,aecj,aorgcj,aothri,aothrj,alvpo1i,alvpo1j,asvpo1i,asvpo1j,asvpo2i,asvpo2j,asvpo3j,aivpo1j,apoci,apocj,alvoo1i,alvoo2i,asvoo1i,asvoo2i,aiso1j,aiso2j,aiso3j,amt1j,amt2j,amt3j,amt4j,amt5j,amt6j,amtno3j,amthydj,aglyj,asqtj,aorgcj,aolgbj,aolgaj,alvoo1j,alvoo2j,asvoo1j,asvoo2j,asvoo3j,aavb1j,aavb2j,aavb3j,aavb4j,apcsoj",
-                    #     str(f_dyn),
-                    #     str(f_out),
-                    # ]
-                    #
-                    # # Append all total PM2.5 fractions for AQS file out
-                    # ncks_cmd2 = ["-A", "-v", "pm25at,pm25ac,pm25co", str(f_dyn), str(f_out)]
+            # # Append all PM2.5 species from Modes for AQS file out
+            # ncks_cmd = [
+            #     "-A",
+            #     "-v",
+            #     "aso4i,aso4j,aso4k,ano3i,ano3j,ano3k,anh4i,anh4j,anh4k,aeci,aecj,aorgcj,aothri,aothrj,alvpo1i,alvpo1j,asvpo1i,asvpo1j,asvpo2i,asvpo2j,asvpo3j,aivpo1j,apoci,apocj,alvoo1i,alvoo2i,asvoo1i,asvoo2i,aiso1j,aiso2j,aiso3j,amt1j,amt2j,amt3j,amt4j,amt5j,amt6j,amtno3j,amthydj,aglyj,asqtj,aorgcj,aolgbj,aolgaj,alvoo1j,alvoo2j,asvoo1j,asvoo2j,asvoo3j,aavb1j,aavb2j,aavb3j,aavb4j,apcsoj",
+            #     str(f_dyn),
+            #     str(f_out),
+            # ]
+            #
+            # # Append all total PM2.5 fractions for AQS file out
+            # ncks_cmd2 = ["-A", "-v", "pm25at,pm25ac,pm25co", str(f_dyn), str(f_out)]
 
-                    # Additional ncap2 commands for PM2.5 species calculations (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                    # ncap2_commands_post = (
-                        # # calculate PM2.5 Sulfate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        # [
-                        #     "-A",
-                        #     "-v",
-                        #     "-s",
-                        #     "pm25_so4 = 0.001*(aso4i*pm25at+aso4j*pm25ac+aso4k*pm25co)*air_density",
-                        #     "-s",
-                        #     'pm25_so4@long_name="PM25 Sulfate"; pm25_so4@units="ug/m3"',
-                        #     str(f_out),
-                        # ],  # Unit = ug/m3
-                        # # calculate PM2.5 Nitrate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        # [
-                        #     "-A",
-                        #     "-v",
-                        #     "-s",
-                        #     "pm25_no3 = 0.001*(ano3i*pm25at+ano3j*pm25ac+ano3k*pm25co)*air_density",
-                        #     "-s",
-                        #     'pm25_no3@long_name="PM25 Nitrate"; pm25_no3@units="ug/m3"',
-                        #     str(f_out),
-                        # ],  # Unit = ug/m3
-                        # # calculate PM2.5 Ammonium for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        # [
-                        #     "-A",
-                        #     "-v",
-                        #     "-s",
-                        #     "pm25_nh4 = 0.001*(anh4i*pm25at+anh4j*pm25ac+anh4k*pm25co)*air_density",
-                        #     "-s",
-                        #     'pm25_nh4@long_name="PM25 Ammonium"; pm25_nh4@units="ug/m3"',
-                        #     str(f_out),
-                        # ],  # Unit = ug/m3
-                        # # calculate PM2.5 Elemental Carbon for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        # [
-                        #     "-A",
-                        #     "-v",
-                        #     "-s",
-                        #     "pm25_ec = 0.001*(aeci*pm25at+aecj*pm25ac)*air_density",
-                        #     "-s",
-                        #     'pm25_ec@long_name="PM25 Elemental Carbon"; pm25_ec@units="ug/m3"',
-                        #     str(f_out),
-                        # ],  # Unit = ug/m3
-                        # # calculate POC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        # [
-                        #     "-A",
-                        #     "-v",
-                        #     "-s",
-                        #     "poci = 0.001*(alvpo1i/1.39+asvpo1i/1.32+asvpo2i/1.26+apoci)*air_density",
-                        #     "-s",
-                        #     'poci@long_name="Primary Organic Carbon i-mode"; poci@units="ug/m3"',
-                        #     str(f_out),
-                        # ],  # Unit = ug/m3
-                        # # calculate POC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        # [
-                        #     "-A",
-                        #     "-v",
-                        #     "-s",
-                        #     "pocj = 0.001*(alvpo1j/1.39+asvpo1j/1.32+asvpo2j/1.26+asvpo3j/1.21+aivpo1j/1.17+apocj)*air_density",
-                        #     "-s",
-                        #     'pocj@long_name="Primary Organic Carbon j-mode"; pocj@units="ug/m3"',
-                        #     str(f_out),
-                        # ],  # Unit = ug/m3
-                        # # calculate POC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        # [
-                        #     "-A",
-                        #     "-v",
-                        #     "-s",
-                        #     "poc = poci + pocj",
-                        #     "-s",
-                        #     'poc@long_name="Primary Organic Carbon (i+j)"; poc@units="ug/m3"',
-                        #     str(f_out),
-                        # ],  # Unit = ug/m3
-                        # # calculate SOC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        # [
-                        #     "-A",
-                        #     "-v",
-                        #     "-s",
-                        #     "soci = 0.001*(alvoo1i/2.27+alvoo2i/2.06+asvoo1i/1.88+asvoo2i/1.73)*air_density",
-                        #     "-s",
-                        #     'soci@long_name="Secondary Organic Carbon i-mode"; soci@units="ug/m3"',
-                        #     str(f_out),
-                        # ],  # Unit = ug/m3
-                        # # calculate SOC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        # [
-                        #     "-A",
-                        #     "-v",
-                        #     "-s",
-                        #     "socj = 0.001*(aiso1j/2.20+aiso2j/2.23+aiso3j/2.80+amt1j/1.67+amt2j/1.67+amt3j/1.72+"
-                        #     "amt4j/1.53+amt5j/1.57+amt6j/1.40+amtno3j/1.90+amthydj/1.54+aglyj/2.13+asqtj/1.52+"
-                        #     "aorgcj/2.00+aolgbj/2.10+aolgaj/2.50+alvoo1j/2.27+alvoo2j/2.06+asvoo1j/1.88+asvoo2j/1.73+"
-                        #     "asvoo3j/1.60+aavb1j/2.70+aavb2j/2.35+aavb3j/2.17+aavb4j/1.99+apcsoj/2.00)*air_density",
-                        #     "-s",
-                        #     'socj@long_name="Secondary Organic Carbon j-mode"; socj@units="ug/m3"',
-                        #     str(f_out),
-                        # ],  # Unit = ug/m3
-                        # # calculate SOC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        # [
-                        #     "-A",
-                        #     "-v",
-                        #     "-s",
-                        #     "soc  = soci + socj",
-                        #     "-s",
-                        #     'soc@long_name="Secondary Organic Carbon (i+j)"; soc@units="ug/m3"',
-                        #     str(f_out),
-                        # ],  # Unit = ug/m3
-                        # # calculate PM2.5 OC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
-                        # [
-                        #     "-A",
-                        #     "-v",
-                        #     "-s",
-                        #     "pm25_oc   = (poci + soci)*pm25at+(pocj + socj)*pm25ac",
-                        #     "-s",
-                        #     'pm25_oc@long_name="PM25 Organic Carbon (i+j)"; pm25_oc@units="ug/m3"',
-                        #     str(f_out),
-                        # ],  # Unit = ug/m3
-                    # )/
+            # Additional ncap2 commands for PM2.5 species calculations (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+            # ncap2_commands_post = (
+            # # calculate PM2.5 Sulfate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+            # [
+            #     "-A",
+            #     "-v",
+            #     "-s",
+            #     "pm25_so4 = 0.001*(aso4i*pm25at+aso4j*pm25ac+aso4k*pm25co)*air_density",
+            #     "-s",
+            #     'pm25_so4@long_name="PM25 Sulfate"; pm25_so4@units="ug/m3"',
+            #     str(f_out),
+            # ],  # Unit = ug/m3
+            # # calculate PM2.5 Nitrate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+            # [
+            #     "-A",
+            #     "-v",
+            #     "-s",
+            #     "pm25_no3 = 0.001*(ano3i*pm25at+ano3j*pm25ac+ano3k*pm25co)*air_density",
+            #     "-s",
+            #     'pm25_no3@long_name="PM25 Nitrate"; pm25_no3@units="ug/m3"',
+            #     str(f_out),
+            # ],  # Unit = ug/m3
+            # # calculate PM2.5 Ammonium for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+            # [
+            #     "-A",
+            #     "-v",
+            #     "-s",
+            #     "pm25_nh4 = 0.001*(anh4i*pm25at+anh4j*pm25ac+anh4k*pm25co)*air_density",
+            #     "-s",
+            #     'pm25_nh4@long_name="PM25 Ammonium"; pm25_nh4@units="ug/m3"',
+            #     str(f_out),
+            # ],  # Unit = ug/m3
+            # # calculate PM2.5 Elemental Carbon for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+            # [
+            #     "-A",
+            #     "-v",
+            #     "-s",
+            #     "pm25_ec = 0.001*(aeci*pm25at+aecj*pm25ac)*air_density",
+            #     "-s",
+            #     'pm25_ec@long_name="PM25 Elemental Carbon"; pm25_ec@units="ug/m3"',
+            #     str(f_out),
+            # ],  # Unit = ug/m3
+            # # calculate POC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+            # [
+            #     "-A",
+            #     "-v",
+            #     "-s",
+            #     "poci = 0.001*(alvpo1i/1.39+asvpo1i/1.32+asvpo2i/1.26+apoci)*air_density",
+            #     "-s",
+            #     'poci@long_name="Primary Organic Carbon i-mode"; poci@units="ug/m3"',
+            #     str(f_out),
+            # ],  # Unit = ug/m3
+            # # calculate POC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+            # [
+            #     "-A",
+            #     "-v",
+            #     "-s",
+            #     "pocj = 0.001*(alvpo1j/1.39+asvpo1j/1.32+asvpo2j/1.26+asvpo3j/1.21+aivpo1j/1.17+apocj)*air_density",
+            #     "-s",
+            #     'pocj@long_name="Primary Organic Carbon j-mode"; pocj@units="ug/m3"',
+            #     str(f_out),
+            # ],  # Unit = ug/m3
+            # # calculate POC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+            # [
+            #     "-A",
+            #     "-v",
+            #     "-s",
+            #     "poc = poci + pocj",
+            #     "-s",
+            #     'poc@long_name="Primary Organic Carbon (i+j)"; poc@units="ug/m3"',
+            #     str(f_out),
+            # ],  # Unit = ug/m3
+            # # calculate SOC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+            # [
+            #     "-A",
+            #     "-v",
+            #     "-s",
+            #     "soci = 0.001*(alvoo1i/2.27+alvoo2i/2.06+asvoo1i/1.88+asvoo2i/1.73)*air_density",
+            #     "-s",
+            #     'soci@long_name="Secondary Organic Carbon i-mode"; soci@units="ug/m3"',
+            #     str(f_out),
+            # ],  # Unit = ug/m3
+            # # calculate SOC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+            # [
+            #     "-A",
+            #     "-v",
+            #     "-s",
+            #     "socj = 0.001*(aiso1j/2.20+aiso2j/2.23+aiso3j/2.80+amt1j/1.67+amt2j/1.67+amt3j/1.72+"
+            #     "amt4j/1.53+amt5j/1.57+amt6j/1.40+amtno3j/1.90+amthydj/1.54+aglyj/2.13+asqtj/1.52+"
+            #     "aorgcj/2.00+aolgbj/2.10+aolgaj/2.50+alvoo1j/2.27+alvoo2j/2.06+asvoo1j/1.88+asvoo2j/1.73+"
+            #     "asvoo3j/1.60+aavb1j/2.70+aavb2j/2.35+aavb3j/2.17+aavb4j/1.99+apcsoj/2.00)*air_density",
+            #     "-s",
+            #     'socj@long_name="Secondary Organic Carbon j-mode"; socj@units="ug/m3"',
+            #     str(f_out),
+            # ],  # Unit = ug/m3
+            # # calculate SOC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+            # [
+            #     "-A",
+            #     "-v",
+            #     "-s",
+            #     "soc  = soci + socj",
+            #     "-s",
+            #     'soc@long_name="Secondary Organic Carbon (i+j)"; soc@units="ug/m3"',
+            #     str(f_out),
+            # ],  # Unit = ug/m3
+            # # calculate PM2.5 OC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)
+            # [
+            #     "-A",
+            #     "-v",
+            #     "-s",
+            #     "pm25_oc   = (poci + soci)*pm25at+(pocj + socj)*pm25ac",
+            #     "-s",
+            #     'pm25_oc@long_name="PM25 Organic Carbon (i+j)"; pm25_oc@units="ug/m3"',
+            #     str(f_out),
+            # ],  # Unit = ug/m3
+            # )/
 
-                    # # Execute all ncap2 commands
-                    # for cmd in ncap2_commands_pre:
-                    #     self._run_ncap2_cmd_(cmd)
-                    #
-                    # # Execute ncks commands
-                    # self._run_ncks_cmd_(ncks_cmd)
-                    # self._run_ncks_cmd_(ncks_cmd2)
-                    #
-                    # # Execute PM species calculation commands
-                    # for cmd in ncap2_commands_post:
-                    #     self._run_ncap2_cmd_(cmd)
+            # # Execute all ncap2 commands
+            # for cmd in ncap2_commands_pre:
+            #     self._run_ncap2_cmd_(cmd)
+            #
+            # # Execute ncks commands
+            # self._run_ncks_cmd_(ncks_cmd)
+            # self._run_ncks_cmd_(ncks_cmd2)
+            #
+            # # Execute PM species calculation commands
+            # for cmd in ncap2_commands_post:
+            #     self._run_ncap2_cmd_(cmd)
 
 
 class AQS_VOC_EvalPackage(AbstractEvalPackage):
@@ -718,7 +797,7 @@ def package_key_to_class(key: PackageKey) -> type[AbstractEvalPackage]:
 
 
 @dask.delayed
-def pm_prep(ctx: PM_PrepContext) -> xr.Dataset:
+def pm_prep(ctx: AbstractDaskOperationContext) -> xr.Dataset:
     local_log_level = logging.DEBUG
 
     phy_dataset = open_dataset(ctx, "phy_path")
@@ -738,17 +817,23 @@ def pm_prep(ctx: PM_PrepContext) -> xr.Dataset:
     ds["air_density"].attrs["units"] = "g/m3"
 
     LOGGER("Calculate PM2.5 Sulfate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)", level=local_log_level)
-    ds["pm25_so4"] = 0.001 * (ds["aso4i"] * ds["pm25at"] + ds["aso4j"] * ds["pm25ac"] + ds["aso4k"] * ds["pm25co"]) * ds["air_density"]
+    ds["pm25_so4"] = (
+        0.001 * (ds["aso4i"] * ds["pm25at"] + ds["aso4j"] * ds["pm25ac"] + ds["aso4k"] * ds["pm25co"]) * ds["air_density"]
+    )
     ds["pm25_so4"].attrs["long_name"] = "PM25 Sulfate"
     ds["pm25_so4"].attrs["units"] = "ug/m3"
 
     LOGGER("Calculate PM2.5 Nitrate for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)", level=local_log_level)
-    ds["pm25_no3"] = 0.001 * (ds["ano3i"] * ds["pm25at"] + ds["ano3j"] * ds["pm25ac"] + ds["ano3k"] * ds["pm25co"]) * ds["air_density"]
+    ds["pm25_no3"] = (
+        0.001 * (ds["ano3i"] * ds["pm25at"] + ds["ano3j"] * ds["pm25ac"] + ds["ano3k"] * ds["pm25co"]) * ds["air_density"]
+    )
     ds["pm25_no3"].attrs["long_name"] = "PM25 Nitrate"
     ds["pm25_no3"].attrs["units"] = "ug/m3"
 
     LOGGER("Calculate PM2.5 Ammonium for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)", level=local_log_level)
-    ds["pm25_nh4"] = 0.001 * (ds["anh4i"] * ds["pm25at"] + ds["anh4j"] * ds["pm25ac"] + ds["anh4k"] * ds["pm25co"]) * ds["air_density"]
+    ds["pm25_nh4"] = (
+        0.001 * (ds["anh4i"] * ds["pm25at"] + ds["anh4j"] * ds["pm25ac"] + ds["anh4k"] * ds["pm25co"]) * ds["air_density"]
+    )
     ds["pm25_nh4"].attrs["long_name"] = "PM25 Ammonium"
     ds["pm25_nh4"].attrs["units"] = "ug/m3"
 
@@ -758,12 +843,23 @@ def pm_prep(ctx: PM_PrepContext) -> xr.Dataset:
     ds["pm25_ec"].attrs["units"] = "ug/m3"
 
     LOGGER("Calculate POC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)", level=local_log_level)
-    ds["poci"] = 0.001 * (ds["alvpo1i"]/ 1.39 + ds["asvpo1i"] / 1.32 + ds["asvpo2i"] / 1.26 + ds["apoci"] )* ds["air_density"]
+    ds["poci"] = 0.001 * (ds["alvpo1i"] / 1.39 + ds["asvpo1i"] / 1.32 + ds["asvpo2i"] / 1.26 + ds["apoci"]) * ds["air_density"]
     ds["poci"].attrs["long_name"] = "Primary Organic Carbon i-mode"
     ds["poci"].attrs["units"] = "ug/m3"
 
     LOGGER("Calculate POC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)", level=local_log_level)
-    ds["pocj"] = 0.001 * (ds["alvpo1j"]/ 1.39 + ds["asvpo1j"] / 1.32 + ds["asvpo2j"] / 1.26 + ds["asvpo3j"] / 1.21 + ds["aivpo1j"] / 1.17 + ds["apocj"]) * ds["air_density"]
+    ds["pocj"] = (
+        0.001
+        * (
+            ds["alvpo1j"] / 1.39
+            + ds["asvpo1j"] / 1.32
+            + ds["asvpo2j"] / 1.26
+            + ds["asvpo3j"] / 1.21
+            + ds["aivpo1j"] / 1.17
+            + ds["apocj"]
+        )
+        * ds["air_density"]
+    )
     ds["pocj"].attrs["long_name"] = "Primary Organic Carbon j-mode"
     ds["pocj"].attrs["units"] = "ug/m3"
 
@@ -773,12 +869,45 @@ def pm_prep(ctx: PM_PrepContext) -> xr.Dataset:
     ds["poc"].attrs["units"] = "ug/m3"
 
     LOGGER("Calculate SOC i-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)", level=local_log_level)
-    ds["soci"] = 0.001 * (ds["alvoo1i"]/2.27+ds["alvoo2i"]/2.06+ds["asvoo1i"]/1.88+ds["asvoo2i"]/1.73)*ds["air_density"]
+    ds["soci"] = (
+        0.001 * (ds["alvoo1i"] / 2.27 + ds["alvoo2i"] / 2.06 + ds["asvoo1i"] / 1.88 + ds["asvoo2i"] / 1.73) * ds["air_density"]
+    )
     ds["soci"].attrs["long_name"] = "Secondary Organic Carbon i-mode"
     ds["soci"].attrs["units"] = "ug/m3"
 
     LOGGER("Calculate SOC j-mode for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)", level=local_log_level)
-    ds["socj"] = 0.001*(ds["aiso1j"]/2.20+ds["aiso2j"]/2.23+ds["aiso3j"]/2.80+ds["amt1j"]/1.67+ds["amt2j"]/1.67+ds["amt3j"]/1.72+ds["amt4j"]/1.53+ds["amt5j"]/1.57+ds["amt6j"]/1.40+ds["amtno3j"]/1.90+ds["amthydj"]/1.54+ds["aglyj"]/2.13+ds["asqtj"]/1.52+ds["aorgcj"]/2.00+ds["aolgbj"]/2.10+ds["aolgaj"]/2.50+ds["alvoo1j"]/2.27+ds["alvoo2j"]/2.06+ds["asvoo1j"]/1.88+ds["asvoo2j"]/1.73+ds["asvoo3j"]/1.60+ds["aavb1j"]/2.70+ds["aavb2j"]/2.35+ds["aavb3j"]/2.17+ds["aavb4j"]/1.99+ds["apcsoj"]/2.00)*ds["air_density"]
+    ds["socj"] = (
+        0.001
+        * (
+            ds["aiso1j"] / 2.20
+            + ds["aiso2j"] / 2.23
+            + ds["aiso3j"] / 2.80
+            + ds["amt1j"] / 1.67
+            + ds["amt2j"] / 1.67
+            + ds["amt3j"] / 1.72
+            + ds["amt4j"] / 1.53
+            + ds["amt5j"] / 1.57
+            + ds["amt6j"] / 1.40
+            + ds["amtno3j"] / 1.90
+            + ds["amthydj"] / 1.54
+            + ds["aglyj"] / 2.13
+            + ds["asqtj"] / 1.52
+            + ds["aorgcj"] / 2.00
+            + ds["aolgbj"] / 2.10
+            + ds["aolgaj"] / 2.50
+            + ds["alvoo1j"] / 2.27
+            + ds["alvoo2j"] / 2.06
+            + ds["asvoo1j"] / 1.88
+            + ds["asvoo2j"] / 1.73
+            + ds["asvoo3j"] / 1.60
+            + ds["aavb1j"] / 2.70
+            + ds["aavb2j"] / 2.35
+            + ds["aavb3j"] / 2.17
+            + ds["aavb4j"] / 1.99
+            + ds["apcsoj"] / 2.00
+        )
+        * ds["air_density"]
+    )
     ds["socj"].attrs["long_name"] = "Secondary Organic Carbon j-mode"
     ds["socj"].attrs["units"] = "ug/m3"
 
@@ -788,7 +917,7 @@ def pm_prep(ctx: PM_PrepContext) -> xr.Dataset:
     ds["soc"].attrs["units"] = "ug/m3"
 
     LOGGER("Calculate PM2.5 OC total (i+j mode) for AQS file out (based on CB6-AERO7 in AQMv8/CMAQv5.4)", level=local_log_level)
-    ds["pm25_oc"] = (ds["poci"] + ds["soci"])*ds["pm25at"]+(ds["pocj"] + ds["socj"])*ds["pm25ac"]
+    ds["pm25_oc"] = (ds["poci"] + ds["soci"]) * ds["pm25at"] + (ds["pocj"] + ds["socj"]) * ds["pm25ac"]
     ds["pm25_oc"].attrs["long_name"] = "PM25 Organic Carbon (i+j)"
     ds["pm25_oc"].attrs["units"] = "ug/m3"
 
@@ -800,7 +929,7 @@ def pm_prep(ctx: PM_PrepContext) -> xr.Dataset:
     return ds
 
 
-def open_dataset(ctx: PM_PrepContext, target: str) -> xr.Dataset:
+def open_dataset(ctx: AbstractDaskOperationContext, target: str) -> xr.Dataset:
     path = getattr(ctx, target)
     LOGGER(f"Load {path}", level=logging.DEBUG)
     ds = xr.open_dataset(path, chunks=ctx.chunks)
@@ -812,7 +941,7 @@ def open_dataset(ctx: PM_PrepContext, target: str) -> xr.Dataset:
 
 
 @log_it
-def run_pm_preprocess_computation(pm_prep_ctx) -> xr.Dataset:
-    dask.config.set(scheduler="threads", num_workers=pm_prep_ctx.dask_num_workers)
-    result = pm_prep(pm_prep_ctx).compute()
+def run_pm_preprocess_computation(ctx: AbstractDaskOperationContext) -> xr.Dataset:
+    dask.config.set(scheduler="threads", num_workers=ctx.dask_num_workers)
+    result = pm_prep(ctx).compute()
     return result

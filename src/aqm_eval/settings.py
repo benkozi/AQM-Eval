@@ -1,10 +1,9 @@
-import os
-from enum import unique, StrEnum
+from enum import StrEnum, unique
 from functools import cached_property
-from typing import Literal
 
 from pydantic import computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 @unique
 class LogLevel(StrEnum):
@@ -20,6 +19,7 @@ class LogLevel(StrEnum):
 
     INFO = "info"
     DEBUG = "debug"
+
 
 class AQM_EvalSettings(BaseSettings):
     model_config = SettingsConfigDict(frozen=True)
@@ -42,5 +42,5 @@ class AQM_EvalSettings(BaseSettings):
     def _validate_aqm_eval_log_level_(cls, value: str) -> LogLevel:
         return LogLevel(value.lower())
 
-SETTINGS = AQM_EvalSettings()
 
+SETTINGS = AQM_EvalSettings()

@@ -14,11 +14,12 @@ from aqm_eval.mm_eval.driver.context.srw import SRWContext
 from aqm_eval.mm_eval.driver.package import (
     AbstractEvalPackage,
     PackageKey,
+    PM_PrepContext,
     TaskKey,
-    package_key_to_class, PM_PrepContext, run_pm_preprocess_computation,
+    package_key_to_class,
+    run_pm_preprocess_computation,
 )
-from aqm_eval.settings import SETTINGS
-from aqm_eval.shared import PathExisting, ncdump
+from aqm_eval.shared import PathExisting
 
 
 class MMEvalRunnerTestData(BaseModel):
@@ -80,6 +81,7 @@ def fake_run_ncks_cmd(self: AbstractEvalPackage, cmd: list[str]) -> None:
         out_file.touch()
     else:
         assert out_file.exists()
+
 
 def fake_run_pm_preprocess_computation(mm_prep_ctx: PM_PrepContext) -> xr.Dataset:
     assert not mm_prep_ctx.out_path.exists()
@@ -143,7 +145,20 @@ class ContextForTest(BaseModel):
     root_dir: PathExisting
 
     dims: dict[str, int] = {"time": 1, "pfull": 64, "grid_yt": 20, "grid_xt": 10}
-    derived_varnames: tuple[str, ...] = ("air_density", "pm25_so4", "pm25_no3", "pm25_nh4", "pm25_ec", "poci", "pocj", "poc", "soc", "soci", "socj", "pm25_oc")
+    derived_varnames: tuple[str, ...] = (
+        "air_density",
+        "pm25_so4",
+        "pm25_no3",
+        "pm25_nh4",
+        "pm25_ec",
+        "poci",
+        "pocj",
+        "poc",
+        "soc",
+        "soci",
+        "socj",
+        "pm25_oc",
+    )
     global_attrs: dict[str, str] = {"foo": "bar", "bar": "foo"}
 
     # @computed_field
@@ -165,16 +180,18 @@ class ContextForTest(BaseModel):
         phy_path = self.root_dir / "phy.nc"
         self.dataset_phy.to_netcdf(phy_path)
 
-        return PM_PrepContext(out_path=self.root_dir / "out.nc",
-                              dyn_path=dyn_path,
-                              phy_path=phy_path,
-                              dask_num_workers=2, )
+        return PM_PrepContext(
+            out_path=self.root_dir / "out.nc",
+            dyn_path=dyn_path,
+            phy_path=phy_path,
+            dask_num_workers=2,
+        )
 
     @cached_property
     def dataset_dyn(self) -> xr.Dataset:
         fields = {ii: self.create_data_array(ii, self.dims) for ii in PM_PrepContext.model_fields["dyn_varnames"].default}
         ret = xr.Dataset(fields)
-        for k,v in self.global_attrs.items():
+        for k, v in self.global_attrs.items():
             ret.attrs[k] = v
         return ret
 
@@ -191,7 +208,6 @@ class ContextForTest(BaseModel):
         shape = tuple(ii for ii in dims.values())
         data = np.random.random(shape)
         return xr.DataArray(data, name=name, dims=tuple(ii for ii in dims.keys()))
-
 
 
 def test_run_pm_preprocess_computation(tmp_path: Path) -> None:
@@ -226,6 +242,7 @@ def test_run_pm_preprocess_computation(tmp_path: Path) -> None:
 
     # print(result)
     result.to_netcdf(test_ctx.pm_prep_ctx.out_path)
+
 
 # def test_run_pm_preprocess_computation_gc6(tmp_path: Path) -> None:
 #
