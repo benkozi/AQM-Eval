@@ -4,26 +4,11 @@ import functools
 import logging
 import logging.config
 import time
-from enum import StrEnum, unique
 from typing import Callable, ParamSpec, TypeVar
 
+from aqm_eval.settings import SETTINGS, LogLevel
+
 _PROJECT_NAME = "aqm-eval"
-
-
-@unique
-class LogLevel(StrEnum):
-    """Log level enum. Used to wrap standard `logging` levels.
-
-    Attributes
-    ----------
-    INFO : str
-        Equivalent to `logging.INFO`.
-    DEBUG : str
-        Equivalent to `logging.DEBUG`.
-    """
-
-    INFO = "info"
-    DEBUG = "debug"
 
 
 class LoggerWrapper:
@@ -105,8 +90,8 @@ class LoggerWrapper:
                 "plain": {
                     # pylint: disable=line-too-long
                     # Uncomment to report verbose output in logs; try to keep these two in sync
-                    # "format": f"[%(name)s][%(levelname)s][%(asctime)s][%(pathname)s:%(lineno)d][%(process)d][%(thread)d][rank={rank}]: %(message)s" # noqa: E501
-                    "format": f"[%(name)s][%(levelname)s][%(asctime)s][%(filename)s:%(lineno)d][rank={rank}]: %(message)s"
+                    "format": f"[%(name)s][%(levelname)s][%(asctime)s][%(pathname)s:%(lineno)d][%(process)d][%(thread)d][rank={rank}]: %(message)s"  # noqa: E501
+                    # "format": f"[%(name)s][%(levelname)s][%(asctime)s][%(filename)s:%(lineno)d][rank={rank}]: %(message)s"
                     # pylint: enable=line-too-long
                 },
             },
@@ -136,7 +121,8 @@ class LoggerWrapper:
 
 
 LOGGER = LoggerWrapper()
-LOGGER.initialize(log_level=LogLevel.DEBUG)
+LOGGER.initialize(log_level=SETTINGS.aqm_eval_log_level)
+LOGGER(f"{SETTINGS=}")
 
 
 P = ParamSpec("P")

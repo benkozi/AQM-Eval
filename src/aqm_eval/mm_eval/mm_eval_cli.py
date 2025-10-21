@@ -6,7 +6,7 @@ from pathlib import Path
 import typer
 
 from aqm_eval.mm_eval.driver.context.yaml_eval import YAMLContext
-from aqm_eval.mm_eval.driver.package import PackageKey, TaskKey, package_key_to_class
+from aqm_eval.mm_eval.driver.package.core import PackageKey, TaskKey, package_key_to_class
 
 os.environ["NO_COLOR"] = "1"
 app = typer.Typer(pretty_exceptions_enable=False)
