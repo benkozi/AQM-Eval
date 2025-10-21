@@ -105,22 +105,3 @@ def test_all_packages(mm_eval_runner_test_data: MMEvalRunnerTestData, mocker: Mo
     m_analysis.save_analysis.assert_called_once()
 
     assert spy_m_dask_op_run.call_count == mm_eval_runner_test_data.expected_n_dask_run_calls
-
-
-# def test_run_pm_preprocess_computation_gc6(tmp_path: Path) -> None:
-#
-#     for fhr in range(25):
-#         fhr_str = f"{fhr:02d}"
-#         dyn_path = Path(f"/gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/sandbox/srw/benkozi/mm-pkgs2/expt_dirs/aqm_AQMNA13km_AEROMMA_success/2023060112/dynf0{fhr_str}.nc")
-#         if fhr == 0:
-#             ncdump(dyn_path)
-#         pm_prep_ctx = PM_PrepContext(out_path=Path("/autofs/ncrc-svm1_home2/Benjamin.Koziol/htmp") / f"out{fhr_str}.nc",
-#                               dyn_path=dyn_path,
-#                               phy_path=Path(f"/gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/sandbox/srw/benkozi/mm-pkgs2/expt_dirs/aqm_AQMNA13km_AEROMMA_success/2023060112/phyf0{fhr_str}.nc"),
-#                               dask_num_workers=SETTINGS.dask_num_workers,
-#                                      chunks={"grid_xt": 100, "grid_yt": 100})
-#
-#         result = run_pm_preprocess_computation(pm_prep_ctx)
-#         result.to_netcdf(pm_prep_ctx.out_path)
-#         if fhr == 0:
-#             ncdump(pm_prep_ctx.out_path)
