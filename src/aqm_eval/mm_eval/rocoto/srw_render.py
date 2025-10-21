@@ -12,6 +12,17 @@ class PackageData(BaseModel):
     key: PackageKey
     tasks: tuple[TaskKey, ...]
 
+    @cached_property
+    def nodes(self) -> str:
+        return "{{{{ task_mm_prep.{key}.nodes }}}}:ppn={{{{ task_mm_prep.{key}.tasks_per_node }}}}".format(key=self.key.value)
+
+    @cached_property
+    def nprocs(self) -> str:
+        return "{{{{ task_mm_prep.{key}.nodes * task_mm_prep.{key}.tasks_per_node }}}}".format(key=self.key.value)
+
+    @cached_property
+    def walltime(self) -> str:
+        return "{{{{ task_mm_prep.{key}.walltime }}}}".format(key=self.key.value)
 
 class PackageDataCollection(BaseModel):
     packages: tuple[PackageData, ...]
@@ -38,6 +49,6 @@ class Renderer(BaseModel):
         return self.out_dir / self.template_name.replace(".j2", "")
 
     def run(self) -> None:
-        config_yaml = self.template.render(data=self.coll)
+        config_yaml = self.template.render(coll=self.coll)
         self.out_path.write_text(config_yaml)
 
