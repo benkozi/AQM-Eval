@@ -82,6 +82,7 @@ class AbstractEvalPackage(ABC, BaseModel):
     ctx: AbstractDriverContext
     key: PackageKey = Field(description="MM package key.")
     namelist_template: str = Field(description="Package template file.")
+    tasks_default: tuple[TaskKey, ...] = Field(description="Default tasks for the package.")
 
     @computed_field(description="Run directory for the MM evaluation package.")
     @cached_property
@@ -107,9 +108,9 @@ class AbstractEvalPackage(ABC, BaseModel):
     @cached_property
     def tasks(self) -> tuple[TaskKey, ...]:
         if self.ctx.mm_base_model_expt_dir is not None:
-            return tuple([ii for ii in TaskKey])
+            return self.tasks_default
         else:
-            return tuple([ii for ii in TaskKey if not ii.name.startswith("SCORECARD")])
+            return tuple([ii for ii in self.tasks_default if not ii.name.startswith("SCORECARD")])
 
     @cached_property
     def task_control_filenames(self) -> set[str]:
@@ -245,8 +246,7 @@ class AbstractEvalPackage(ABC, BaseModel):
         LOGGER(f"{finalize=}")
 
         if task_key not in self.tasks:
-            LOGGER(f"{task_key=} not in {self.tasks=}. returning.", level=logging.WARN)
-            return
+            LOGGER(exc_info=ValueError(f"{task_key=} not in {self.tasks=}. returning."))
 
         assert self.run_dir.exists()
 

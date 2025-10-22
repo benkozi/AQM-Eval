@@ -11,11 +11,7 @@ class AQS_VOC_EvalPackage(AbstractEvalPackage):
 
     key: PackageKey = PackageKey.AQS_VOC
     namelist_template: str = "namelist.aqs.voc.j2"
-
-    @computed_field(description="Tasks that the package will run.")
-    @cached_property
-    def tasks(self) -> tuple[TaskKey, ...]:
-        return (
+    tasks_default: tuple[TaskKey, ...] =(
             TaskKey.SAVE_PAIRED,
             TaskKey.TIMESERIES,
             TaskKey.TAYLOR,
