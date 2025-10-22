@@ -39,8 +39,8 @@ class ContextForDaskTest(BaseModel):
         ret = xr.Dataset(fields)
         for k, v in self.global_attrs.items():
             ret.attrs[k] = v
-        ret.attrs["ak"] = np.random.random(self.dims["pfull"] + 1)
-        ret.attrs["bk"] = np.random.random(self.dims["pfull"] + 1)
+        # ret.attrs["ak"] = np.random.random(self.dims["pfull"] + 1)
+        # ret.attrs["bk"] = np.random.random(self.dims["pfull"] + 1)
         return ret
 
     @cached_property
