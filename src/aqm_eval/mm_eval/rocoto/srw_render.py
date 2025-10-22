@@ -40,6 +40,7 @@ class TaskData(AbstractExecutionData):
     def execution_host(self) -> str:
         return f"{self.host}.execution.batchargs"
 
+
 class TaskDataCollection(BaseModel):
     members: tuple[TaskData, ...]
 
@@ -65,7 +66,7 @@ class PackageData(AbstractExecutionData):
         ret = {}
         for ii in self.tasks.members:
             tasks_to_exclude = f"{self.host}.{self.key.value}.tasks_to_exclude"
-            should_run = '{{% if "{task_key}" not in {tasks_to_exclude} and ("scorecard" in "{task_key}" and melodies_monet_parm.aqm.base_model_expt_dir is not none) %}}run_task{{% endif %}}'.format(task_key=ii.key.value, tasks_to_exclude=tasks_to_exclude)
+            should_run = '{{% if "{task_key}" not in {tasks_to_exclude} %}}run_task{{% endif %}}'.format(task_key=ii.key.value, tasks_to_exclude=tasks_to_exclude)
             ret[ii.key] = should_run
         return ret
 

@@ -58,9 +58,14 @@ task_mm_{{ package.key.value }}_run_{{ task.key.value }}:
   {% else %}
           task: mm_{{ package.key.value }}_run_save_paired
   {% endif %}
-      streq:
+      streq_task:
         left: run_task
         right: '{{ package.should_run_task[task.key] }}'
+  {% if "scorecard" in task.key.value %}
+      streq_scorecard:
+        left: run_scorecard_task
+        right: {% raw %}'{% if melodies_monet_parm.aqm.base_model_expt_dir is not none %}run_scorecard_task{% endif %}'{% endraw %}
+  {% endif %}
 
   {% endfor %}
   {% endfor %}
