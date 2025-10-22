@@ -40,6 +40,8 @@ def test(tmp_path: Path) -> None:
     #tdk: add to cli
     packages = PackageDataCollection()
     print(packages)
-    renderer = Renderer(coll=packages, out_dir=tmp_path)
+    #tdk: go back to tmp_path
+    out_dir = r"C:\Users\bkozi\Dropbox\dtmp"
+    renderer = Renderer(coll=packages, out_dir=out_dir)
     renderer.run()
     print(renderer.out_path.read_text())

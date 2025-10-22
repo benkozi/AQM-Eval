@@ -14,7 +14,7 @@ default_aqm_task: &default_aqm
   queue: '&QUEUE_DEFAULT;'
 
   {% for package in coll.members %}
-task_mm_prep_{{ package.key.value }}
+task_mm_{{ package.key.value }}_prep:
   <<: *default_aqm
   command: '&LOAD_MODULES_RUN_TASK; "mm_prep" "&HOMEdir;/jobs/JSRW_AQM_MELODIES_MONET_PREP"'
   join:
@@ -33,10 +33,10 @@ task_mm_prep_{{ package.key.value }}
           task: run_fcst_mem000
       streq:
         left: run_package
-        right: '{% raw %}{%{% endraw %} if "{{ package.key.value }}" in {{ package.host }}.packages_to_run {%raw%}%}run_package{% endif %}{% endraw %}'
+        right: '{{ package.should_run }}'
 
   {% for task in package.tasks.members %}
-task_mm_run_{{ package.key.value }}_{{ task.key.value }}
+task_mm_{{ package.key.value }}_run_{{ task.key.value }}:
   <<: *default_aqm
   command: '&LOAD_MODULES_RUN_TASK; "mm_run" "&HOMEdir;/jobs/JSRW_AQM_MELODIES_MONET_RUN"'
   join:
@@ -54,19 +54,13 @@ task_mm_run_{{ package.key.value }}_{{ task.key.value }}
       taskdep:
         attrs:
   {% if task.key.value == "save_paired" %}
-          task: mm_prep_{{ package.key.value }}
+          task: mm_{{ package.key.value }}_prep
   {% else %}
-          task: mm_run_{{ package.key.value }}_save_paired
+          task: mm_{{ package.key.value }}_run_save_paired
   {% endif %}
-        streq:
-          left: run_task
-          right: '{% raw %}{%{% endraw %} if "{{ task.key.value }}" not in {{ package.host }}.{{ package.key.value }}.tasks_to_exclude {%raw%}%}run_task{% endif %}{% endraw %}'
-  {% if "scorecard" in task.key.value %}
-        streq:
-          left: run_scorecard_task
-          right: {% raw %}'{%{% endraw %} if {{ package.host }}.MM_BASE_MODEL_EXPT_DIR is not none {% raw %}%}run_scorecard_task{% endif %}'{% endraw %}
-
-  {% endif %}
+      streq:
+        left: run_task
+        right: '{{ package.should_run_task[task.key] }}'
 
   {% endfor %}
   {% endfor %}

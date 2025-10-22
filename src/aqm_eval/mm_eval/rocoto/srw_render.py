@@ -14,23 +14,31 @@ class AbstractExecutionData(ABC, BaseModel):
     host: str
 
     @cached_property
+    def execution_host(self) -> str:
+        return f"{self.host}.{self.key.value}.execution.batchargs"
+
+    @cached_property
     def nodes(self) -> str:
-        return "{{{{ {host}.{key}.nodes }}}}:ppn={{{{ {host}.{key}.tasks_per_node }}}}".format(
-            key=self.key.value, host=self.host)
+        return "{{{{ {host}.nodes }}}}:ppn={{{{ {host}.tasks_per_node }}}}".format(
+            host=self.execution_host)
 
     @cached_property
     def nprocs(self) -> str:
-        return "{{{{ {host}.{key}.nodes * {host}.{key}.tasks_per_node }}}}".format(
-            key=self.key.value, host=self.host)
+        return "{{{{ {host}.nodes * {host}.tasks_per_node }}}}".format(
+            host=self.execution_host)
 
     @cached_property
     def walltime(self) -> str:
-        return "{{{{ {host}.{key}.walltime }}}}".format(key=self.key.value, host=self.host)
+        return "{{{{ {host}.walltime }}}}".format( host=self.execution_host)
 
 
 class TaskData(AbstractExecutionData):
     key: TaskKey
-    host: str = "task_mm_run"
+    host: str = "melodies_monet_parm.aqm.tasks"
+
+    @cached_property
+    def execution_host(self) -> str:
+        return f"{self.host}.execution.batchargs"
 
 class TaskDataCollection(BaseModel):
     members: tuple[TaskData, ...]
@@ -38,13 +46,29 @@ class TaskDataCollection(BaseModel):
 class PackageData(AbstractExecutionData):
     key: PackageKey
 
-    host: str = "task_mm_prep"
+    host: str = "melodies_monet_parm.aqm.packages"
 
     @computed_field
     @cached_property
     def tasks(self) -> TaskDataCollection:
         members = tuple([TaskData(key=ii) for ii in package_key_to_class(self.key).model_fields["tasks_default"].default])
         return TaskDataCollection(members=members)
+
+    @cached_property
+    def should_run(self) -> str:
+        path = f"{self.host}.packages_to_run"
+        ret = '{{% if "{key}" in {path} %}}run_package{{% endif %}}'.format(key=self.key.value, path=path)
+        return ret
+
+    @cached_property
+    def should_run_task(self) -> dict[TaskKey, str]:
+        ret = {}
+        for ii in self.tasks.members:
+            tasks_to_exclude = f"{self.host}.{self.key.value}.tasks_to_exclude"
+            should_run = '{{% if "{task_key}" not in {tasks_to_exclude} and ("scorecard" in "{task_key}" and melodies_monet_parm.aqm.base_model_expt_dir is not none) %}}run_task{{% endif %}}'.format(task_key=ii.key.value, tasks_to_exclude=tasks_to_exclude)
+            ret[ii.key] = should_run
+        return ret
+
 
 class PackageDataCollection(BaseModel):
 
@@ -67,7 +91,7 @@ class Renderer(BaseModel):
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(searchpath=searchpath),
             undefined=jinja2.StrictUndefined,
-            trim_blocks=True,
+            # trim_blocks=True,
             lstrip_blocks=True,
 
         )
