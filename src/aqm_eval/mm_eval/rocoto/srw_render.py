@@ -6,7 +6,7 @@ import jinja2
 from pydantic import BaseModel, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER
-from aqm_eval.mm_eval.driver.package.core import PackageKey, TaskKey
+from aqm_eval.mm_eval.driver.package.core import PackageKey, TaskKey, package_key_to_class
 
 
 class AbstractExecutionData(ABC, BaseModel):
@@ -37,12 +37,22 @@ class TaskDataCollection(BaseModel):
 
 class PackageData(AbstractExecutionData):
     key: PackageKey
-    tasks: TaskDataCollection
 
     host: str = "task_mm_prep"
 
+    @computed_field
+    @cached_property
+    def tasks(self) -> TaskDataCollection:
+        members = tuple([TaskData(key=ii) for ii in package_key_to_class(self.key).model_fields["tasks_default"].default])
+        return TaskDataCollection(members=members)
+
 class PackageDataCollection(BaseModel):
-    members: tuple[PackageData, ...]
+
+    @computed_field
+    @cached_property
+    def members(self) -> tuple[PackageData, ...]:
+        return tuple([PackageData(key=ii) for ii in PackageKey])
+
 
 
 class Renderer(BaseModel):
@@ -57,6 +67,9 @@ class Renderer(BaseModel):
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(searchpath=searchpath),
             undefined=jinja2.StrictUndefined,
+            trim_blocks=True,
+            lstrip_blocks=True,
+
         )
         return env.get_template(self.template_name)
 
