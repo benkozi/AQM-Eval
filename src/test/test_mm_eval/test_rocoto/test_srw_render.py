@@ -1,11 +1,40 @@
 from pathlib import Path
 
+from polyfactory.factories.pydantic_factory import ModelFactory
+
 from aqm_eval.mm_eval.driver.package.core import TaskKey, PackageKey
-from aqm_eval.mm_eval.rocoto.srw_render import PackageData, PackageDataCollection, Renderer
+from aqm_eval.mm_eval.rocoto.srw_render import PackageData, PackageDataCollection, Renderer, \
+    TaskDataCollection, TaskData
+
+#     __randomize_collection_length__ = True
+#     __min_collection_length__ = len(PackageKey)
+#     __max_collection_length__ = len(PackageKey)
+#
+# class TaskDataCollectionFactory(ModelFactory[TaskDataCollection]):
+#     __randomize_collection_length__ = True
+#     __min_collection_length__ = len(TaskKey)
+#     __max_collection_length__ = len(TaskKey)
+
+class TaskDataFactory(ModelFactory[TaskData]):
+    ...
+
+class TaskDataCollectionFactory(ModelFactory[TaskDataCollection]):
+
+    @classmethod
+    def members(cls) -> tuple[TaskData, ...]:
+        return tuple(TaskDataFactory.build(key=task_key) for task_key in TaskKey)
+
+class PackageDataFactory(ModelFactory[PackageData]):
+    __model_factories__ = {TaskDataCollection: TaskDataCollectionFactory}
+
+
+class PackageDataCollectionFactory(ModelFactory[PackageDataCollection]):
+    __model_factories__ = {PackageData: PackageDataFactory}
 
 
 def test(tmp_path: Path) -> None:
-    packages = PackageDataCollection(packages=[PackageData(key=ii, tasks=tuple(TaskKey)) for ii in PackageKey])
+    packages = PackageDataCollectionFactory.build()
+    print(packages)
     renderer = Renderer(coll=packages, out_dir=tmp_path)
     renderer.run()
     print(renderer.out_path.read_text())

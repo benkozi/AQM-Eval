@@ -1,3 +1,4 @@
+from abc import ABC
 from functools import cached_property
 from pathlib import Path
 
@@ -8,24 +9,40 @@ from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.package.core import PackageKey, TaskKey
 
 
-class PackageData(BaseModel):
-    key: PackageKey
-    tasks: tuple[TaskKey, ...]
+class AbstractExecutionData(ABC, BaseModel):
+    key: PackageKey | TaskKey
+    host: str
 
     @cached_property
     def nodes(self) -> str:
-        return "{{{{ task_mm_prep.{key}.nodes }}}}:ppn={{{{ task_mm_prep.{key}.tasks_per_node }}}}".format(key=self.key.value)
+        return "{{{{ {host}.{key}.nodes }}}}:ppn={{{{ {host}.{key}.tasks_per_node }}}}".format(
+            key=self.key.value, host=self.host)
 
     @cached_property
     def nprocs(self) -> str:
-        return "{{{{ task_mm_prep.{key}.nodes * task_mm_prep.{key}.tasks_per_node }}}}".format(key=self.key.value)
+        return "{{{{ {host}.{key}.nodes * {host}.{key}.tasks_per_node }}}}".format(
+            key=self.key.value, host=self.host)
 
     @cached_property
     def walltime(self) -> str:
-        return "{{{{ task_mm_prep.{key}.walltime }}}}".format(key=self.key.value)
+        return "{{{{ {host}.{key}.walltime }}}}".format(key=self.key.value, host=self.host)
+
+
+class TaskData(AbstractExecutionData):
+    key: TaskKey
+    host: str = "task_mm_run"
+
+class TaskDataCollection(BaseModel):
+    members: tuple[TaskData, ...]
+
+class PackageData(AbstractExecutionData):
+    key: PackageKey
+    tasks: TaskDataCollection
+
+    host: str = "task_mm_prep"
 
 class PackageDataCollection(BaseModel):
-    packages: tuple[PackageData, ...]
+    members: tuple[PackageData, ...]
 
 
 class Renderer(BaseModel):

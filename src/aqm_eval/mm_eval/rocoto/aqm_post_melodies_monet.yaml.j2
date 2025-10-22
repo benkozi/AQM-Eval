@@ -13,7 +13,7 @@ default_aqm_task: &default_aqm
   partition: {% raw %}'{{ "&PARTITION_DEFAULT;" if platform.get("PARTITION_DEFAULT") }}'{% endraw %}
   queue: '&QUEUE_DEFAULT;'
 
-  {% for package in coll.packages %}
+  {% for package in coll.members %}
 task_mm_prep_{{ package.key.value }}
   <<: *default_aqm
   command: '&LOAD_MODULES_RUN_TASK; "mm_prep" "&HOMEdir;/jobs/JSRW_AQM_MELODIES_MONET_PREP"'
@@ -30,28 +30,32 @@ task_mm_prep_{{ package.key.value }}
     taskdep:
       attrs:
         task: run_fcst_mem000
-  {% for task in package.tasks %}
-task_mm_run_{{ package.key.value }}_{{ task.value }}
-{#  metatask_mm_run_#package#_task:#}
-{#    var:#}
-{#      task: '{% if task_mm_prep.MM_BASE_MODEL_EXPT_DIR is none %}{{ task_mm_run.MM_EVAL_TASKS_SINGLE_MODEL | join(" ") }}{% else %}{{ task_mm_run.MM_EVAL_TASKS_MULTI_MODEL | join(" ") }}{% endif %}'#}
-{#    task_mm_run_#package#_#task#:#}
-{#      <<: *default_aqm#}
-{#      command: '&LOAD_MODULES_RUN_TASK; "mm_run" "&HOMEdir;/jobs/JSRW_AQM_MELODIES_MONET_RUN"'#}
-{#      join:#}
-{#        cyclestr:#}
-{#          value: '&LOGDIR;/{{ jobname }}_@Y@m@d@H&LOGEXT;'#}
-{#      envars:#}
-{#        <<: *default_vars#}
-{#        nprocs: '{{ task_mm_run.execution.batchargs.nodes * task_mm_run.execution.batchargs.tasks_per_node }}'#}
-{#        MM_EVAL_PACKAGE: '#package#'#}
-{#        MM_EVAL_TASK: '#task#'#}
-{#      nodes: '{{ task_mm_run.execution.batchargs.nodes }}:ppn={{ task_mm_run.execution.batchargs.tasks_per_node }}'#}
-{#      walltime: '{{ task_mm_run.execution.batchargs.walltime }}'#}
-{#      dependency:#}
-{#        taskdep:#}
-{#          attrs:#}
-{#            task: mm_run_#package#_save_paired#}
+  {% for task in package.tasks.members %}
+task_mm_run_{{ package.key.value }}_{{ task.key.value }}
+  <<: *default_aqm
+  command: '&LOAD_MODULES_RUN_TASK; "mm_run" "&HOMEdir;/jobs/JSRW_AQM_MELODIES_MONET_RUN"'
+  join:
+    cyclestr:
+      value: {% raw %}'&LOGDIR;/{{ jobname }}_@Y@m@d@H&LOGEXT;'{% endraw %}
+  envars:
+    <<: *default_vars
+    nprocs: '{{ task.nprocs }}'
+    MM_EVAL_PACKAGE: '{{ package.key.value }}'
+    MM_EVAL_TASK: '{{ task.key.value }}'
+  nodes: '{{ task.nodes }}'
+  walltime: '{{ task.walltime }}'
+  dependency:
+    and:
+      taskdep:
+        attrs:
+  {% if task.key.value == "save_paired" %}
+          task: mm_prep_{{ package.key.value }}
+  {% else %}
+          task: mm_run_{{ package.key.value }}_save_paired
+  {% endif %}
+        streq:
+          left: run_task
+          right: '{% raw %}{%{% endraw %} if "{{ task.key.value }}" not in {{ package.host }}.{{ package.key.value }}.tasks_to_exclude {%raw%}%}run_task{% endif %}{% endraw %}'
   {% endfor %}
   {% endfor %}
 
