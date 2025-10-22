@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from aqm_eval.mm_eval.driver.package.aqs_pm import AQS_PM_PreprocessDaskOperation
 from aqm_eval.mm_eval.driver.package.core import AbstractDaskOperation
 from aqm_eval.mm_eval.driver.package.ish import ISH_PreprocessDaskOperation
-from aqm_eval.shared import PathExisting
+from aqm_eval.shared import PathExisting, ncdump
 
 
 class ContextForDaskTest(BaseModel):
@@ -39,6 +39,8 @@ class ContextForDaskTest(BaseModel):
         ret = xr.Dataset(fields)
         for k, v in self.global_attrs.items():
             ret.attrs[k] = v
+        ret.attrs["ak"] = np.random.random(self.dims["pfull"] + 1)
+        ret.attrs["bk"] = np.random.random(self.dims["pfull"] + 1)
         return ret
 
     @cached_property
@@ -61,6 +63,7 @@ def test(tmp_path: Path, klass: type[AbstractDaskOperation]) -> None:
     np.random.seed(0)
     test_ctx = ContextForDaskTest(root_dir=tmp_path, klass=klass)
     result = test_ctx.op.run()
+    print(result)
     expected_dims = test_ctx.dims
     assert result.dims == expected_dims
     expected_vars = set(result.data_vars)
@@ -68,3 +71,12 @@ def test(tmp_path: Path, klass: type[AbstractDaskOperation]) -> None:
     assert expected_vars == set(test_ctx.op.dyn_varnames + test_ctx.op.phy_varnames + test_ctx.op.derived_varnames)
     assert result.attrs == test_ctx.global_attrs
     result.to_netcdf(test_ctx.op.out_path)
+
+
+def test2(tmp_path: Path) -> None:
+    #tdk:rm
+    ds = xr.Dataset()
+    ds.attrs["foo"] = [0.1,0.2,0.3]
+    out_path = tmp_path / "out.nc"
+    ds.to_netcdf(out_path)
+    ncdump(out_path)

@@ -338,6 +338,7 @@ class AbstractDaskOperation(ABC, BaseModel):
     phy_path: PathExisting
     dask_num_workers: int
     chunks: dict[str, int] | Literal["auto"] = "auto"
+    surf_only: bool = True #tdk: make this configurable
 
     dyn_varnames: tuple[str, ...]
     phy_varnames: tuple[str, ...]
@@ -375,11 +376,15 @@ class AbstractDaskOperation(ABC, BaseModel):
     @abstractmethod
     def _compute_derived_fields_(self, ds: xr.Dataset) -> xr.Dataset: ...
 
-    def _open_dataset_(self, target: str) -> xr.Dataset:
+    def _open_dataset_(self, target: Literal["phy_path", "dyn_path"]) -> xr.Dataset:
         path = getattr(self, target)
         LOGGER(f"Load {path}", level=logging.DEBUG)
         ds = xr.open_dataset(path, chunks=self.chunks)
-        # ds = ds.isel(pfull=slice(0, 1))
+        if self.surf_only:
+            ds = ds.isel(pfull=slice(0, 1))
+            # if target == "dyn_path":
+            #     ds.attrs["ak"] = ds.attrs["ak"][0:2]
+            #     ds.attrs["bk"] = ds.attrs["bk"][0:2]
         LOGGER(f"{ds.dims=}", level=logging.DEBUG)
         if self.chunks == "auto":
             ds = ds.chunk(self.chunks)
