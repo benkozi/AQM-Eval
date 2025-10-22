@@ -10,7 +10,7 @@ from pydantic import Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
-from aqm_eval.mm_eval.driver.package.core import PackageKey
+from aqm_eval.mm_eval.driver.package.core import PackageKey, TaskKey
 from aqm_eval.shared import PathExisting, assert_directory_exists, assert_file_exists
 
 try:
@@ -70,7 +70,7 @@ class SRWContext(AbstractDriverContext):
     @computed_field
     @cached_property
     def mm_output_dir(self) -> Path:
-        config_path = self.find_nested_key(("task_mm_prep", "MM_OUTPUT_DIR"))
+        config_path = self.find_nested_key(("melodies_monet_parm", "aqm", "output_dir"))
         if config_path is None:
             config_path = self.expt_dir / "mm_output"
         return config_path
@@ -83,27 +83,28 @@ class SRWContext(AbstractDriverContext):
     @computed_field
     @cached_property
     def mm_package_keys(self) -> tuple[PackageKey, ...]:
-        return tuple([PackageKey(ii) for ii in self.find_nested_key(("task_mm_prep", "MM_EVAL_PACKAGES"))])
+        return tuple([PackageKey(ii) for ii in self.find_nested_key(("melodies_monet_parm", "aqm", "packages", "packages_to_run"))])
 
     @computed_field
     @cached_property
     def mm_obs_airnow_fn_template(self) -> str:
-        return self.find_nested_key(("task_mm_prep", "MM_OBS_AIRNOW_FN_TEMPLATE"))
+        return self.find_nested_key(("melodies_monet_parm", "aqm", "observation_templates", PackageKey.CHEM.value))
 
     @computed_field
     @cached_property
     def mm_obs_ish_fn_template(self) -> str:
-        return self.find_nested_key(("task_mm_prep", "MM_OBS_ISH_FN_TEMPLATE"))
+        return self.find_nested_key(("melodies_monet_parm", "aqm", "observation_templates", PackageKey.ISH.value))
 
     @computed_field
     @cached_property
     def mm_obs_aqs_pm_fn_template(self) -> str:
-        return self.find_nested_key(("task_mm_prep", "MM_OBS_AQS_PM_FN_TEMPLATE"))
+        #tdk: create single observations representation
+        return self.find_nested_key(("melodies_monet_parm", "aqm", "observation_templates", PackageKey.AQS_PM.value))
 
     @computed_field
     @cached_property
     def mm_obs_aqs_voc_fn_template(self) -> str:
-        return self.find_nested_key(("task_mm_prep", "MM_OBS_AQS_VOC_FN_TEMPLATE"))
+        return self.find_nested_key(("melodies_monet_parm", "aqm", "observation_templates", PackageKey.AQS_VOC.value))
 
     @computed_field
     @cached_property
@@ -113,7 +114,7 @@ class SRWContext(AbstractDriverContext):
     @computed_field
     @cached_property
     def mm_base_model_expt_dir(self) -> PathExisting | None:
-        ret = self.find_nested_key(("task_mm_prep", "MM_BASE_MODEL_EXPT_DIR"))
+        ret = self.find_nested_key(("melodies_monet_parm", "aqm", "base_model_expt_dir"))
         if ret is not None:
             ret = assert_directory_exists(ret)
         return ret
