@@ -339,7 +339,7 @@ class AbstractDaskOperation(ABC, BaseModel):
     phy_path: str
     dask_num_workers: int
     surf_only: bool
-    chunks: dict[str, int] | Literal["auto", "auto-aqm-eval"] = {"grid_xt": 388}
+    chunks: dict[str, int] | Literal["auto", "auto-aqm-eval"] = {"grid_xt": 388, "grid_yt": 244}
 
     dyn_varnames: tuple[str, ...]
     phy_varnames: tuple[str, ...]
@@ -358,13 +358,17 @@ class AbstractDaskOperation(ABC, BaseModel):
             new_fields_dyn = {ii: dyn_dataset[ii] for ii in self.dyn_varnames}
             new_fields_phy = {ii: phy_dataset[ii] for ii in self.phy_varnames}
             new_fields = {**new_fields_dyn, **new_fields_phy}
+            LOGGER("Create merged dataset", level=local_log_level)
             ds = xr.Dataset(new_fields)
-
             ds.attrs = dyn_dataset.attrs
 
+            LOGGER("Before compute derived fields", level=local_log_level)
             ds = self._compute_derived_fields_(ds)
+            LOGGER("After compute derived fields", level=local_log_level)
 
+            LOGGER("Before ds.compute", level=local_log_level)
             ds = ds.compute()
+            LOGGER("After ds.compute", level=local_log_level)
         finally:
             dyn_dataset.close()
             phy_dataset.close()
