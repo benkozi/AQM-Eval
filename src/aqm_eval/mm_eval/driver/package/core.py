@@ -339,7 +339,7 @@ class AbstractDaskOperation(ABC, BaseModel):
     phy_path: str
     dask_num_workers: int
     surf_only: bool
-    chunks: dict[str, int] | Literal["auto", "auto-aqm-eval"] = {"grid_xt": 388, "grid_yt": 244}
+    chunks: dict[str, int] | Literal["auto", "auto-aqm-eval"] = {"time": 1}
 
     dyn_varnames: tuple[str, ...]
     phy_varnames: tuple[str, ...]
