@@ -58,17 +58,22 @@ class ForecastFileSpec(BaseModel):
     src_dir: PathExisting
     out_dir: PathExisting
     out_prefix: str
+    forecast_hours: tuple[int, ...] = range(1, 25)
     # forecast_hour: int = Field(ge=0, le=24)
 
     @computed_field
     @cached_property
-    def dyn_path(self) -> str:
-        return str(self.src_dir / f"dynf*.nc")
+    def dyn_path(self) -> tuple[Path, ...]:
+        fns = self.src_dir.glob("dynf*.nc")
+        ret = [ii for ii in fns if "0.nc" not in ii.name]
+        return tuple(ret)
 
     @computed_field
     @cached_property
-    def phy_path(self) -> str:
-        return str(self.src_dir / f"phyf*.nc")
+    def phy_path(self) -> tuple[Path, ...]:
+        fns = self.src_dir.glob("phyf*.nc")
+        ret = [ii for ii in fns if "0.nc" not in ii.name]
+        return tuple(ret)
 
     @computed_field
     @cached_property
@@ -335,11 +340,11 @@ class AbstractDaskOperation(ABC, BaseModel):
     model_config = {"frozen": True}
 
     out_path: Path
-    dyn_path: str
-    phy_path: str
+    dyn_path: tuple[Path, ...]
+    phy_path: tuple[Path, ...]
     dask_num_workers: int
     surf_only: bool
-    chunks: dict[str, int] | Literal["auto", "auto-aqm-eval"] = {"grid_yt": 244}
+    chunks: dict[str, int] | Literal["auto", "auto-aqm-eval"] = {"time": 1}
 
     dyn_varnames: tuple[str, ...]
     phy_varnames: tuple[str, ...]
@@ -387,13 +392,13 @@ class AbstractDaskOperation(ABC, BaseModel):
         local_log_level = logging.DEBUG
         LOGGER(f"Load {path}", level=local_log_level)
         if self.chunks == "auto-aqm-eval":
-            with xr.open_mfdataset(str(path), concat_dim="time", combine="nested") as ds:
+            with xr.open_mfdataset(path, concat_dim="time", combine="nested") as ds:
                 dims_to_chunk = {ii: ds.sizes[ii] for ii in ["grid_xt", "grid_yt"]}
                 chunks = calc_2d_chunks(dims_to_chunk, self.dask_num_workers - ds.sizes["time"])
             LOGGER(f"calculated chunks {chunks=}", level=local_log_level)
         else:
             chunks = self.chunks
-        ds = xr.open_mfdataset(str(path), chunks=chunks, concat_dim="time", combine="nested")
+        ds = xr.open_mfdataset(path, chunks=chunks, concat_dim="time", combine="nested")
         LOGGER(f"xr.open_mfdataset {ds=}", level=local_log_level)
         if self.surf_only:
             ds = ds.isel(pfull=slice(0, 1))

@@ -8,7 +8,7 @@ import xarray as xr
 from pydantic import BaseModel
 
 from aqm_eval.mm_eval.driver.package.aqs_pm import AQS_PM_PreprocessDaskOperation
-from aqm_eval.mm_eval.driver.package.core import AbstractDaskOperation
+from aqm_eval.mm_eval.driver.package.core import AbstractDaskOperation, ForecastFileSpec
 from aqm_eval.mm_eval.driver.package.ish import ISH_PreprocessDaskOperation
 from aqm_eval.shared import PathExisting, ncdump
 
@@ -33,8 +33,12 @@ class ContextForDaskTest(BaseModel):
             phy_path = self.root_dir / f"phyf{ii}.nc"
             self.dataset_phy.to_netcdf(phy_path)
 
+        spec = ForecastFileSpec(src_dir=self.root_dir, out_dir=self.root_dir, out_prefix="test")
+        print(f"{spec.dyn_path=}")
+        print(f"{spec.phy_path=}")
+
         return self.klass.model_validate(
-            dict(out_path=self.root_dir / "out.nc", dyn_path=str(self.root_dir / "dynf*.nc"), phy_path=str(self.root_dir / "phyf*.nc"), dask_num_workers=4, surf_only=self.surf_only,
+            dict(out_path=self.root_dir / "out.nc", dyn_path=spec.dyn_path, phy_path=spec.phy_path, dask_num_workers=4, surf_only=self.surf_only,
                  chunks="auto-aqm-eval")
         )
 
@@ -97,7 +101,7 @@ def test(tmp_path: Path, klass: type[AbstractDaskOperation], surf_only: bool) ->
     result = test_ctx.op.run()
     print(result)
     expected_dims = test_ctx.dims
-    expected_dims["time"] = test_ctx.n_files
+    expected_dims["time"] = test_ctx.n_files - 1 # no f0.nc file
     if surf_only:
         expected_dims["pfull"] = 1
     assert result.dims == expected_dims
