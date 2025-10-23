@@ -390,7 +390,7 @@ class AbstractDaskOperation(ABC, BaseModel):
         else:
             chunks = self.chunks
         ds = xr.open_mfdataset(str(path), chunks=chunks, concat_dim="time", combine="nested")
-        LOGGER(f"xr.open_mfdataset {ds}", level=local_log_level)
+        LOGGER(f"xr.open_mfdataset {ds=}", level=local_log_level)
         if self.surf_only:
             ds = ds.isel(pfull=slice(0, 1))
             if "phalf" in ds.dims:
@@ -402,6 +402,7 @@ class AbstractDaskOperation(ABC, BaseModel):
         LOGGER(f"{ds.dims=}", level=local_log_level)
         if self.chunks == "auto":
             ds = ds.chunk(self.chunks)
+        LOGGER(f"exiting _open_dataset_ {ds=}", level=local_log_level)
         return ds
 
 
