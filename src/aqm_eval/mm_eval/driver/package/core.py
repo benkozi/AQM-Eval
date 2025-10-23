@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from enum import StrEnum, unique
 from functools import cached_property
 from pathlib import Path
-from typing import Iterator, Literal
+from typing import Iterator, Literal, Hashable
 
 import cartopy  # type: ignore[import-untyped]
 import dask
@@ -16,6 +16,7 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from melodies_monet import driver  # type: ignore[import-untyped]
 from melodies_monet.driver import analysis  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, computed_field
+from xarray.core.utils import Frozen
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
@@ -57,22 +58,22 @@ class ForecastFileSpec(BaseModel):
     src_dir: PathExisting
     out_dir: PathExisting
     out_prefix: str
-    forecast_hour: int = Field(ge=0, le=24)
+    # forecast_hour: int = Field(ge=0, le=24)
 
     @computed_field
     @cached_property
-    def dyn_path(self) -> PathExisting:
-        return assert_file_exists(self.src_dir / f"dynf0{self.forecast_hour:02d}.nc")
+    def dyn_path(self) -> str:
+        return str(self.src_dir / f"dynf*.nc")
 
     @computed_field
     @cached_property
-    def phy_path(self) -> PathExisting:
-        return assert_file_exists(self.src_dir / f"phyf0{self.forecast_hour:02d}.nc")
+    def phy_path(self) -> str:
+        return str(self.src_dir / f"phyf*.nc")
 
     @computed_field
     @cached_property
     def out_path(self) -> Path:
-        return self.out_dir / f"{self.out_prefix}_f0{self.forecast_hour:02d}.nc"
+        return self.out_dir / f"{self.out_prefix}.nc"
 
 
 class AbstractEvalPackage(ABC, BaseModel):
@@ -198,13 +199,13 @@ class AbstractEvalPackage(ABC, BaseModel):
                 LOGGER(exc_info=ValueError(f"no cycle directories found in {expt_dir=}"))
             for dir_path in dirlist:
                 dir_name = dir_path.name
-                for fhr in range(1, 25):
-                    yield ForecastFileSpec(
-                        src_dir=dir_path,
-                        out_dir=model.link_alldays_path,
-                        out_prefix=f"{model.prefix}_{dir_name}",
-                        forecast_hour=fhr,
-                    )
+                # for fhr in range(1, 25):
+                yield ForecastFileSpec(
+                    src_dir=dir_path,
+                    out_dir=model.link_alldays_path,
+                    out_prefix=f"{model.prefix}_{dir_name}",
+                    # forecast_hour=fhr,
+                )
 
     @log_it
     def initialize(self) -> None:
@@ -334,8 +335,8 @@ class AbstractDaskOperation(ABC, BaseModel):
     model_config = {"frozen": True}
 
     out_path: Path
-    dyn_path: PathExisting
-    phy_path: PathExisting
+    dyn_path: str
+    phy_path: str
     dask_num_workers: int
     surf_only: bool
     chunks: dict[str, int] | Literal["auto", "auto-aqm-eval"]
@@ -382,13 +383,13 @@ class AbstractDaskOperation(ABC, BaseModel):
         local_log_level = logging.DEBUG
         LOGGER(f"Load {path}", level=local_log_level)
         if self.chunks == "auto-aqm-eval":
-            with xr.open_dataset(path) as ds:
+            with xr.open_mfdataset(str(path), concat_dim="time", combine="nested") as ds:
                 dims_to_chunk = {ii: ds.sizes[ii] for ii in ["grid_xt", "grid_yt"]}
-                chunks = calc_2d_chunks(dims_to_chunk, self.dask_num_workers)
-                LOGGER(f"calculated chunks {chunks=}", level=local_log_level)
+                chunks = calc_2d_chunks(dims_to_chunk, self.dask_num_workers - ds.sizes["time"])
+            LOGGER(f"calculated chunks {chunks=}", level=local_log_level)
         else:
             chunks = self.chunks
-        ds = xr.open_dataset(path, chunks=chunks)
+        ds = xr.open_mfdataset(str(path), chunks=chunks, concat_dim="time", combine="nested")
         if self.surf_only:
             ds = ds.isel(pfull=slice(0, 1))
             if "phalf" in ds.dims:

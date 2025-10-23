@@ -57,6 +57,8 @@ def ncdump(path: Path) -> None:
 
 
 def calc_2d_chunks(dims: dict[str, int], n_chunks: int) -> dict[str, int]:
+    if n_chunks < 1:
+        n_chunks = 1
     per_dim = np.ceil(np.sqrt(n_chunks))
     chunks = {k: int(np.ceil(v / per_dim)) for k, v in dims.items()}
     return chunks

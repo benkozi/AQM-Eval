@@ -22,17 +22,20 @@ class ContextForDaskTest(BaseModel):
 
     dims: dict[str, int] = {"time": 1, "pfull": 64, "grid_yt": 20, "grid_xt": 10}
     global_attrs: dict[str, str] = {"foo": "bar", "bar": "foo"}
+    n_files: int = 5
 
     @cached_property
     def op(self) -> AbstractDaskOperation:
-        dyn_path = self.root_dir / "dyn.nc"
-        self.dataset_dyn.to_netcdf(dyn_path)
+        for ii in range(self.n_files):
+            dyn_path = self.root_dir / f"dynf{ii}.nc"
+            self.dataset_dyn.to_netcdf(dyn_path)
 
-        phy_path = self.root_dir / "phy.nc"
-        self.dataset_phy.to_netcdf(phy_path)
+            phy_path = self.root_dir / f"phyf{ii}.nc"
+            self.dataset_phy.to_netcdf(phy_path)
 
         return self.klass.model_validate(
-            dict(out_path=self.root_dir / "out.nc", dyn_path=dyn_path, phy_path=phy_path, dask_num_workers=2, surf_only=self.surf_only, chunks="auto-aqm-eval")
+            dict(out_path=self.root_dir / "out.nc", dyn_path=str(self.root_dir / "dynf*.nc"), phy_path=str(self.root_dir / "phyf*.nc"), dask_num_workers=4, surf_only=self.surf_only,
+                 chunks="auto-aqm-eval")
         )
 
     @cached_property
@@ -94,6 +97,7 @@ def test(tmp_path: Path, klass: type[AbstractDaskOperation], surf_only: bool) ->
     result = test_ctx.op.run()
     print(result)
     expected_dims = test_ctx.dims
+    expected_dims["time"] = test_ctx.n_files
     if surf_only:
         expected_dims["pfull"] = 1
     assert result.dims == expected_dims

@@ -36,12 +36,9 @@ def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool, pack
     expected_n_dask_run_calls = 0
 
     match package_key:
-        case PackageKey.ISH:
-            expected_n_links = 24 * 2  # 24 dynf hourly files * 2 cycle directories
-            expected_n_dask_run_calls = 24 * 2  # 24 dynf/phyf hourly files * 2 cycle directories
-        case PackageKey.AQS_PM:
-            expected_n_links = 24 * 2  # 24 dynf hourly files * 2 cycle directories
-            expected_n_dask_run_calls = 24 * 2  # 24 dynf/phyf hourly files * 2 cycle directories
+        case PackageKey.ISH | PackageKey.AQS_PM:
+            expected_n_links = 2 # 2 combined files (1 per cycle)
+            expected_n_dask_run_calls = expected_n_links # one call per file created
 
     if use_base_model:
         # Two model adjustment
