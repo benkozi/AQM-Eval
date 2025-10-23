@@ -1,9 +1,8 @@
 from pathlib import Path
 
-import numpy as np
 import pytest
 
-from aqm_eval.shared import assert_directory_exists, assert_file_exists
+from aqm_eval.shared import assert_directory_exists, assert_file_exists, calc_2d_chunks
 
 
 def test_assert_file_exists_with_valid_file(tmp_path: Path) -> None:
@@ -54,12 +53,6 @@ def test_assert_directory_exists_with_directory(tmp_path: Path) -> None:
     # Should raise ValueError because it's not a directory
     with pytest.raises(ValueError, match="path is not a directory"):
         assert_directory_exists(test_file)
-
-
-def calc_2d_chunks(dims: dict[str, int], n_chunks: int) -> dict[str, int]:
-    per_dim = np.ceil(np.sqrt(n_chunks))
-    chunks = {k: int(np.ceil(v / per_dim)) for k, v in dims.items()}
-    return chunks
 
 
 def test_calc_2d_chunks() -> None:

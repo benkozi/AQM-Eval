@@ -3,6 +3,7 @@ import subprocess
 from pathlib import Path
 from typing import Annotated, Any
 
+import numpy as np
 from pydantic import BeforeValidator
 
 from aqm_eval.logging_aqm_eval import LOGGER
@@ -53,3 +54,9 @@ def assert_directory_exists(path: Path | str) -> PathExisting:
 def ncdump(path: Path) -> None:
     result = subprocess.check_output(["ncdump", "-h", str(path)])
     print(result.decode())
+
+
+def calc_2d_chunks(dims: dict[str, int], n_chunks: int) -> dict[str, int]:
+    per_dim = np.ceil(np.sqrt(n_chunks))
+    chunks = {k: int(np.ceil(v / per_dim)) for k, v in dims.items()}
+    return chunks

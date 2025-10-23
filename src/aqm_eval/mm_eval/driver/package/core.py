@@ -21,8 +21,7 @@ from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.model import Model, ModelRole
 from aqm_eval.settings import SETTINGS
-from aqm_eval.shared import PathExisting, assert_file_exists, get_or_create_path
-from test.test_shared import calc_2d_chunks
+from aqm_eval.shared import PathExisting, assert_file_exists, get_or_create_path, calc_2d_chunks
 
 
 @unique
