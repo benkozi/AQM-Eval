@@ -5,7 +5,7 @@ from pathlib import Path
 import jinja2
 from pydantic import BaseModel, computed_field
 
-from aqm_eval.logging_aqm_eval import LOGGER
+from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.package.core import PackageKey, TaskKey, package_key_to_class
 
 
@@ -107,3 +107,12 @@ class Renderer(BaseModel):
         config_yaml = self.template.render(coll=self.coll)
         self.out_path.write_text(config_yaml)
 
+
+@log_it
+def render_task_group(tmp_path: Path):
+    packages = PackageDataCollection()
+    LOGGER(packages)
+    renderer = Renderer(coll=packages, out_dir=tmp_path)
+    LOGGER(renderer)
+    renderer.run()
+    LOGGER(renderer.out_path.read_text())

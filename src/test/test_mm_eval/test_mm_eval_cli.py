@@ -38,6 +38,12 @@ def test_srw_run_package_and_task_selector(tmp_path: Path, srw_context: SRWConte
     mock_run.assert_called_once()
 
 
+def test_srw_task_group(tmp_path: Path) -> None:
+    runner = CliRunner()
+    result = runner.invoke(app, ["srw-task-group", "--out-dir", str(tmp_path)])
+    print(result.output)
+
+
 def test_yaml_init(namelist_chem_yaml_config: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(app, ["yaml-init", "--yaml-config", str(namelist_chem_yaml_config)])

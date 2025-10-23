@@ -7,6 +7,7 @@ import typer
 
 from aqm_eval.mm_eval.driver.context.yaml_eval import YAMLContext
 from aqm_eval.mm_eval.driver.package.core import PackageKey, TaskKey, package_key_to_class
+from aqm_eval.mm_eval.rocoto.srw_render import render_task_group
 
 os.environ["NO_COLOR"] = "1"
 app = typer.Typer(pretty_exceptions_enable=False)
@@ -68,6 +69,16 @@ def srw_run(
     klass = package_key_to_class(package_selector)
     package = klass.model_validate(dict(ctx=ctx))
     package.run(task_key=task_selector)
+
+
+@app.command(
+    name="srw-task-group",
+    help="Create a YAML-based SRW task group for all packages and tasks.",
+)
+def srw_task_group(
+    out_dir: Path = typer.Option(..., "--out-dir", help="Output directory for the task group YAML.", file_okay=False),
+) -> None:
+    render_task_group(out_dir)
 
 
 if __name__ == "__main__":
