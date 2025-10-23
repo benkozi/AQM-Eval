@@ -22,6 +22,7 @@ from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.model import Model, ModelRole
 from aqm_eval.settings import SETTINGS
 from aqm_eval.shared import PathExisting, assert_file_exists, get_or_create_path
+from test.test_shared import calc_2d_chunks
 
 
 @unique
@@ -337,12 +338,13 @@ class AbstractDaskOperation(ABC, BaseModel):
     dyn_path: PathExisting
     phy_path: PathExisting
     dask_num_workers: int
-    chunks: dict[str, int] | Literal["auto"] = "auto"
-    surf_only: bool = True #tdk: make this configurable
+    surf_only: bool
+    chunks: dict[str, int] | Literal["auto", "auto-aqm-eval"]
 
     dyn_varnames: tuple[str, ...]
     phy_varnames: tuple[str, ...]
     derived_varnames: tuple[str, ...]
+
 
     def run(self) -> xr.Dataset:
         dask.config.set(scheduler="threads", num_workers=self.dask_num_workers)
@@ -378,14 +380,25 @@ class AbstractDaskOperation(ABC, BaseModel):
 
     def _open_dataset_(self, target: Literal["phy_path", "dyn_path"]) -> xr.Dataset:
         path = getattr(self, target)
-        LOGGER(f"Load {path}", level=logging.DEBUG)
-        ds = xr.open_dataset(path, chunks=self.chunks)
+        local_log_level = logging.DEBUG
+        LOGGER(f"Load {path}", level=local_log_level)
+        if self.chunks == "auto-aqm-eval":
+            with xr.open_dataset(path) as ds:
+                dims_to_chunk = {ii: ds.dims[ii] for ii in ["grid_xt", "grid_yt"]}
+                chunks = calc_2d_chunks(dims_to_chunk, self.dask_num_workers)
+                LOGGER(f"calculated chunks {chunks=}", level=local_log_level)
+        else:
+            chunks = self.chunks
+        ds = xr.open_dataset(path, chunks=chunks)
         if self.surf_only:
             ds = ds.isel(pfull=slice(0, 1))
-            # if target == "dyn_path":
-            #     ds.attrs["ak"] = ds.attrs["ak"][0:2]
-            #     ds.attrs["bk"] = ds.attrs["bk"][0:2]
-        LOGGER(f"{ds.dims=}", level=logging.DEBUG)
+            if "phalf" in ds.dims:
+                ds = ds.isel(phalf=slice(0, 1))
+            if "ak" in ds.attrs:
+                ds.attrs["ak"] = ds.attrs["ak"][0:2]
+            if "bk" in ds.attrs:
+                ds.attrs["bk"] = ds.attrs["bk"][0:2]
+        LOGGER(f"{ds.dims=}", level=local_log_level)
         if self.chunks == "auto":
             ds = ds.chunk(self.chunks)
         return ds
@@ -402,13 +415,15 @@ class AbstractDaskEvalPackage(AbstractEvalPackage):
     @log_it
     def _run_dask_operations_(self) -> None:
         for spec in self.iter_forecast_file_specs():
+            LOGGER(f"{spec=}")
             op = self.klass_dask_operation.model_validate(
                 dict(
                     out_path=spec.out_path,
                     dyn_path=spec.dyn_path,
                     phy_path=spec.phy_path,
                     dask_num_workers=SETTINGS.dask_num_workers,
-                    chunks={"grid_xt": 100, "grid_yt": 100},
+                    surf_only=True,
+                    chunks="auto-aqm-eval",
                 )
             )
             op.run()

@@ -1,5 +1,6 @@
 from functools import cached_property
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
@@ -17,6 +18,7 @@ class ContextForDaskTest(BaseModel):
 
     root_dir: PathExisting
     klass: type[AbstractDaskOperation]
+    surf_only: bool
 
     dims: dict[str, int] = {"time": 1, "pfull": 64, "grid_yt": 20, "grid_xt": 10}
     global_attrs: dict[str, str] = {"foo": "bar", "bar": "foo"}
@@ -30,8 +32,28 @@ class ContextForDaskTest(BaseModel):
         self.dataset_phy.to_netcdf(phy_path)
 
         return self.klass.model_validate(
-            dict(out_path=self.root_dir / "out.nc", dyn_path=dyn_path, phy_path=phy_path, dask_num_workers=2)
+            dict(out_path=self.root_dir / "out.nc", dyn_path=dyn_path, phy_path=phy_path, dask_num_workers=2, surf_only=self.surf_only, chunks="auto-aqm-eval")
         )
+
+    @cached_property
+    def ak_bk_value(self) -> np.array:
+        return np.array(range(self.dims["pfull"] + 1))
+
+    @cached_property
+    def ak_bk_attrs(self) -> dict[str, np.array]:
+        if self.surf_only:
+            return {"ak": self.ak_bk_value[0:2], "bk": self.ak_bk_value[0:2]}
+        else:
+            return {"ak": self.ak_bk_value, "bk": self.ak_bk_value}
+
+
+    @cached_property
+    def expected_global_attrs(self) -> dict[str, Any]:
+        ret = self.global_attrs.copy()
+        ret.update(self.ak_bk_attrs)
+        for ii in ["ak", "bk"]:
+            ret[ii] = ret[ii].tolist()
+        return ret
 
     @cached_property
     def dataset_dyn(self) -> xr.Dataset:
@@ -39,8 +61,7 @@ class ContextForDaskTest(BaseModel):
         ret = xr.Dataset(fields)
         for k, v in self.global_attrs.items():
             ret.attrs[k] = v
-        # ret.attrs["ak"] = np.random.random(self.dims["pfull"] + 1)
-        # ret.attrs["bk"] = np.random.random(self.dims["pfull"] + 1)
+        ret.attrs.update(self.ak_bk_attrs)
         return ret
 
     @cached_property
@@ -58,25 +79,29 @@ class ContextForDaskTest(BaseModel):
         return xr.DataArray(data, name=name, dims=tuple(ii for ii in dims.keys()))
 
 
-@pytest.mark.parametrize("klass", [ISH_PreprocessDaskOperation, AQS_PM_PreprocessDaskOperation])
-def test(tmp_path: Path, klass: type[AbstractDaskOperation]) -> None:
+@pytest.fixture(params=[ISH_PreprocessDaskOperation, AQS_PM_PreprocessDaskOperation])
+def klass(request: pytest.FixtureRequest) -> type[AbstractDaskOperation]:
+    return request.param
+
+@pytest.fixture(params=[True, False])
+def surf_only(request: pytest.FixtureRequest) -> bool:
+    return request.param
+
+
+def test(tmp_path: Path, klass: type[AbstractDaskOperation], surf_only: bool) -> None:
     np.random.seed(0)
-    test_ctx = ContextForDaskTest(root_dir=tmp_path, klass=klass)
+    test_ctx = ContextForDaskTest(root_dir=tmp_path, klass=klass, surf_only=surf_only)
     result = test_ctx.op.run()
     print(result)
     expected_dims = test_ctx.dims
+    if surf_only:
+        expected_dims["pfull"] = 1
     assert result.dims == expected_dims
     expected_vars = set(result.data_vars)
     expected_vars.update({"pfull"})
     assert expected_vars == set(test_ctx.op.dyn_varnames + test_ctx.op.phy_varnames + test_ctx.op.derived_varnames)
-    assert result.attrs == test_ctx.global_attrs
+    actual_attrs = result.attrs.copy()
+    for ii in ["ak", "bk"]:
+        actual_attrs[ii] = actual_attrs[ii].tolist()
+    assert actual_attrs == test_ctx.expected_global_attrs
     result.to_netcdf(test_ctx.op.out_path)
-
-
-def test2(tmp_path: Path) -> None:
-    #tdk:rm
-    ds = xr.Dataset()
-    ds.attrs["foo"] = [0.1,0.2,0.3]
-    out_path = tmp_path / "out.nc"
-    ds.to_netcdf(out_path)
-    ncdump(out_path)
