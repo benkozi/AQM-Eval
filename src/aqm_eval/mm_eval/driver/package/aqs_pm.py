@@ -10,7 +10,8 @@ from aqm_eval.mm_eval.driver.model import ModelRole
 from aqm_eval.mm_eval.driver.package.core import (
     AbstractDaskEvalPackage,
     AbstractDaskOperation,
-    PackageKey, TaskKey,
+    PackageKey,
+    TaskKey,
 )
 
 

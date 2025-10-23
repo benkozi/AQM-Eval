@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from aqm_eval.mm_eval.driver.package.aqs_pm import AQS_PM_PreprocessDaskOperation
 from aqm_eval.mm_eval.driver.package.core import AbstractDaskOperation, ForecastFileSpec
 from aqm_eval.mm_eval.driver.package.ish import ISH_PreprocessDaskOperation
-from aqm_eval.shared import PathExisting, ncdump
+from aqm_eval.shared import PathExisting
 
 
 class ContextForDaskTest(BaseModel):
@@ -21,7 +21,7 @@ class ContextForDaskTest(BaseModel):
     surf_only: bool
 
     dims: dict[str, int] = {"time": 1, "pfull": 64, "grid_yt": 20, "grid_xt": 10}
-    global_attrs: dict[str, str] = {"foo": "bar", "bar": "foo"}
+    global_attrs: dict[str, Any] = {"foo": "bar", "bar": "foo"}
     n_files: int = 15
 
     @cached_property
@@ -38,21 +38,26 @@ class ContextForDaskTest(BaseModel):
         print(f"{spec.phy_path=}")
 
         return self.klass.model_validate(
-            dict(out_path=self.root_dir / "out.nc", dyn_path=spec.dyn_path, phy_path=spec.phy_path, dask_num_workers=4, surf_only=self.surf_only,
-                 chunks="auto-aqm-eval")
+            dict(
+                out_path=self.root_dir / "out.nc",
+                dyn_path=spec.dyn_path,
+                phy_path=spec.phy_path,
+                dask_num_workers=4,
+                surf_only=self.surf_only,
+                chunks="auto-aqm-eval",
+            )
         )
 
     @cached_property
-    def ak_bk_value(self) -> np.array:
+    def ak_bk_value(self) -> np.ndarray:
         return np.array(range(self.dims["pfull"] + 1))
 
     @cached_property
-    def ak_bk_attrs(self) -> dict[str, np.array]:
+    def ak_bk_attrs(self) -> dict[str, np.ndarray]:
         if self.surf_only:
             return {"ak": self.ak_bk_value[0:2], "bk": self.ak_bk_value[0:2]}
         else:
             return {"ak": self.ak_bk_value, "bk": self.ak_bk_value}
-
 
     @cached_property
     def expected_global_attrs(self) -> dict[str, Any]:
@@ -90,6 +95,7 @@ class ContextForDaskTest(BaseModel):
 def klass(request: pytest.FixtureRequest) -> type[AbstractDaskOperation]:
     return request.param
 
+
 @pytest.fixture(params=[True, False])
 def surf_only(request: pytest.FixtureRequest) -> bool:
     return request.param
@@ -101,7 +107,7 @@ def test(tmp_path: Path, klass: type[AbstractDaskOperation], surf_only: bool) ->
     result = test_ctx.op.run()
     print(result)
     expected_dims = test_ctx.dims
-    expected_dims["time"] = test_ctx.n_files - 1 # no f0.nc file
+    expected_dims["time"] = test_ctx.n_files - 1  # no f0.nc file
     if surf_only:
         expected_dims["pfull"] = 1
     assert result.dims == expected_dims

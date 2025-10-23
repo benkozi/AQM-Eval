@@ -37,8 +37,8 @@ def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool, pack
 
     match package_key:
         case PackageKey.ISH | PackageKey.AQS_PM:
-            expected_n_links = 2 # 2 combined files (1 per cycle)
-            expected_n_dask_run_calls = expected_n_links # one call per file created
+            expected_n_links = 2  # 2 combined files (1 per cycle)
+            expected_n_dask_run_calls = expected_n_links  # one call per file created
 
     if use_base_model:
         # Two model adjustment

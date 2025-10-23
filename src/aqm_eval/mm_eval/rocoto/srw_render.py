@@ -19,17 +19,15 @@ class AbstractExecutionData(ABC, BaseModel):
 
     @cached_property
     def nodes(self) -> str:
-        return "{{{{ {host}.nodes }}}}:ppn={{{{ {host}.tasks_per_node }}}}".format(
-            host=self.execution_host)
+        return "{{{{ {host}.nodes }}}}:ppn={{{{ {host}.tasks_per_node }}}}".format(host=self.execution_host)
 
     @cached_property
     def nprocs(self) -> str:
-        return "{{{{ {host}.nodes * {host}.tasks_per_node }}}}".format(
-            host=self.execution_host)
+        return "{{{{ {host}.nodes * {host}.tasks_per_node }}}}".format(host=self.execution_host)
 
     @cached_property
     def walltime(self) -> str:
-        return "{{{{ {host}.walltime }}}}".format( host=self.execution_host)
+        return "{{{{ {host}.walltime }}}}".format(host=self.execution_host)
 
 
 class TaskData(AbstractExecutionData):
@@ -43,6 +41,7 @@ class TaskData(AbstractExecutionData):
 
 class TaskDataCollection(BaseModel):
     members: tuple[TaskData, ...]
+
 
 class PackageData(AbstractExecutionData):
     key: PackageKey
@@ -66,18 +65,18 @@ class PackageData(AbstractExecutionData):
         ret = {}
         for ii in self.tasks.members:
             tasks_to_exclude = f"{self.host}.{self.key.value}.tasks_to_exclude"
-            should_run = '{{% if "{task_key}" not in {tasks_to_exclude} %}}run_task{{% endif %}}'.format(task_key=ii.key.value, tasks_to_exclude=tasks_to_exclude)
+            should_run = '{{% if "{task_key}" not in {tasks_to_exclude} %}}run_task{{% endif %}}'.format(
+                task_key=ii.key.value, tasks_to_exclude=tasks_to_exclude
+            )
             ret[ii.key] = should_run
         return ret
 
 
 class PackageDataCollection(BaseModel):
-
     @computed_field
     @cached_property
     def members(self) -> tuple[PackageData, ...]:
         return tuple([PackageData(key=ii) for ii in PackageKey])
-
 
 
 class Renderer(BaseModel):
@@ -94,7 +93,6 @@ class Renderer(BaseModel):
             undefined=jinja2.StrictUndefined,
             # trim_blocks=True,
             lstrip_blocks=True,
-
         )
         return env.get_template(self.template_name)
 
@@ -109,10 +107,10 @@ class Renderer(BaseModel):
 
 
 @log_it
-def render_task_group(tmp_path: Path):
+def render_task_group(tmp_path: Path) -> None:
     packages = PackageDataCollection()
-    LOGGER(packages)
+    LOGGER(str(packages))
     renderer = Renderer(coll=packages, out_dir=tmp_path)
-    LOGGER(renderer)
+    LOGGER(str(renderer))
     renderer.run()
     LOGGER(renderer.out_path.read_text())

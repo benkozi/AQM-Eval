@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from enum import StrEnum, unique
 from functools import cached_property
 from pathlib import Path
-from typing import Iterator, Literal, Hashable
+from typing import Iterator, Literal
 
 import cartopy  # type: ignore[import-untyped]
 import dask
@@ -17,13 +17,12 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from melodies_monet import driver  # type: ignore[import-untyped]
 from melodies_monet.driver import analysis  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, computed_field
-from xarray.core.utils import Frozen
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.model import Model, ModelRole
 from aqm_eval.settings import SETTINGS
-from aqm_eval.shared import PathExisting, assert_file_exists, get_or_create_path, calc_2d_chunks
+from aqm_eval.shared import PathExisting, calc_2d_chunks, get_or_create_path
 
 
 @unique
@@ -59,7 +58,7 @@ class ForecastFileSpec(BaseModel):
     src_dir: PathExisting
     out_dir: PathExisting
     out_prefix: str
-    forecast_hours: tuple[int, ...] = range(1, 25)
+    forecast_hours: tuple[int, ...] = tuple(range(1, 25))
     # forecast_hour: int = Field(ge=0, le=24)
 
     @computed_field
@@ -353,7 +352,6 @@ class AbstractDaskOperation(ABC, BaseModel):
     phy_varnames: tuple[str, ...]
     derived_varnames: tuple[str, ...]
 
-
     def run(self) -> xr.Dataset:
         dask.config.set(scheduler="threads", num_workers=self.dask_num_workers)
         local_log_level = logging.DEBUG
@@ -394,14 +392,15 @@ class AbstractDaskOperation(ABC, BaseModel):
         path = getattr(self, target)
         local_log_level = logging.DEBUG
         LOGGER(f"Load {path}", level=local_log_level)
+        local_chunks: dict[str, int] | Literal["auto"] = "auto"
         if self.chunks == "auto-aqm-eval":
             with xr.open_mfdataset(path, concat_dim="time", combine="nested") as ds:
                 dims_to_chunk = {ii: ds.sizes[ii] for ii in ["grid_xt", "grid_yt"]}
-                chunks = calc_2d_chunks(dims_to_chunk, self.dask_num_workers - ds.sizes["time"])
-            LOGGER(f"calculated chunks {chunks=}", level=local_log_level)
+                local_chunks = calc_2d_chunks(dims_to_chunk, self.dask_num_workers - ds.sizes["time"])
+            LOGGER(f"calculated chunks {local_chunks=}", level=local_log_level)
         else:
-            chunks = self.chunks
-        ds = xr.open_mfdataset(path, chunks=chunks, concat_dim="time", combine="nested")
+            local_chunks = self.chunks
+        ds = xr.open_mfdataset(path, chunks=local_chunks, concat_dim="time", combine="nested")
         LOGGER(f"xr.open_mfdataset {ds=}", level=local_log_level)
         if self.surf_only:
             ds = ds.isel(pfull=slice(0, 1))

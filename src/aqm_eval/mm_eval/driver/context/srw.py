@@ -10,7 +10,7 @@ from pydantic import Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
-from aqm_eval.mm_eval.driver.package.core import PackageKey, TaskKey
+from aqm_eval.mm_eval.driver.package.core import PackageKey
 from aqm_eval.shared import PathExisting, assert_directory_exists, assert_file_exists
 
 try:
@@ -98,7 +98,7 @@ class SRWContext(AbstractDriverContext):
     @computed_field
     @cached_property
     def mm_obs_aqs_pm_fn_template(self) -> str:
-        #tdk: create single observations representation
+        # tdk: create single observations representation
         return self.find_nested_key(("melodies_monet_parm", "aqm", "observation_templates", PackageKey.AQS_PM.value))
 
     @computed_field

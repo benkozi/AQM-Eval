@@ -1,7 +1,3 @@
-from functools import cached_property
-
-from pydantic import computed_field
-
 from aqm_eval.logging_aqm_eval import log_it
 from aqm_eval.mm_eval.driver.package.core import AbstractEvalPackage, PackageKey, TaskKey
 
@@ -11,17 +7,17 @@ class AQS_VOC_EvalPackage(AbstractEvalPackage):
 
     key: PackageKey = PackageKey.AQS_VOC
     namelist_template: str = "namelist.aqs.voc.j2"
-    tasks_default: tuple[TaskKey, ...] =(
-            TaskKey.SAVE_PAIRED,
-            TaskKey.TIMESERIES,
-            TaskKey.TAYLOR,
-            TaskKey.SPATIAL_BIAS,
-            TaskKey.SPATIAL_OVERLAY,
-            TaskKey.BOXPLOT,
-            TaskKey.MULTI_BOXPLOT,
-            TaskKey.CSI,
-            TaskKey.STATS,
-        )
+    tasks_default: tuple[TaskKey, ...] = (
+        TaskKey.SAVE_PAIRED,
+        TaskKey.TIMESERIES,
+        TaskKey.TAYLOR,
+        TaskKey.SPATIAL_BIAS,
+        TaskKey.SPATIAL_OVERLAY,
+        TaskKey.BOXPLOT,
+        TaskKey.MULTI_BOXPLOT,
+        TaskKey.CSI,
+        TaskKey.STATS,
+    )
 
     @log_it
     def initialize(self) -> None:
