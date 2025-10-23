@@ -425,7 +425,6 @@ class AbstractDaskEvalPackage(AbstractEvalPackage):
                     phy_path=spec.phy_path,
                     dask_num_workers=SETTINGS.dask_num_workers,
                     surf_only=True,
-                    chunks="auto-aqm-eval",
                 )
             )
             op.run()
