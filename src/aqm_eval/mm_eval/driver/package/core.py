@@ -383,7 +383,7 @@ class AbstractDaskOperation(ABC, BaseModel):
         LOGGER(f"Load {path}", level=local_log_level)
         if self.chunks == "auto-aqm-eval":
             with xr.open_dataset(path) as ds:
-                dims_to_chunk = {ii: ds.dims[ii] for ii in ["grid_xt", "grid_yt"]}
+                dims_to_chunk = {ii: ds.sizes[ii] for ii in ["grid_xt", "grid_yt"]}
                 chunks = calc_2d_chunks(dims_to_chunk, self.dask_num_workers)
                 LOGGER(f"calculated chunks {chunks=}", level=local_log_level)
         else:
