@@ -1,6 +1,7 @@
 """Defines package objects used when generating MM files. A package is a collection of tasks specfiic to an evaluation type."""
 
 import logging
+import re
 from abc import ABC, abstractmethod
 from enum import StrEnum, unique
 from functools import cached_property
@@ -65,14 +66,16 @@ class ForecastFileSpec(BaseModel):
     @cached_property
     def dyn_path(self) -> tuple[Path, ...]:
         fns = self.src_dir.glob("dynf*.nc")
-        ret = [ii for ii in fns if "0.nc" not in ii.name]
+        pattern = re.compile(r".*dynf0+\.nc")
+        ret = [ii for ii in fns if re.match(pattern, ii.name) is None]
         return tuple(ret)
 
     @computed_field
     @cached_property
     def phy_path(self) -> tuple[Path, ...]:
         fns = self.src_dir.glob("phyf*.nc")
-        ret = [ii for ii in fns if "0.nc" not in ii.name]
+        pattern = re.compile(r".*phyf0+\.nc")
+        ret = [ii for ii in fns if re.match(pattern, ii.name) is None]
         return tuple(ret)
 
     @computed_field

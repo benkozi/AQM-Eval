@@ -22,7 +22,7 @@ class ContextForDaskTest(BaseModel):
 
     dims: dict[str, int] = {"time": 1, "pfull": 64, "grid_yt": 20, "grid_xt": 10}
     global_attrs: dict[str, str] = {"foo": "bar", "bar": "foo"}
-    n_files: int = 5
+    n_files: int = 15
 
     @cached_property
     def op(self) -> AbstractDaskOperation:
