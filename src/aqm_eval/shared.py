@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import numpy as np
-from pydantic import BeforeValidator
+from pydantic import BeforeValidator, PlainSerializer
 
 from aqm_eval.logging_aqm_eval import LOGGER
 
@@ -17,14 +17,14 @@ def assert_path_exists(path: Path | str) -> Path:
 
 
 def _format_path_existing_(value: Path | str) -> Path:
-    LOGGER(f"formatting {value}", level=logging.DEBUG)
+    # LOGGER(f"formatting {value}", level=logging.DEBUG)
     ret = Path(value)
     if not ret.exists():
         LOGGER(exc_info=FileNotFoundError(f"path does not exist: {ret}"))
     return ret
 
 
-PathExisting = Annotated[Path, BeforeValidator(_format_path_existing_)]
+PathExisting = Annotated[Path, BeforeValidator(_format_path_existing_), PlainSerializer(lambda x: str(x), return_type=str)]
 
 
 def get_or_create_path(path: str | Path, **kwargs: Any) -> Path:
