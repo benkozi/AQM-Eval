@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
-from aqm_eval.mm_eval.driver.model import Model, ModelRole
+from aqm_eval.mm_eval.driver.model import Model
 from aqm_eval.settings import SETTINGS
 from aqm_eval.shared import PathExisting, calc_2d_chunks, get_or_create_path
 
@@ -107,10 +107,10 @@ class AbstractEvalPackage(ABC, BaseModel):
     def mm_package_output_dir(self) -> Path:
         return self.ctx.mm_output_dir / self.key.value
 
-    @computed_field(description="Prefix for each model role.")
-    @cached_property
-    def model_prefixes(self) -> dict[ModelRole, str]:
-        return {ii: ii.value + "_orig" for ii in ModelRole}
+    # @computed_field(description="Prefix for each model role.")
+    # @cached_property
+    # def model_prefixes(self) -> dict[ModelRole, str]:
+    #     return {ii: ii.value + "_orig" for ii in ModelRole}
 
     @computed_field(description="Tasks that the package will run.")
     @cached_property
@@ -126,40 +126,20 @@ class AbstractEvalPackage(ABC, BaseModel):
 
     @cached_property
     def mm_models(self) -> tuple[Model, ...]:
-        """
-        Returns
-        -------
-        tuple[Model, ...]
-            The models to use in the evaluation. At most, this can contain two models: the
-            "evaluation" model and an optional "base" model. If two models are returned,
-            "scorecards" can be created.
-        """
-        ret = [
-            Model(
-                expt_dir=self.ctx.mm_eval_model_expt_dir,
-                label="eval_aqm",
-                title="Eval AQM",
-                prefix=self.model_prefixes[ModelRole.EVAL],
-                role=ModelRole.EVAL,
+        ret = []
+        for k,v in self.ctx.mm_config.aqm.models.items():
+            kwds = dict(
+                expt_dir=v.expt_dir,
+                label=k,
+                title=v.title,
+                color=v.color,
                 dyn_file_template=("dynf*.nc",),
                 cycle_dir_template=self.ctx.link_simulation,
                 link_alldays_path=self.link_alldays_path,
             )
-        ]
-        if self.ctx.mm_base_model_expt_dir is not None:
-            ret.append(
-                Model(
-                    expt_dir=self.ctx.mm_base_model_expt_dir,
-                    label="base_aqm",
-                    title="Base AQM",
-                    prefix=self.model_prefixes[ModelRole.BASE],
-                    role=ModelRole.BASE,
-                    dyn_file_template=("dynf*.nc",),
-                    cycle_dir_template=self.ctx.link_simulation,
-                    link_alldays_path=self.link_alldays_path,
-                )
-            )
+            ret.append(Model.model_validate(kwds))
         return tuple(ret)
+
 
     @cached_property
     def mm_model_labels(self) -> list[str]:
@@ -210,7 +190,7 @@ class AbstractEvalPackage(ABC, BaseModel):
                 yield ForecastFileSpec(
                     src_dir=dir_path,
                     out_dir=model.link_alldays_path,
-                    out_prefix=f"{model.prefix}_{dir_name}",
+                    out_prefix=f"{model.label}_{dir_name}",
                     # forecast_hour=fhr,
                 )
 

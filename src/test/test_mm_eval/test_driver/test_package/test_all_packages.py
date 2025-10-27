@@ -6,6 +6,7 @@ import xarray as xr
 from pydantic import BaseModel
 from pytest_mock import MockerFixture
 
+from aqm_eval.mm_eval.driver.context.config import Config
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
 from aqm_eval.mm_eval.driver.package.core import (
     AbstractDaskOperation,
@@ -30,7 +31,7 @@ def package_key(request: pytest.FixtureRequest) -> PackageKey:
 
 
 @pytest.fixture
-def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool, package_key: PackageKey) -> MMEvalRunnerTestData:
+def mm_eval_runner_test_data(srw_context: SRWContext, package_key: PackageKey, config: Config) -> MMEvalRunnerTestData:
     package_class = package_key_to_class(package_key)
     expected_n_links = 25 * 2  # 25 dynf hourly files * 2 cycle directories
     expected_n_dask_run_calls = 0
@@ -40,10 +41,10 @@ def mm_eval_runner_test_data(srw_context: SRWContext, use_base_model: bool, pack
             expected_n_links = 2  # 2 combined files (1 per cycle)
             expected_n_dask_run_calls = expected_n_links  # one call per file created
 
-    if use_base_model:
-        # Two model adjustment
-        expected_n_links *= 2
-        expected_n_dask_run_calls *= 2
+    # Adjust for model count
+    n_models = len(config.aqm.models)
+    expected_n_links *= n_models
+    expected_n_dask_run_calls *= n_models
 
     return MMEvalRunnerTestData(
         expected_n_links=expected_n_links,

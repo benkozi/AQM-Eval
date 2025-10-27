@@ -25,24 +25,24 @@ paired_dataset:
 {%- endfor %}
 
 {% for mm_model in package.mm_models %}
-# ==== Model - {{ mm_model.role.value }} ====
-model_{{ mm_model.role.value }}_label: {{ mm_model.label }}
-model_{{ mm_model.role.value }}_files: {{ mm_model.link_alldays_path_template }}
-model_{{ mm_model.role.value }}_type: '"rrfs"'
-model_{{ mm_model.role.value }}_kwargs:
+# ==== Model ====
+model_{{ mm_model.label }}_label: {{ mm_model.label }}
+model_{{ mm_model.label }}_files: {{ mm_model.link_alldays_path_template }}
+model_{{ mm_model.label }}_type: '"rrfs"'
+model_{{ mm_model.label }}_kwargs:
   surf_only: True
   mech: "cb6r3_ae6_aq"
-model_{{ mm_model.role.value }}_radius: 20_000
-model_{{ mm_model.role.value }}_mapping:
+model_{{ mm_model.label }}_radius: 20_000
+model_{{ mm_model.label }}_mapping:
   pm25_so4: 'SO4f'
   pm25_no3: 'NO3f'
   pm25_nh4: 'NH4+f'
   pm25_ec: 'ECf'
   pm25_oc: 'OCPM2.5LCTOT'
-model_{{ mm_model.role.value }}_variables: "~"
-model_{{ mm_model.role.value }}_projection: "~"
-model_{{ mm_model.role.value }}_plot_kwargs:
-  color: {{ mm_model.plot_kwargs_color }}
+model_{{ mm_model.label }}_variables: "~"
+model_{{ mm_model.label }}_projection: "~"
+model_{{ mm_model.label }}_plot_kwargs:
+  color: {{ mm_model.color }}
   marker: "^"
   linestyle: "-"
   markersize: 4

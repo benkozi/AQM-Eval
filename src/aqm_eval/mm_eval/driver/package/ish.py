@@ -5,7 +5,6 @@ import dask.array
 import xarray as xr
 from pydantic import computed_field
 
-from aqm_eval.mm_eval.driver.model import ModelRole
 from aqm_eval.mm_eval.driver.package.core import (
     AbstractDaskEvalPackage,
     AbstractDaskOperation,
@@ -69,8 +68,3 @@ class ISH_EvalPackage(AbstractDaskEvalPackage):
         TaskKey.STATS,
     )
     klass_dask_operation: type[AbstractDaskOperation] = ISH_PreprocessDaskOperation
-
-    @computed_field(description="Prefix for each model role.")
-    @cached_property
-    def model_prefixes(self) -> dict[ModelRole, str]:
-        return {ii: ii.value + "_ish" for ii in ModelRole}
