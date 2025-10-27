@@ -4,7 +4,7 @@ from typing import Any, Annotated
 from pydantic import BaseModel, model_serializer, field_serializer, Field, BeforeValidator
 
 from aqm_eval.mm_eval.driver.package.core import PackageKey, TaskKey
-from aqm_eval.shared import PathExisting
+from aqm_eval.shared import PathExisting, PathExistingDir
 
 
 def _is_unique_(v: tuple[Any, ...]) -> tuple[Any, ...]:
@@ -30,19 +30,19 @@ class Execution(BaseModel):
 class PackageConfig(BaseModel):
     model_config = {"frozen": True}
 
-    key: PackageKey #tdk: is unique
-    execution: Execution
+    active: bool
     observation_template: str
     tasks: tuple[TaskKey, ...] #tdk: is unique, save_paired is always first and required
+    execution: Execution
 
 
 
 class AQMModelConfig(BaseModel):
     model_config = {"frozen": True}
 
-    key: str #tdk: no spaces, - and _ only
+    key: str
     title: str #tdk: unique in coll
-    path: PathExisting
+    expt_dir: PathExistingDir
     color: str #tdk: any valid matplotlib color, unique in coll
     is_host: bool = False # tdk: only one model needs to be host = true but must be one
 
@@ -50,23 +50,23 @@ class AQMModelConfig(BaseModel):
 class AQMConfig(BaseModel):
     model_config = {"frozen": True}
 
-    output_dir: Path
-    models: tuple[AQMModelConfig, ...] = Field(min_length=1)
-    packages: tuple[PackageConfig, ...] = Field(min_length=1)
-    packages_to_run: tuple[PackageKey, ...] = Field(min_length=1)
+    output_dir: Path #tdk:doc: existing directory
+    models: dict[str, AQMModelConfig] #tdk: str key is unique
+    packages: dict[PackageKey, PackageConfig] = Field(min_length=1)
 
 
 class Config(BaseModel):
     model_config = {"frozen": True}
 
     aqm: AQMConfig
-    key: str = "melodies_monet_parm"
 
-    def to_yaml_as_json(self) -> dict:
+    _key: str = "melodies_monet_parm"
+
+    def to_yaml(self) -> dict:
         ret = self.model_dump(mode="json")
-        ret = {self.key: ret}
+        ret = {self._key: ret}
         return ret
 
     @classmethod
-    def from_yaml_as_json(cls, data: dict) -> "Config":
-        return cls.model_validate(data[cls.model_fields["key"].default])
+    def from_yaml(cls, data: dict) -> "Config":
+        return cls.model_validate(data[cls._key.default])

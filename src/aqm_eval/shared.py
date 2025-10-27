@@ -16,15 +16,16 @@ def assert_path_exists(path: Path | str) -> Path:
     return path
 
 
-def _format_path_existing_(value: Path | str) -> Path:
-    # LOGGER(f"formatting {value}", level=logging.DEBUG)
-    ret = Path(value)
-    if not ret.exists():
-        LOGGER(exc_info=FileNotFoundError(f"path does not exist: {ret}"))
-    return ret
+PathExisting = Annotated[Path, BeforeValidator(assert_path_exists), PlainSerializer(lambda x: str(x), return_type=str)]
+
+def assert_directory_exists(path: Path | str) -> PathExisting:
+    path = assert_path_exists(path)
+    if not path.is_dir():
+        LOGGER(exc_info=ValueError(f"path is not a directory: {path}"))
+    return path
 
 
-PathExisting = Annotated[Path, BeforeValidator(_format_path_existing_), PlainSerializer(lambda x: str(x), return_type=str)]
+PathExistingDir = Annotated[Path, BeforeValidator(assert_directory_exists), PlainSerializer(lambda x: str(x), return_type=str)]
 
 
 def get_or_create_path(path: str | Path, **kwargs: Any) -> Path:
@@ -41,13 +42,6 @@ def assert_file_exists(path: Path | str) -> Path:
     path = assert_path_exists(path)
     if not path.is_file():
         LOGGER(exc_info=ValueError(f"path is not a file: {path}"))
-    return path
-
-
-def assert_directory_exists(path: Path | str) -> PathExisting:
-    path = assert_path_exists(path)
-    if not path.is_dir():
-        LOGGER(exc_info=ValueError(f"path is not a directory: {path}"))
     return path
 
 
