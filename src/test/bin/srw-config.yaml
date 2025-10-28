@@ -6,7 +6,7 @@ melodies_monet_parm:
         expt_dir: null
         title: "Evaluation Target"
         plot_kwargs:
-          color: forestgreen
+          color: g
           marker: ^
           linestyle: '-'
           markersize: 4

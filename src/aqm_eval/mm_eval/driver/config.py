@@ -69,7 +69,7 @@ class PackageConfig(BaseModel):
     model_config = {"frozen": True}
 
     key: PackageKey = Field(exclude=True)
-    observation_template: str
+    observation_template: str #tdk: can be null if active is false
     mapping: dict[str, str] = Field(default_factory=dict)
     active: bool = True
     tasks_to_exclude: tuple[

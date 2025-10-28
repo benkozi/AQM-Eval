@@ -136,9 +136,13 @@ class SRWContext(AbstractDriverContext):
         mm_parm_right = self.yaml_data[self.config_path_user]
 
         root = mm_parm_right["melodies_monet_parm"]["aqm"]
+        found_host = False
         for k, v in root["models"].items():
-            if v["is_host"]:
+            if v.get("is_host", False):
                 v["expt_dir"] = self.expt_dir
+                found_host = True
+        if not found_host:
+            raise ValueError("No host model found.")
         if root["output_dir"] is None:
             root["output_dir"] = self.mm_output_dir_default
 
