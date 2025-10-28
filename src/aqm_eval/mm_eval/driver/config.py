@@ -70,7 +70,7 @@ class PackageConfig(BaseModel):
 
     key: PackageKey = Field(exclude=True)
     observation_template: str #tdk: can be null if active is false
-    mapping: dict[str, str] = Field(default_factory=dict)
+    mapping: dict[str, str]
     active: bool = True
     tasks_to_exclude: tuple[
         TaskKey, ...]  = tuple()
@@ -79,7 +79,7 @@ class PackageConfig(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def _validate_model_(cls, values: dict) -> dict:
-        if values.get("mapping") == {}:
+        if values.get("mapping") is None:
             match values["key"]:
                 case PackageKey.CHEM:
                     mapping = {
