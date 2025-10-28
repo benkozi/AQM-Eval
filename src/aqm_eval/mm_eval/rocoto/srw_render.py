@@ -57,8 +57,8 @@ class PackageData(AbstractExecutionData):
 
     @cached_property
     def should_run(self) -> str:
-        path = f"{self.host}.packages_to_run"
-        ret = '{{% if "{key}" in {path} %}}run_package{{% endif %}}'.format(key=self.key.value, path=path)
+        path = f"{self.host}.{self.key.value}.active"
+        ret = '{{% if {path} %}}run_package{{% endif %}}'.format(path=path)
         return ret
 
     @cached_property

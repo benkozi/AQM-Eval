@@ -69,7 +69,7 @@ task_mm_{{ package.key.value }}_run_{{ task.key.value }}:
   {% if "scorecard" in task.key.value %}
       streq_scorecard:
         left: run_scorecard_task
-        right: {% raw %}'{% if melodies_monet_parm.aqm.base_model_expt_dir is not none %}run_scorecard_task{% endif %}'{% endraw %}
+        right: {% raw %}'{% if (melodies_monet_parm.aqm.models | length) > 1 %}run_scorecard_task{% endif %}'{% endraw %}
   {% endif %}
 
   {% endfor %}

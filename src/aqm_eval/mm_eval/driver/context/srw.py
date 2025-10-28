@@ -70,10 +70,12 @@ class SRWContext(AbstractDriverContext):
     @computed_field
     @cached_property
     def mm_output_dir(self) -> Path:
-        config_path = self.mm_config.aqm.output_dir
-        if config_path is None:
-            config_path = self.expt_dir / "mm_output"
-        return config_path
+        return self.mm_config.aqm.output_dir
+
+    @computed_field
+    @cached_property
+    def mm_output_dir_default(self) -> Path:
+        return self.expt_dir / "mm_output"
 
     @computed_field
     @cached_property
@@ -132,6 +134,14 @@ class SRWContext(AbstractDriverContext):
     def mm_config(self) -> Config:
         mm_parm_left = self.yaml_data[self.config_path_var_defns]
         mm_parm_right = self.yaml_data[self.config_path_user]
+
+        root = mm_parm_right["melodies_monet_parm"]["aqm"]
+        for k, v in root["models"].items():
+            if v["is_host"]:
+                v["expt_dir"] = self.expt_dir
+        if root["output_dir"] is None:
+            root["output_dir"] = self.mm_output_dir_default
+
         return Config.from_yaml_overlay(mm_parm_left, mm_parm_right)
 
     @cached_property

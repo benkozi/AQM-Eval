@@ -267,6 +267,9 @@ class AbstractEvalPackage(ABC, BaseModel):
             LOGGER(f"{package_run_dir=} does not exist. creating.")
             package_run_dir.mkdir(parents=True, exist_ok=False)
 
+        out_mm_cfg = package_run_dir / "melodies_monet_parm.yaml"
+        out_mm_cfg.write_text(yaml.safe_dump(self.ctx.mm_config.to_yaml(), sort_keys=False))
+
         cfg = {"ctx": self.ctx, "mm_tasks": tuple([ii.value for ii in self.tasks]), "package": self}
         namelist_config_str = self.j2_env.get_template(self.namelist_template).render(cfg)
         namelist_config = yaml.safe_load(namelist_config_str)

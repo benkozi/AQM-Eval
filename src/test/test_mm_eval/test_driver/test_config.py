@@ -16,6 +16,7 @@ def test(config: Config, tmp_path: Path) -> None:
     with open(out_path, "r") as f:
         data = yaml.safe_load(f)
     print(data)
+    assert "key" not in data["melodies_monet_parm"]["aqm"]["models"]["eval1"]
 
     _ = Config.from_yaml(data)
 

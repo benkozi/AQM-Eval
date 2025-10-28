@@ -2,7 +2,10 @@ from pathlib import Path
 
 import pytest
 import yaml
+from _pytest.fixtures import FixtureRequest
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
+from statsmodels.sandbox.nonparametric.kdecovclass import test_kde_1d
+from uwtools.api.config import get_yaml_config
 
 from aqm_eval.mm_eval.driver.config import Config
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
@@ -82,8 +85,14 @@ def expt_dir(config: Config) -> Path:
     return list(config.aqm.host_model.values())[0].expt_dir
 
 
+@pytest.fixture(params=["pure", "srw"])
+def config_content(request: FixtureRequest, config: Config, bin_dir: Path) -> dict:
+    return get_config_content(bin_dir, config, request.param)
+
+
+
 @pytest.fixture()
-def config_path_user(config: Config, expt_dir: Path) -> Path:
+def config_path_user(expt_dir: Path, bin_dir: Path, config_content: dict) -> Path:
     yaml_content = {
         "metadata": {"description": "config for SRW-AQM, AQM_NA_13km, AEROMMA field campaign"},
         "user": {"RUN_ENVIR": "community", "MACHINE": "GAEAC6", "ACCOUNT": "bil-fire8"},
@@ -120,11 +129,25 @@ def config_path_user(config: Config, expt_dir: Path) -> Path:
         #     }
         # },
     }
-    yaml_content.update(config.to_yaml())
+    yaml_content.update(config_content)
     yaml_path = expt_dir / "config.yaml"
     with open(yaml_path, "w") as f:
         yaml.dump(yaml_content, f)
     return yaml_path
+
+
+def get_config_content(bin_dir: Path, config: Config, config_src: str) -> dict:
+    match config_src:
+        case "pure":
+            new_content = (config.to_yaml())
+        case "srw":
+            srw_config = bin_dir / "srw-config.yaml"
+            srw_config_raw = srw_config.read_text()
+            srw_config_raw = srw_config_raw.replace("!int '{{ platform.NCORES_PER_NODE }}'", "100")
+            new_content = yaml.safe_load(srw_config_raw)
+        case _:
+            raise NotImplementedError(config_src)
+    return new_content
 
 
 @pytest.fixture()
@@ -138,11 +161,11 @@ def config_path_rocoto(expt_dir: Path) -> Path:
 
 
 @pytest.fixture()
-def config_path_var_defns(tmp_path: Path, expt_dir: Path, config: Config) -> Path:
+def config_path_var_defns(tmp_path: Path, expt_dir: Path, config_content: dict) -> Path:
     path = tmp_path / "NaturalEarth"
     path.mkdir(exist_ok=True, parents=True)
     yaml_content = {"platform": {"FIXshp": f"{str(path)}"}}
-    yaml_content.update(config.to_yaml())
+    yaml_content.update(config_content)
     yaml_path = expt_dir / "var_defns.yaml"
     with open(yaml_path, "w") as f:
         yaml.dump(yaml_content, f)

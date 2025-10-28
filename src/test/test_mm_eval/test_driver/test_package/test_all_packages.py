@@ -29,7 +29,7 @@ def package_key(request: pytest.FixtureRequest) -> PackageKey:
 
 
 @pytest.fixture
-def mm_eval_runner_test_data(srw_context: SRWContext, package_key: PackageKey, config: Config) -> MMEvalRunnerTestData:
+def mm_eval_runner_test_data(srw_context: SRWContext, package_key: PackageKey) -> MMEvalRunnerTestData:
     package_class = package_key_to_class(package_key)
     expected_n_links = 25 * 2  # 25 dynf hourly files * 2 cycle directories
     expected_n_dask_run_calls = 0
@@ -40,7 +40,7 @@ def mm_eval_runner_test_data(srw_context: SRWContext, package_key: PackageKey, c
             expected_n_dask_run_calls = expected_n_links  # one call per file created
 
     # Adjust for model count
-    n_models = len(config.aqm.models)
+    n_models = len(srw_context.mm_config.aqm.models)
     expected_n_links *= n_models
     expected_n_dask_run_calls *= n_models
 
@@ -75,7 +75,7 @@ def test_all_packages(mm_eval_runner_test_data: MMEvalRunnerTestData, mocker: Mo
 
     actual_files = package.run_dir.rglob("*.yaml")
     expected_filenames = package.task_control_filenames
-    expected_filenames.update({"namelist.yaml"})
+    expected_filenames.update({"namelist.yaml", "melodies_monet_parm.yaml"})
     assert set([ii.name for ii in actual_files]) == expected_filenames
 
     assert package.link_alldays_path.name in [ii.name for ii in package.run_dir.iterdir()]

@@ -3,7 +3,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Annotated, Mapping
 
-from pydantic import BaseModel, Field, AfterValidator, model_validator
+from pydantic import BaseModel, Field, AfterValidator, model_validator, model_serializer
 
 from aqm_eval.shared import PathExistingDir
 
@@ -46,32 +46,38 @@ def _is_unique_(v: tuple[Any, ...]) -> tuple[Any, ...]:
 class BatchArgs(BaseModel):
     model_config = {"frozen": True}
 
-    nodes: int = Field(ge=1)
-    tasks_per_node: int = Field(ge=1)
-    walltime: str  # tdk: format is HH:MM:SS
+    nodes: int = Field(ge=1, default=1)
+    tasks_per_node: int = Field(ge=1, default=1)
+    walltime: str = Field(default="00:01:00")
 
 
 class Execution(BaseModel):
     model_config = {"frozen": True}
 
-    batchargs: BatchArgs
+    batchargs: BatchArgs = Field(default_factory=BatchArgs)
+
+
+class TaskConfig(BaseModel):
+    model_config = {"frozen": True}
+
+    execution: Execution = Field(default_factory=Execution)
 
 
 class PackageConfig(BaseModel):
     model_config = {"frozen": True}
 
-    key: PackageKey  # tdk: this should not be written out and should automatically be populated
-    active: bool
+    key: PackageKey = Field(exclude=True)
     observation_template: str
+    mapping: dict[str, str] = Field(default_factory=dict)
+    active: bool = True
     tasks_to_exclude: tuple[
-        TaskKey, ...]  # tdk: is unique, save_paired is always first and required
-    execution: Execution
-    mapping: dict[str, str]
+        TaskKey, ...]  = tuple()
+    execution: Execution = Field(default_factory=Execution)
 
     @model_validator(mode="before")
     @classmethod
     def _validate_model_(cls, values: dict) -> dict:
-        if values.get("mapping") is None:
+        if values.get("mapping") == {}:
             match values["key"]:
                 case PackageKey.CHEM:
                     mapping = {
@@ -122,15 +128,23 @@ class PlotKwargs(BaseModel):
 class AQMModelConfig(BaseModel):
     model_config = {"frozen": True}
 
-    title: str  # tdk: unique in coll
+    key: str = Field(exclude=True)
     expt_dir: PathExistingDir
-    plot_kwargs: PlotKwargs
+    title: str  # tdk: unique in coll
+    plot_kwargs: PlotKwargs = Field(default_factory=PlotKwargs)
     is_host: bool = False  # tdk: only one model needs to be host = true but must be one
     type: str = "rrfs"
     kwargs: dict[str, Any] = {'surf_only': True, 'mech': 'cb6r3_ae6_aq'}
     radius_of_influence: float = 20000
     variables: Any | None = None
     projection: Any | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _validate_model_(cls, values: dict) -> dict:
+        if values.get("title") is None:
+            values["title"] = values["key"]
+        return values
 
 
 def _validate_models_after_(value: dict[str, AQMModelConfig]) -> dict[str, AQMModelConfig]:
@@ -147,6 +161,7 @@ class AQMConfig(BaseModel):
     models: Annotated[dict[str, AQMModelConfig], AfterValidator(_validate_models_after_)] = Field(
         max_length=4)
     packages: dict[PackageKey, PackageConfig] = Field(min_length=1)
+    tasks: TaskConfig
 
     @cached_property
     def host_model(self) -> dict[str, AQMModelConfig]:
@@ -154,6 +169,17 @@ class AQMConfig(BaseModel):
             if v.is_host:
                 return {k: v}
         raise ValueError("No host model found.")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _validate_model_(cls, values: dict) -> dict:
+        for target in ["models", "packages"]:
+            for k, v in values[target].items():
+                if isinstance(values[target][k], Mapping):
+                    values[target][k]["key"] = k
+        return values
+
+
 
 
 class Config(BaseModel):
