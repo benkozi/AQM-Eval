@@ -6,13 +6,11 @@ import xarray as xr
 from pydantic import BaseModel
 from pytest_mock import MockerFixture
 
-from aqm_eval.mm_eval.driver.context.config import Config
+from aqm_eval.mm_eval.driver.config import Config, TaskKey, PackageKey
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
 from aqm_eval.mm_eval.driver.package.core import (
     AbstractDaskOperation,
     AbstractEvalPackage,
-    PackageKey,
-    TaskKey,
     package_key_to_class,
 )
 

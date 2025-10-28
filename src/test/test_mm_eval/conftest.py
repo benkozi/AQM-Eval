@@ -1,14 +1,80 @@
 from pathlib import Path
-from typing import Iterator
 
 import pytest
 import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
-from aqm_eval.mm_eval.driver.context.config import Config
+from aqm_eval.mm_eval.driver.config import Config
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
-from aqm_eval.mm_eval.driver.package.core import PackageKey
-from aqm_eval.shared import PathExisting, PathExistingDir
+
+import tempfile
+from pathlib import Path
+
+import pytest
+from polyfactory.factories.pydantic_factory import ModelFactory
+
+from aqm_eval.mm_eval.driver.config import PackageConfig, AQMModelConfig, AQMConfig, Config, \
+    PlotKwargs, PackageKey
+
+_TEST_GLOBALS = {"tmp_path": Path("")}
+
+
+class PackageConfigFactory(ModelFactory[PackageConfig]):
+
+    @classmethod
+    def active(cls) -> bool:
+        return True
+
+
+class PlotKwargsFactory(ModelFactory[PlotKwargs]):
+    __use_defaults__ = True
+
+
+class AQMModelConfigFactory(ModelFactory[AQMModelConfig]):
+    __use_defaults__ = True
+
+    @classmethod
+    def plot_kwargs(cls):
+        return PlotKwargsFactory.build()
+
+
+class AQMConfigFactory(ModelFactory[AQMConfig]):
+
+    @classmethod
+    def output_dir(cls) -> Path:
+        return Path(tempfile.mkdtemp()) / "foo" / "bar"
+
+    @classmethod
+    def models(cls):
+        global _TEST_GLOBALS
+        data = {"eval1": {"is_host": True}, "base1": {"is_host": False},
+                "base2": {"is_host": False}, "base4": {"is_host": False}}
+        ret = {}
+        for k, v in data.items():
+            expt_dir = _TEST_GLOBALS["tmp_path"] / k
+            expt_dir.mkdir(exist_ok=True, parents=True)
+            ret[k] = AQMModelConfigFactory.build(**{**data[k], "expt_dir": expt_dir})
+        return ret
+
+    @classmethod
+    def packages(cls):
+        return {ii: PackageConfigFactory.build() for ii in PackageKey}
+
+
+class ConfigFactory(ModelFactory[Config]):
+    __use_defaults__ = True
+
+    @classmethod
+    def aqm(cls):
+        return AQMConfigFactory.build()
+
+
+@pytest.fixture
+def config(tmp_path: Path) -> Config:
+    global _TEST_GLOBALS
+    _TEST_GLOBALS["tmp_path"] = tmp_path
+    return ConfigFactory.build()
+
 
 
 @pytest.fixture

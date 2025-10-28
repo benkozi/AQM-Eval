@@ -9,9 +9,8 @@ from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.package.core import (
     AbstractDaskEvalPackage,
     AbstractDaskOperation,
-    PackageKey,
-    TaskKey,
 )
+from aqm_eval.mm_eval.driver.config import TaskKey, PackageKey
 
 
 class AQS_PM_PreprocessDaskOperation(AbstractDaskOperation):

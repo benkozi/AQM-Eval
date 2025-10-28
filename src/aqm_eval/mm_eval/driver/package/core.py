@@ -3,7 +3,6 @@
 import logging
 import re
 from abc import ABC, abstractmethod
-from enum import StrEnum, unique
 from functools import cached_property
 from pathlib import Path
 from typing import Iterator, Literal
@@ -19,39 +18,11 @@ from melodies_monet.driver import analysis  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
+from aqm_eval.mm_eval.driver.config import TaskKey, PackageKey, PackageConfig
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.model import Model
 from aqm_eval.settings import SETTINGS
 from aqm_eval.shared import PathExisting, calc_2d_chunks, get_or_create_path
-
-
-@unique
-class TaskKey(StrEnum):
-    """Unique MM task keys."""
-
-    SAVE_PAIRED = "save_paired"
-    TIMESERIES = "timeseries"
-    TAYLOR = "taylor"
-    SPATIAL_BIAS = "spatial_bias"
-    SPATIAL_OVERLAY = "spatial_overlay"
-    BOXPLOT = "boxplot"
-    MULTI_BOXPLOT = "multi_boxplot"
-    SCORECARD_RMSE = "scorecard_rmse"
-    SCORECARD_IOA = "scorecard_ioa"
-    SCORECARD_NMB = "scorecard_nmb"
-    SCORECARD_NME = "scorecard_nme"
-    CSI = "csi"
-    STATS = "stats"
-
-
-@unique
-class PackageKey(StrEnum):
-    """Unique MM package keys."""
-
-    CHEM = "chem"
-    ISH = "ish"
-    AQS_PM = "aqs_pm"
-    AQS_VOC = "aqs_voc"
 
 
 class ForecastFileSpec(BaseModel):
@@ -88,6 +59,7 @@ class AbstractEvalPackage(ABC, BaseModel):
 
     model_config = {"frozen": True}
     ctx: AbstractDriverContext
+
     key: PackageKey = Field(description="MM package key.")
     namelist_template: str = Field(description="Package template file.")
     tasks_default: tuple[TaskKey, ...] = Field(description="Default tasks for the package.")
@@ -129,10 +101,11 @@ class AbstractEvalPackage(ABC, BaseModel):
         ret = []
         for k,v in self.ctx.mm_config.aqm.models.items():
             kwds = dict(
-                expt_dir=v.expt_dir,
+                cfg = v,
+                # expt_dir=v.expt_dir,
                 label=k,
-                title=v.title,
-                color=v.color,
+                # title=v.title,
+                # color=v.color,
                 dyn_file_template=("dynf*.nc",),
                 cycle_dir_template=self.ctx.link_simulation,
                 link_alldays_path=self.link_alldays_path,
@@ -159,7 +132,7 @@ class AbstractEvalPackage(ABC, BaseModel):
         list[str]
             Model titles used for MM plotting, converted into a format suitable for ``jinja2``.
         """
-        return ", ".join([f'"{ii.title}"' for ii in self.mm_models])
+        return ", ".join([f'"{ii.cfg.title}"' for ii in self.mm_models])
 
     @cached_property
     def j2_env(self) -> Environment:
@@ -176,9 +149,13 @@ class AbstractEvalPackage(ABC, BaseModel):
             undefined=StrictUndefined,
         )
 
+    @cached_property
+    def cfg(self) -> PackageConfig:
+        return self.ctx.mm_config.aqm.packages[self.key]
+
     def iter_forecast_file_specs(self) -> Iterator[ForecastFileSpec]:
         for model in self.mm_models:
-            expt_dir = model.expt_dir
+            expt_dir = model.cfg.expt_dir
             dirlist = []
             for dir_pattern in model.cycle_dir_template:
                 dirlist += sorted([d for d in expt_dir.glob(dir_pattern) if d.is_dir()])
@@ -295,6 +272,7 @@ class AbstractEvalPackage(ABC, BaseModel):
         namelist_config = yaml.safe_load(namelist_config_str)
         with open(package_run_dir / "namelist.yaml", "w") as f:
             f.write(namelist_config_str)
+        namelist_config['package'] = self
 
         assert isinstance(cfg["mm_tasks"], tuple)
         for task in cfg["mm_tasks"]:
@@ -311,7 +289,7 @@ class AbstractEvalPackage(ABC, BaseModel):
             LOGGER(f"{task=}")
             template = self.j2_env.get_template(f"template_{task}.j2")
             LOGGER(f"{template=}")
-            config_yaml = template.render(**namelist_config)
+            config_yaml = template.render({**namelist_config})
             curr_control_path = package_run_dir / f"control_{task}.yaml"
             LOGGER(f"{curr_control_path=}")
             with open(curr_control_path, "w") as f:

@@ -6,7 +6,8 @@ import jinja2
 from pydantic import BaseModel, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
-from aqm_eval.mm_eval.driver.package.core import PackageKey, TaskKey, package_key_to_class
+from aqm_eval.mm_eval.driver.package.core import package_key_to_class
+from aqm_eval.mm_eval.driver.config import TaskKey, PackageKey
 
 
 class AbstractExecutionData(ABC, BaseModel):

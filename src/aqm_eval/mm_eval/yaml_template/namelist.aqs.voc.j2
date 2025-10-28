@@ -24,29 +24,29 @@ paired_dataset:
   {{ mm_model.label }}: "aqs_voc_{{ mm_model.label }}.nc4"
 {%- endfor %}
 
-{% for mm_model in package.mm_models %}
-# ==== Model ====
-model_{{ mm_model.label }}_label: {{ mm_model.label }}
-model_{{ mm_model.label }}_files: {{ mm_model.link_alldays_path_template }}
-model_{{ mm_model.label }}_type: '"rrfs"'
-model_{{ mm_model.label }}_kwargs:
-  surf_only: True
-  mech: "cb6r3_ae6_aq"
-model_{{ mm_model.label }}_radius: 20_000
-model_{{ mm_model.label }}_mapping:
-  etha: 'ETHANE'
-  prpa: 'PROPANE'
-  benzene: 'BENZENE'
-  tol: 'TOLUENE'
-  isop: 'ISOPRENE'
-model_{{ mm_model.label }}_variables: "~"
-model_{{ mm_model.label }}_projection: "~"
-model_{{ mm_model.label }}_plot_kwargs:
-  color: {{ mm_model.color }}
-  marker: "^"
-  linestyle: "-"
-  markersize: 4
-{% endfor %}
+{#{% for mm_model in package.mm_models %}#}
+{## ==== Model ====#}
+{#model_{{ mm_model.label }}_label: {{ mm_model.label }}#}
+{#model_{{ mm_model.label }}_files: {{ mm_model.link_alldays_path_template }}#}
+{#model_{{ mm_model.label }}_type: '"rrfs"'#}
+{#model_{{ mm_model.label }}_kwargs:#}
+{#  surf_only: True#}
+{#  mech: "cb6r3_ae6_aq"#}
+{#model_{{ mm_model.label }}_radius: 20_000#}
+{#model_{{ mm_model.label }}_mapping:#}
+{#  etha: 'ETHANE'#}
+{#  prpa: 'PROPANE'#}
+{#  benzene: 'BENZENE'#}
+{#  tol: 'TOLUENE'#}
+{#  isop: 'ISOPRENE'#}
+{#model_{{ mm_model.label }}_variables: "~"#}
+{#model_{{ mm_model.label }}_projection: "~"#}
+{#model_{{ mm_model.label }}_plot_kwargs:#}
+{#  color: {{ mm_model.color }}#}
+{#  marker: "^"#}
+{#  linestyle: "-"#}
+{#  markersize: 4#}
+{#{% endfor %}#}
 
 # ==== Obs (AQS VOC by default) ====
 obs_label: {{ package.key.value }}

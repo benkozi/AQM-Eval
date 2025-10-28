@@ -6,7 +6,8 @@ from pathlib import Path
 import typer
 
 from aqm_eval.mm_eval.driver.context.yaml_eval import YAMLContext
-from aqm_eval.mm_eval.driver.package.core import PackageKey, TaskKey, package_key_to_class
+from aqm_eval.mm_eval.driver.package.core import package_key_to_class
+from aqm_eval.mm_eval.driver.config import TaskKey, PackageKey
 from aqm_eval.mm_eval.rocoto.srw_render import render_task_group
 
 os.environ["NO_COLOR"] = "1"

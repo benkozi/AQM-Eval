@@ -8,9 +8,8 @@ from pydantic import computed_field
 from aqm_eval.mm_eval.driver.package.core import (
     AbstractDaskEvalPackage,
     AbstractDaskOperation,
-    PackageKey,
-    TaskKey,
 )
+from aqm_eval.mm_eval.driver.config import TaskKey, PackageKey
 
 
 class ISH_PreprocessDaskOperation(AbstractDaskOperation):

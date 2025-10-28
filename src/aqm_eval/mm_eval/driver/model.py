@@ -1,14 +1,13 @@
 """Defines the model objects used when generating MM configuration files."""
 
-from enum import StrEnum, unique
 from functools import cached_property
 from pathlib import Path
 
 from pydantic import BaseModel, Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
+from aqm_eval.mm_eval.driver.config import AQMModelConfig
 from aqm_eval.mm_eval.driver.helpers import create_symlinks
-from aqm_eval.shared import PathExisting
 
 
 # @unique
@@ -24,15 +23,16 @@ class Model(BaseModel):
 
     model_config = {"frozen": True}
 
-    expt_dir: PathExisting = Field(description="Experiment directory containing model output.")
+    cfg: AQMModelConfig #tdk: rename to ModelConfig?
+    # expt_dir: PathExisting = Field(description="Experiment directory containing model output.")
     label: str = Field(description="Model label used to uniquely identify the model in MM configuration files.")
-    title: str = Field(description="Model title used in MM plots.")
+    # title: str = Field(description="Model title used in MM plots.")
     # prefix: str = Field(description="File prefix used when creating symlinks to model output files.")
     # role: ModelRole = Field(description="Model role when generating configuration files.")
     cycle_dir_template: tuple[str, ...] = Field(description="Templates for selecting model output directories.")
     dyn_file_template: tuple[str, ...] = Field(description="Templates for selecting model output dynamics files.")
     link_alldays_path: Path = Field(description="Path to directory where symlinks to model output files will be created.")
-    color: str
+    # color: str
 
     @computed_field(description="Template for selecting symlinked data files.")
     @cached_property
@@ -65,7 +65,7 @@ class Model(BaseModel):
         None
         """
         create_symlinks(
-            self.expt_dir,
+            self.cfg.expt_dir,
             self.link_alldays_path,
             self.label,
             self.cycle_dir_template,

@@ -10,8 +10,7 @@ from pydantic import Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
-from aqm_eval.mm_eval.driver.context.config import Config
-from aqm_eval.mm_eval.driver.package.core import PackageKey
+from aqm_eval.mm_eval.driver.config import Config, PackageKey
 from aqm_eval.shared import PathExisting, assert_directory_exists, assert_file_exists
 
 try:
@@ -127,6 +126,7 @@ class SRWContext(AbstractDriverContext):
     @cached_property
     def cartopy_data_dir(self) -> PathExisting:
         return assert_directory_exists(self.find_nested_key(("platform", "FIXshp"))).absolute().resolve(strict=True)
+
 
     @cached_property
     def mm_config(self) -> Config:
