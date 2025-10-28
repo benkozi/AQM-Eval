@@ -1,9 +1,11 @@
+from collections import deque
 from enum import unique, StrEnum
 from functools import cached_property
 from pathlib import Path
 from typing import Any, Annotated, Mapping
 
-from pydantic import BaseModel, Field, AfterValidator, model_validator, model_serializer
+from pydantic import BaseModel, Field, AfterValidator, model_validator, model_serializer, \
+    field_validator
 
 from aqm_eval.shared import PathExistingDir
 
@@ -119,10 +121,12 @@ class PackageConfig(BaseModel):
 class PlotKwargs(BaseModel):
     model_config = {"frozen": True}
 
-    color: str = "forestgreen"  # tdk: this needs to be auto-generated and unique
+    color: str = "g"
     marker: str = '^'
     linestyle: str = '-'
     markersize: int = 4
+
+    _possible_colors: tuple[str] = ("g", "m", "k", "r", "b", "y")
 
 
 class AQMModelConfig(BaseModel):
@@ -131,7 +135,7 @@ class AQMModelConfig(BaseModel):
     key: str = Field(exclude=True)
     expt_dir: PathExistingDir
     title: str  # tdk: unique in coll
-    plot_kwargs: PlotKwargs = Field(default_factory=PlotKwargs)
+    plot_kwargs: PlotKwargs
     is_host: bool = False  # tdk: only one model needs to be host = true but must be one
     type: str = "rrfs"
     kwargs: dict[str, Any] = {'surf_only': True, 'mech': 'cb6r3_ae6_aq'}
@@ -172,7 +176,7 @@ class AQMConfig(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def _validate_model_(cls, values: dict) -> dict:
+    def _validate_model_before_(cls, values: dict) -> dict:
         for target in ["models", "packages"]:
             for k, v in values[target].items():
                 if isinstance(values[target][k], Mapping):
