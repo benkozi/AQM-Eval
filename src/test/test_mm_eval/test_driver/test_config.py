@@ -20,12 +20,12 @@ def test(config: Config, tmp_path: Path) -> None:
 
     _ = Config.from_yaml(data)
 
-
-def test_from_yaml_overlay(config: Config) -> None:
-
-    data1 = deepcopy(config.to_yaml())
-    data2 = deepcopy(config.to_yaml())
-    data2["melodies_monet_parm"]["aqm"]["models"]["eval1"]["title"] = "on overridden title"
-
-    actual = Config.from_yaml_overlay(data1, data2)
-    assert actual.aqm.models["eval1"].title == "on overridden title"
+#
+# def test_from_yaml_overlay(config: Config) -> None:
+#
+#     data1 = deepcopy(config.to_yaml())
+#     data2 = deepcopy(config.to_yaml())
+#     data2["melodies_monet_parm"]["aqm"]["models"]["eval1"]["title"] = "on overridden title"
+#
+#     actual = Config.from_yaml_overlay(data1, data2)
+#     assert actual.aqm.models["eval1"].title == "on overridden title"

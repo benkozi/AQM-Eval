@@ -132,10 +132,12 @@ class SRWContext(AbstractDriverContext):
 
     @cached_property
     def mm_config(self) -> Config:
-        mm_parm_left = self.yaml_data[self.config_path_var_defns]
-        mm_parm_right = self.yaml_data[self.config_path_user]
+        mm_parm_left = self.yaml_data[self.config_path_var_defns]["melodies_monet_parm"]
+        mm_parm_right = self.yaml_data[self.config_path_user]["melodies_monet_parm"]
+        Config.update_left(mm_parm_left, mm_parm_right)
+        mm_parm = {"melodies_monet_parm": mm_parm_left,}
 
-        root = mm_parm_right["melodies_monet_parm"]["aqm"]
+        root = mm_parm["melodies_monet_parm"]["aqm"]
         found_host = False
         for k, v in root["models"].items():
             if v.get("is_host", False):
@@ -146,7 +148,7 @@ class SRWContext(AbstractDriverContext):
         if root["output_dir"] is None:
             root["output_dir"] = self.mm_output_dir_default
 
-        return Config.from_yaml_overlay(mm_parm_left, mm_parm_right)
+        return Config.from_yaml(mm_parm)
 
     @cached_property
     def datetime_first_cycl(self) -> datetime:

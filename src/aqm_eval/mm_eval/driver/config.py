@@ -201,17 +201,18 @@ class Config(BaseModel):
     @classmethod
     def from_yaml(cls, data: dict) -> "Config":
         return cls.model_validate(data[cls._key.default])
-
-    @classmethod
-    def from_yaml_overlay(cls, data_left: dict, data_right: dict) -> "Config":
-        data_left = cls._update_left_(data_left[cls._key.default], data_right[cls._key.default])
-        return cls.from_yaml({cls._key.default: data_left})
+    #
+    # @classmethod
+    # def from_yaml_overlay(cls, data_left: dict, data_right: dict) -> "Config":
+    #     cls.update_left(data_left[cls._key.default], data_right[cls._key.default])
+    #     return cls.from_yaml(data_left)
 
     @staticmethod
-    def _update_left_(data_left: dict, data_right: dict) -> dict:
+    def update_left(data_left: dict, data_right: dict) -> None:
         for key, value in data_right.items():
-            if isinstance(data_left[key], Mapping):
-                Config._update_left_(data_left[key], value)
+            # if key not in data_left:
+            #     data_left[key] = value
+            if isinstance(data_left.get(key), Mapping):
+                Config.update_left(data_left[key], value)
             else:
                 data_left[key] = value
-        return data_left
