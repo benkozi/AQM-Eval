@@ -40,6 +40,14 @@ class TaskData(AbstractExecutionData):
         return f"{self.host}.execution.batchargs"
 
 
+class StatsTaskData(TaskData):
+    key: TaskKey = TaskKey.STATS
+
+    @cached_property
+    def execution_host(self) -> str:
+        return f"{self.host}.stats_execution.batchargs"
+
+
 class TaskDataCollection(BaseModel):
     members: tuple[TaskData, ...]
 
@@ -103,7 +111,7 @@ class Renderer(BaseModel):
         return self.out_dir / self.template_name.replace(".j2", "")
 
     def run(self) -> None:
-        config_yaml = self.template.render(coll=self.coll)
+        config_yaml = self.template.render(coll=self.coll, task_stats=StatsTaskData())
         self.out_path.write_text(config_yaml)
 
 

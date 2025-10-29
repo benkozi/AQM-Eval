@@ -50,7 +50,7 @@ class BatchArgs(BaseModel):
 
     nodes: int = Field(ge=1, default=1)
     tasks_per_node: int = Field(ge=1, default=1)
-    walltime: str = Field(default="00:01:00")
+    walltime: str = Field(default="01:00:00")
 
 
 class Execution(BaseModel):
@@ -63,6 +63,7 @@ class TaskConfig(BaseModel):
     model_config = {"frozen": True}
 
     execution: Execution = Field(default_factory=Execution)
+    stats_execution: Execution = Field(default_factory=Execution)
 
 
 class PackageConfig(BaseModel):

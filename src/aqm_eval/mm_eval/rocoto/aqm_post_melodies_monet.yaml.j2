@@ -58,11 +58,20 @@ task_mm_{{ package.key.value }}_run_{{ task.key.value }}:
       value: {% raw %}'&LOGDIR;/{{ jobname }}_@Y@m@d@H&LOGEXT;'{% endraw %}
   envars:
     <<: *default_vars
+  {% if task.key.value == "stats" %}
+    nprocs: '{{ task_stats.nprocs }}'
+  {% else %}
     nprocs: '{{ task.nprocs }}'
+  {% endif %}
     MM_EVAL_PACKAGE: '{{ package.key.value }}'
     MM_EVAL_TASK: '{{ task.key.value }}'
+  {% if task.key.value == "stats" %}
+  nodes: '{{ task_stats.nodes }}'
+  walltime: '{{ task_stats.walltime }}'
+  {% else %}
   nodes: '{{ task.nodes }}'
   walltime: '{{ task.walltime }}'
+  {% endif %}
   dependency:
     and:
       taskdep:
