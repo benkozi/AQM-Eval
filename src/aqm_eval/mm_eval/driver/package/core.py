@@ -87,7 +87,7 @@ class AbstractEvalPackage(ABC, BaseModel):
     @computed_field(description="Tasks that the package will run.")
     @cached_property
     def tasks(self) -> tuple[TaskKey, ...]:
-        if len(self.ctx.mm_config.aqm.models) == 1:
+        if len(self.ctx.mm_config.aqm.models) > 1:
             return self.tasks_default
         else:
             return tuple([ii for ii in self.tasks_default if not ii.name.startswith("SCORECARD")])
