@@ -85,7 +85,7 @@ def expt_dir(config: Config) -> Path:
     return list(config.aqm.host_model.values())[0].expt_dir
 
 
-@pytest.fixture(params=["pure", "srw"])
+@pytest.fixture(params=["pure", "srw", "srw-no-forecast"])
 def config_content(request: FixtureRequest, config: Config, bin_dir: Path) -> dict:
     return get_config_content(bin_dir, config, request.param)
 
@@ -145,6 +145,13 @@ def get_config_content(bin_dir: Path, config: Config, config_src: str) -> dict:
             srw_config_raw = srw_config.read_text()
             srw_config_raw = srw_config_raw.replace("!int '{{ platform.NCORES_PER_NODE }}'", "100")
             new_content = yaml.safe_load(srw_config_raw)
+        case "srw-no-forecast":
+            srw_config = bin_dir / "srw-config.yaml"
+            srw_config_raw = srw_config.read_text()
+            srw_config_raw = srw_config_raw.replace("!int '{{ platform.NCORES_PER_NODE }}'", "100")
+            new_content = yaml.safe_load(srw_config_raw)
+            new_content["melodies_monet_parm"]["aqm"]["no_forecast"] = True
+            new_content["melodies_monet_parm"]["aqm"]["models"]["base1"] = config.aqm.models["base1"].model_dump(mode="json")
         case _:
             raise NotImplementedError(config_src)
     return new_content

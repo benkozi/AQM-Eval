@@ -100,6 +100,9 @@ class AbstractEvalPackage(ABC, BaseModel):
     def mm_models(self) -> tuple[Model, ...]:
         ret = []
         for k,v in self.ctx.mm_config.aqm.models.items():
+            if self.ctx.mm_config.aqm.no_forecast and v.is_host:
+                LOGGER(f"skipping host model {k=} as no_forecast is True")
+                continue
             kwds = dict(
                 cfg = v,
                 # expt_dir=v.expt_dir,
@@ -111,6 +114,8 @@ class AbstractEvalPackage(ABC, BaseModel):
                 link_alldays_path=self.link_alldays_path,
             )
             ret.append(Model.model_validate(kwds))
+        if len(ret) == 0:
+            raise ValueError(f"no models found for package {self.key=}. At least one is required.")
         return tuple(ret)
 
 

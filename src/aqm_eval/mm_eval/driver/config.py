@@ -151,21 +151,15 @@ class AQMModelConfig(BaseModel):
         return values
 
 
-def _validate_models_after_(value: dict[str, AQMModelConfig]) -> dict[str, AQMModelConfig]:
-    is_host = set([k for k, v in value.items() if v.is_host])
-    if len(is_host) != 1:
-        raise ValueError(f"Only one model can be host. Found {is_host}.")
-    return value
-
-
 class AQMConfig(BaseModel):
     model_config = {"frozen": True}
 
     output_dir: Path  # tdk:doc: existing directory
-    models: Annotated[dict[str, AQMModelConfig], AfterValidator(_validate_models_after_)] = Field(
+    models: dict[str, AQMModelConfig] = Field(
         max_length=4)
     packages: dict[PackageKey, PackageConfig] = Field(min_length=1)
     tasks: TaskConfig
+    no_forecast: bool = False
 
     @cached_property
     def host_model(self) -> dict[str, AQMModelConfig]:
@@ -181,6 +175,14 @@ class AQMConfig(BaseModel):
             for k, v in values[target].items():
                 if isinstance(values[target][k], Mapping):
                     values[target][k]["key"] = k
+        return values
+
+    @field_validator("models", mode="after")
+    @classmethod
+    def _validate_models_after_(cls, values: dict[str, AQMModelConfig]) -> dict[str, AQMModelConfig]:
+        is_host = set([k for k, v in values.items() if v.is_host])
+        if len(is_host) != 1:
+            raise ValueError(f"Only one model can be host. Found {is_host}.")
         return values
 
 

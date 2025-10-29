@@ -15,7 +15,7 @@ from aqm_eval.mm_eval.driver.package.core import (
 )
 
 
-class MMEvalRunnerTestData(BaseModel):
+class AllPackagesTestData(BaseModel):
     model_config = {"frozen": True}
     ctx: SRWContext
     package_class: type[AbstractEvalPackage]
@@ -29,7 +29,7 @@ def package_key(request: pytest.FixtureRequest) -> PackageKey:
 
 
 @pytest.fixture
-def mm_eval_runner_test_data(srw_context: SRWContext, package_key: PackageKey) -> MMEvalRunnerTestData:
+def all_pkgs_test_data(srw_context: SRWContext, package_key: PackageKey) -> AllPackagesTestData:
     package_class = package_key_to_class(package_key)
     expected_n_links = 25 * 2  # 25 dynf hourly files * 2 cycle directories
     expected_n_dask_run_calls = 0
@@ -41,10 +41,12 @@ def mm_eval_runner_test_data(srw_context: SRWContext, package_key: PackageKey) -
 
     # Adjust for model count
     n_models = len(srw_context.mm_config.aqm.models)
+    if srw_context.mm_config.aqm.no_forecast:
+        n_models -= 1
     expected_n_links *= n_models
     expected_n_dask_run_calls *= n_models
 
-    return MMEvalRunnerTestData(
+    return AllPackagesTestData(
         expected_n_links=expected_n_links,
         ctx=srw_context,
         package_class=package_class,
@@ -58,8 +60,8 @@ def fake_run(self: AbstractDaskOperation) -> xr.Dataset:
     return xr.Dataset()
 
 
-def test_all_packages(mm_eval_runner_test_data: MMEvalRunnerTestData, mocker: MockerFixture) -> None:
-    package = mm_eval_runner_test_data.package_class.model_validate(dict(ctx=mm_eval_runner_test_data.ctx))
+def test_all_packages(all_pkgs_test_data: AllPackagesTestData, mocker: MockerFixture) -> None:
+    package = all_pkgs_test_data.package_class.model_validate(dict(ctx=all_pkgs_test_data.ctx))
 
     # Mock for dask operations -----------------------------------------------------------------
 
@@ -71,7 +73,7 @@ def test_all_packages(mm_eval_runner_test_data: MMEvalRunnerTestData, mocker: Mo
     package.initialize()
 
     actual_data = [ii.name for ii in package.link_alldays_path.iterdir()]
-    assert len(actual_data) == mm_eval_runner_test_data.expected_n_links
+    assert len(actual_data) == all_pkgs_test_data.expected_n_links
 
     actual_files = package.run_dir.rglob("*.yaml")
     expected_filenames = package.task_control_filenames
@@ -100,4 +102,4 @@ def test_all_packages(mm_eval_runner_test_data: MMEvalRunnerTestData, mocker: Mo
     m_analysis.pair_data.assert_called_once()
     m_analysis.save_analysis.assert_called_once()
 
-    assert spy_m_dask_op_run.call_count == mm_eval_runner_test_data.expected_n_dask_run_calls
+    assert spy_m_dask_op_run.call_count == all_pkgs_test_data.expected_n_dask_run_calls
