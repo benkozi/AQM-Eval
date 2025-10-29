@@ -22,10 +22,10 @@ class AbstractDriverContext(ABC, BaseModel):
     def mm_config(self) -> Config:
         ...
 
-    @computed_field
-    @cached_property
-    @abstractmethod
-    def mm_base_model_expt_dir(self) -> PathExisting | None: ...
+    # @computed_field
+    # @cached_property
+    # @abstractmethod
+    # def mm_base_model_expt_dir(self) -> PathExisting | None: ...
 
     @computed_field
     @cached_property

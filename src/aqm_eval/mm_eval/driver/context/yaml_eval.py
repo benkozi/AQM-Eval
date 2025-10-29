@@ -17,10 +17,10 @@ class YAMLContext(AbstractDriverContext):
 
     yaml_config: PathExisting = Field(description="Path to the YAML configuration file for the MM package.")
 
-    @computed_field
-    @cached_property
-    def mm_base_model_expt_dir(self) -> PathExisting:
-        return assert_directory_exists(self._config_data["link_base_path"])
+    # @computed_field
+    # @cached_property
+    # def mm_base_model_expt_dir(self) -> PathExisting:
+    #     return assert_directory_exists(self._config_data["link_base_path"])
 
     @computed_field
     @cached_property
