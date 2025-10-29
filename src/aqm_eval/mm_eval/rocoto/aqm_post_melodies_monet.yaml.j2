@@ -33,9 +33,18 @@ task_mm_{{ package.key.value }}_prep:
   walltime: '{{ package.walltime }}'
   dependency:
     and:
-      taskdep:
-        attrs:
-          task: run_fcst_mem000
+      or:
+        not:
+          taskvalid:
+            attrs:
+              task: run_fcst_mem000
+        and:
+          taskvalid:
+            attrs:
+              task: run_fcst_mem000
+          taskdep:
+            attrs:
+              task: run_fcst_mem000
       streq:
         left: run_package
         right: '{{ package.should_run }}'
