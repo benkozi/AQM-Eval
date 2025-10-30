@@ -39,7 +39,7 @@ class TaskData(AbstractExecutionData):
 
     @cached_property
     def execution_host(self) -> str:
-        return "{}.{}.execution.tasks.get('{}', {}).batchargs".format(self.host, self.key_package.value, self.key.value, self.fallback_host)
+        return '{}.{}.execution.tasks.get("{}", {}).batchargs'.format(self.host, self.key_package.value, self.key.value, self.fallback_host)
 
     @cached_property
     def nodes(self) -> str:
