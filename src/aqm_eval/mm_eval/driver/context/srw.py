@@ -55,7 +55,7 @@ class SRWContext(AbstractDriverContext):
     @computed_field
     @cached_property
     def date_last_cycle_srw(self) -> str:
-        return self.find_nested_key(("workflow", "DATE_LAST_CYCL"))
+        return self.find_nested_key(("workflow", "DATE_LAST_CYCL_MM"))
 
     @computed_field
     @cached_property

@@ -19,3 +19,5 @@ dependencies:
   - melodies-monet=1.*
   - uwtools # Needed for SRW context
   - polyfactory # dev only tdk: pin
+
+#tdk: make environment-dev yaml
