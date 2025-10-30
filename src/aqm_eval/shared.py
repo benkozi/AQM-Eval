@@ -1,10 +1,12 @@
+import datetime
 import logging
 import subprocess
+from copy import deepcopy
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Iterator
 
 import numpy as np
-from pydantic import BeforeValidator, PlainSerializer
+from pydantic import BeforeValidator, PlainSerializer, BaseModel
 
 from aqm_eval.logging_aqm_eval import LOGGER
 
@@ -56,3 +58,20 @@ def calc_2d_chunks(dims: dict[str, int], n_chunks: int) -> dict[str, int]:
     per_dim = np.ceil(np.sqrt(n_chunks))
     chunks = {k: int(np.ceil(v / per_dim)) for k, v in dims.items()}
     return chunks
+
+
+class DateRange(BaseModel):
+    start: datetime.datetime
+    end: datetime.datetime
+
+    def iter_by_step(self, step: datetime.timedelta = datetime.timedelta(days=1)) -> Iterator[datetime.datetime]:
+        curr_dt = deepcopy(self.start)
+        while curr_dt <= self.end:
+            try:
+                yield deepcopy(curr_dt)
+            finally:
+                curr_dt += step
+
+    @staticmethod
+    def to_srw_str(target: datetime.datetime) -> str:
+        return target.strftime("%Y%m%d%H")

@@ -107,12 +107,13 @@ class AbstractEvalPackage(ABC, BaseModel):
             kwds = dict(
                 cfg = v,
                 # expt_dir=v.expt_dir,
-                label=k,
+                # label=k,
                 # title=v.title,
                 # color=v.color,
                 dyn_file_template=("dynf*.nc",),
-                cycle_dir_template=self.ctx.link_simulation,
+                # cycle_dir_template=self.ctx.link_simulation,
                 link_alldays_path=self.link_alldays_path,
+                date_range=self.ctx.date_range,
             )
             ret.append(Model.model_validate(kwds))
         if len(ret) == 0:
@@ -162,18 +163,9 @@ class AbstractEvalPackage(ABC, BaseModel):
     def iter_forecast_file_specs(self) -> Iterator[ForecastFileSpec]:
         for model in self.mm_models:
             expt_dir = model.cfg.expt_dir
-            # dirlist = []
-            # for dir_pattern in model.cycle_dir_template:
-            #     dirlist += sorted([d for d in expt_dir.glob(dir_pattern) if d.is_dir()])
-            # if len(dirlist) == 0:
-            #     LOGGER(exc_info=ValueError(f"no cycle directories found in {expt_dir=}"))
-            curr_dt = self.ctx.datetime_first_cycl
-            end_dt = self.ctx.datetime_last_cycl
-            delta = datetime.timedelta(days=1)
-            while curr_dt <= end_dt:
-                dir_path = expt_dir / curr_dt.strftime("%Y%m%d%H")
+            for curr_dt in self.ctx.date_range.iter_by_step():
+                dir_path = expt_dir / self.ctx.date_range.to_srw_str(curr_dt)
                 assert_directory_exists(dir_path)
-                curr_dt += delta
                 yield ForecastFileSpec(
                     src_dir=dir_path,
                     out_dir=model.link_alldays_path,

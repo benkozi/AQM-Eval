@@ -7,7 +7,7 @@ from pathlib import Path
 from pydantic import BaseModel, computed_field
 
 from aqm_eval.mm_eval.driver.config import Config
-from aqm_eval.shared import PathExisting
+from aqm_eval.shared import PathExisting, DateRange
 
 
 class AbstractDriverContext(ABC, BaseModel):
@@ -75,4 +75,8 @@ class AbstractDriverContext(ABC, BaseModel):
     @cached_property
     def template_dir(self) -> PathExisting:
         return (Path(__file__).parent.parent.parent / "yaml_template").absolute().resolve()
+
+    @cached_property
+    def date_range(self) -> DateRange:
+        return DateRange(start=self.datetime_first_cycl, end=self.datetime_last_cycl)
 

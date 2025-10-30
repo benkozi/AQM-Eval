@@ -7,7 +7,9 @@ from pydantic import BaseModel, Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.config import AQMModelConfig
+from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.helpers import create_symlinks
+from aqm_eval.shared import DateRange
 
 
 # @unique
@@ -24,14 +26,16 @@ class Model(BaseModel):
     model_config = {"frozen": True}
 
     cfg: AQMModelConfig #tdk: rename to ModelConfig?
+    # ctx: AbstractDriverContext
     # expt_dir: PathExisting = Field(description="Experiment directory containing model output.")
-    label: str = Field(description="Model label used to uniquely identify the model in MM configuration files.")
+    # label: str = Field(description="Model label used to uniquely identify the model in MM configuration files.")
     # title: str = Field(description="Model title used in MM plots.")
     # prefix: str = Field(description="File prefix used when creating symlinks to model output files.")
     # role: ModelRole = Field(description="Model role when generating configuration files.")
-    cycle_dir_template: tuple[str, ...] = Field(description="Templates for selecting model output directories.")
+    # cycle_dir_template: tuple[str, ...] = Field(description="Templates for selecting model output directories.")
     dyn_file_template: tuple[str, ...] = Field(description="Templates for selecting model output dynamics files.")
     link_alldays_path: Path = Field(description="Path to directory where symlinks to model output files will be created.")
+    date_range: DateRange
     # color: str
 
     @computed_field(description="Template for selecting symlinked data files.")
@@ -40,6 +44,10 @@ class Model(BaseModel):
         ret = str(self.link_alldays_path / f"{self.label}*.nc")
         LOGGER(f"link_alldays_path_template: {ret}")
         return ret
+
+    @cached_property
+    def label(self) -> str:
+        return self.cfg.key
 
     # @computed_field(description="Determines a model's color based on its role.")
     # @cached_property
@@ -68,6 +76,6 @@ class Model(BaseModel):
             self.cfg.expt_dir,
             self.link_alldays_path,
             self.label,
-            self.cycle_dir_template,
+            self.date_range,
             self.dyn_file_template,
         )
