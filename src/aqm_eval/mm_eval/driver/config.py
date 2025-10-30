@@ -59,11 +59,17 @@ class Execution(BaseModel):
     batchargs: BatchArgs = Field(default_factory=BatchArgs)
 
 
-class TaskConfig(BaseModel):
+# class TaskConfig(BaseModel):
+#     model_config = {"frozen": True}
+#
+#     execution: Execution = Field(default_factory=Execution)
+#     stats_execution: Execution = Field(default_factory=Execution)
+
+class PackageExecution(BaseModel):
     model_config = {"frozen": True}
 
-    execution: Execution = Field(default_factory=Execution)
-    stats_execution: Execution = Field(default_factory=Execution)
+    prep: Execution
+    tasks: dict[TaskKey, Execution]
 
 
 class PackageConfig(BaseModel):
@@ -75,7 +81,8 @@ class PackageConfig(BaseModel):
     active: bool = True
     tasks_to_exclude: tuple[
         TaskKey, ...]  = tuple()
-    execution: Execution = Field(default_factory=Execution)
+    execution: PackageExecution = Field(default_factory=PackageExecution)
+
 
     @model_validator(mode="before")
     @classmethod
@@ -130,6 +137,12 @@ class PlotKwargs(BaseModel):
     _possible_colors: tuple[str] = ("g", "m", "k", "r", "b", "y")
 
 
+class TaskDefaults(BaseModel):
+    model_config = {"frozen": True}
+
+    execution: Execution
+
+
 class AQMModelConfig(BaseModel):
     model_config = {"frozen": True}
 
@@ -159,7 +172,7 @@ class AQMConfig(BaseModel):
     models: dict[str, AQMModelConfig] = Field(
         max_length=4)
     packages: dict[PackageKey, PackageConfig] = Field(min_length=1)
-    tasks: TaskConfig
+    task_defaults: TaskDefaults
     no_forecast: bool = False
 
     @cached_property

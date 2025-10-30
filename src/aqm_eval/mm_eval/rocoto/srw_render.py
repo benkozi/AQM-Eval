@@ -16,7 +16,7 @@ class AbstractExecutionData(ABC, BaseModel):
 
     @cached_property
     def execution_host(self) -> str:
-        return f"{self.host}.{self.key.value}.execution.batchargs"
+        return f"{self.host}.{self.key.value}.execution.prep.batchargs"
 
     @cached_property
     def nodes(self) -> str:
@@ -33,20 +33,25 @@ class AbstractExecutionData(ABC, BaseModel):
 
 class TaskData(AbstractExecutionData):
     key: TaskKey
-    host: str = "melodies_monet_parm.aqm.tasks"
+    key_package: PackageKey
+    host: str = "melodies_monet_parm.aqm.packages"
+    fallback_host: str = "melodies_monet_parm.aqm.task_defaults.execution"
 
     @cached_property
     def execution_host(self) -> str:
-        return f"{self.host}.execution.batchargs"
-
-
-class StatsTaskData(TaskData):
-    key: TaskKey = TaskKey.STATS
+        return "{}.{}.execution.tasks.get('{}', {}).batchargs".format(self.host, self.key_package.value, self.key.value, self.fallback_host)
 
     @cached_property
-    def execution_host(self) -> str:
-        return f"{self.host}.stats_execution.batchargs"
+    def nodes(self) -> str:
+        return "{{{{ {host}.nodes }}}}:ppn={{{{ {host}.tasks_per_node }}}}".format(host=self.execution_host)
 
+    @cached_property
+    def nprocs(self) -> str:
+        return "{{{{ {host}.nodes * {host}.tasks_per_node }}}}".format(host=self.execution_host)
+
+    @cached_property
+    def walltime(self) -> str:
+        return "{{{{ {host}.walltime }}}}".format(host=self.execution_host)
 
 class TaskDataCollection(BaseModel):
     members: tuple[TaskData, ...]
@@ -60,7 +65,7 @@ class PackageData(AbstractExecutionData):
     @computed_field
     @cached_property
     def tasks(self) -> TaskDataCollection:
-        members = tuple([TaskData(key=ii) for ii in package_key_to_class(self.key).model_fields["tasks_default"].default])
+        members = tuple([TaskData(key=ii, key_package=self.key) for ii in package_key_to_class(self.key).model_fields["tasks_default"].default])
         return TaskDataCollection(members=members)
 
     @cached_property
@@ -111,7 +116,7 @@ class Renderer(BaseModel):
         return self.out_dir / self.template_name.replace(".j2", "")
 
     def run(self) -> None:
-        config_yaml = self.template.render(coll=self.coll, task_stats=StatsTaskData())
+        config_yaml = self.template.render(coll=self.coll)
         self.out_path.write_text(config_yaml)
 
 
