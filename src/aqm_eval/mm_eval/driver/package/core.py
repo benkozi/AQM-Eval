@@ -1,5 +1,5 @@
 """Defines package objects used when generating MM files. A package is a collection of tasks specfiic to an evaluation type."""
-
+import datetime
 import logging
 import re
 from abc import ABC, abstractmethod
@@ -22,7 +22,8 @@ from aqm_eval.mm_eval.driver.config import TaskKey, PackageKey, PackageConfig
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.model import Model
 from aqm_eval.settings import SETTINGS
-from aqm_eval.shared import PathExisting, calc_2d_chunks, get_or_create_path
+from aqm_eval.shared import PathExisting, calc_2d_chunks, get_or_create_path, \
+    assert_directory_exists
 
 
 class ForecastFileSpec(BaseModel):
@@ -161,20 +162,29 @@ class AbstractEvalPackage(ABC, BaseModel):
     def iter_forecast_file_specs(self) -> Iterator[ForecastFileSpec]:
         for model in self.mm_models:
             expt_dir = model.cfg.expt_dir
-            dirlist = []
-            for dir_pattern in model.cycle_dir_template:
-                dirlist += sorted([d for d in expt_dir.glob(dir_pattern) if d.is_dir()])
-            if len(dirlist) == 0:
-                LOGGER(exc_info=ValueError(f"no cycle directories found in {expt_dir=}"))
-            for dir_path in dirlist:
-                dir_name = dir_path.name
-                # for fhr in range(1, 25):
+            # dirlist = []
+            # for dir_pattern in model.cycle_dir_template:
+            #     dirlist += sorted([d for d in expt_dir.glob(dir_pattern) if d.is_dir()])
+            # if len(dirlist) == 0:
+            #     LOGGER(exc_info=ValueError(f"no cycle directories found in {expt_dir=}"))
+            curr_dt = self.ctx.datetime_first_cycl
+            end_dt = self.ctx.datetime_last_cycl
+            delta = datetime.timedelta(days=1)
+            while curr_dt <= end_dt:
+                dir_path = expt_dir / curr_dt.strftime("%Y%m%d%H")
+                assert_directory_exists(dir_path)
+                curr_dt += delta
                 yield ForecastFileSpec(
                     src_dir=dir_path,
                     out_dir=model.link_alldays_path,
-                    out_prefix=f"{model.label}_{dir_name}",
+                    out_prefix=f"{model.label}_{dir_path.name}",
                     # forecast_hour=fhr,
                 )
+
+            # for dir_path in dirlist:
+            #     dir_name = dir_path.name
+                # for fhr in range(1, 25):
+
 
     @log_it
     def initialize(self) -> None:

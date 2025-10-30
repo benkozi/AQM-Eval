@@ -103,7 +103,8 @@ def config_path_user(expt_dir: Path, bin_dir: Path, config_content: dict) -> Pat
             "PREDEF_GRID_NAME": "AQM_NA_13km",
             "CCPP_PHYS_SUITE": "FV3_GFS_v16",
             "DATE_FIRST_CYCL": "2023060112",
-            "DATE_LAST_CYCL": "2023060212",
+            # "DATE_LAST_CYCL": "2023060212",
+            "DATE_LAST_CYCL_MM": "2023060212",
         },
         # "task_mm_prep": { #tdk:rm
         #     "MM_OUTPUT_DIR": None,
