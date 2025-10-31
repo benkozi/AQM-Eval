@@ -32,25 +32,25 @@ class AbstractDriverContext(ABC, BaseModel):
     @abstractmethod
     def mm_eval_model_expt_dir(self) -> PathExisting: ...
 
-    @computed_field
-    @cached_property
-    @abstractmethod
-    def link_simulation(self) -> tuple[str, ...]: ...
+    # @computed_field
+    # @cached_property
+    # @abstractmethod
+    # def link_simulation(self) -> tuple[str, ...]: ...
 
     @computed_field(description="Path to the Cartopy data directory containing NaturalEarth shapefiles.")
     @cached_property
     @abstractmethod
     def cartopy_data_dir(self) -> PathExisting: ...
 
-    @computed_field(description="Date of the first cycle for MM evaluation in yyyy-mm-dd-HH:MM:SS UTC format.")
-    @cached_property
-    @abstractmethod
-    def date_first_cycle_mm(self) -> str: ...
-
-    @computed_field(description="Date of the last cycle for MM evaluation in yyyy-mm-dd-HH:MM:SS UTC format.")
-    @cached_property
-    @abstractmethod
-    def date_last_cycle_mm(self) -> str: ...
+    # @computed_field(description="Date of the first cycle for MM evaluation in yyyy-mm-dd-HH:MM:SS UTC format.")
+    # @cached_property
+    # @abstractmethod
+    # def date_first_cycle_mm(self) -> str: ...
+    #
+    # @computed_field(description="Date of the last cycle for MM evaluation in yyyy-mm-dd-HH:MM:SS UTC format.")
+    # @cached_property
+    # @abstractmethod
+    # def date_last_cycle_mm(self) -> str: ...
 
     @computed_field(description="Path template to select AirNow observational. Wildcards may be used to select multiple files.")
     @cached_property
@@ -76,7 +76,5 @@ class AbstractDriverContext(ABC, BaseModel):
     def template_dir(self) -> PathExisting:
         return (Path(__file__).parent.parent.parent / "yaml_template").absolute().resolve()
 
-    @cached_property
-    def date_range(self) -> DateRange:
-        return DateRange(start=self.datetime_first_cycl, end=self.datetime_last_cycl)
+
 

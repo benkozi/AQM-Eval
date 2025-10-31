@@ -1,4 +1,5 @@
 from collections import deque
+from datetime import datetime
 from enum import unique, StrEnum
 from functools import cached_property
 from pathlib import Path
@@ -7,7 +8,7 @@ from typing import Any, Annotated, Mapping
 from pydantic import BaseModel, Field, AfterValidator, model_validator, model_serializer, \
     field_validator
 
-from aqm_eval.shared import PathExistingDir
+from aqm_eval.shared import PathExistingDir, DateRange
 
 
 @unique
@@ -206,8 +207,16 @@ class Config(BaseModel):
     model_config = {"frozen": True}
 
     aqm: AQMConfig
+    start_datetime: str = Field(description="Evaluation start time in yyyy-mm-dd-HH:MM:SS UTC format.")
+    end_datetime: str = Field(description="Evaluation end time in yyyy-mm-dd-HH:MM:SS UTC format.")
 
     _key: str = "melodies_monet_parm"
+
+    @cached_property
+    def date_range(self) -> DateRange:
+        start = datetime.strptime(self.start_datetime, "%Y-%m-%d-%H:%M:%S")
+        end = datetime.strptime(self.end_datetime, "%Y-%m-%d-%H:%M:%S")
+        return DateRange(start=start, end=end)
 
     def to_yaml(self) -> dict:
         ret = self.model_dump(mode="json")

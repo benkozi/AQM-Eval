@@ -113,7 +113,7 @@ class AbstractEvalPackage(ABC, BaseModel):
                 dyn_file_template=("dynf*.nc",),
                 # cycle_dir_template=self.ctx.link_simulation,
                 link_alldays_path=self.link_alldays_path,
-                date_range=self.ctx.date_range,
+                date_range=self.ctx.mm_config.date_range,
             )
             ret.append(Model.model_validate(kwds))
         if len(ret) == 0:

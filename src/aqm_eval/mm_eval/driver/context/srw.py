@@ -49,23 +49,23 @@ class SRWContext(AbstractDriverContext):
 
     @computed_field
     @cached_property
-    def date_first_cycle_srw(self) -> str:
+    def _date_first_cycle_srw(self) -> str:
         return self.find_nested_key(("workflow", "DATE_FIRST_CYCL"))
 
     @computed_field
     @cached_property
-    def date_last_cycle_srw(self) -> str:
+    def _date_last_cycle_srw(self) -> str:
         return self.find_nested_key(("workflow", "DATE_LAST_CYCL_MM"))
 
     @computed_field
     @cached_property
-    def date_first_cycle_mm(self) -> str:
-        return _convert_date_string_to_mm_(self.date_first_cycle_srw)
+    def _date_first_cycle_mm(self) -> str:
+        return _convert_date_string_to_mm_(self._date_first_cycle_srw)
 
     @computed_field
     @cached_property
-    def date_last_cycle_mm(self) -> str:
-        return _convert_date_string_to_mm_(self.date_last_cycle_srw)
+    def _date_last_cycle_mm(self) -> str:
+        return _convert_date_string_to_mm_(self._date_last_cycle_srw)
 
     @computed_field
     @cached_property
@@ -111,10 +111,10 @@ class SRWContext(AbstractDriverContext):
     def mm_obs_aqs_voc_fn_template(self) -> str:
         return self.mm_config.aqm.packages[PackageKey.AQS_VOC].observation_template
 
-    @computed_field
-    @cached_property
-    def link_simulation(self) -> tuple[str, ...]:
-        return tuple(set([f"{str(ii.year)}*" for ii in [self.datetime_first_cycl, self.datetime_last_cycl]]))
+    # @computed_field
+    # @cached_property
+    # def link_simulation(self) -> tuple[str, ...]:
+    #     return tuple(set([f"{str(ii.year)}*" for ii in [self.datetime_first_cycl, self.datetime_last_cycl]]))
 
     # @computed_field
     # @cached_property
@@ -137,26 +137,34 @@ class SRWContext(AbstractDriverContext):
         Config.update_left(mm_parm_left, mm_parm_right)
         mm_parm = {"melodies_monet_parm": mm_parm_left,}
 
-        root = mm_parm["melodies_monet_parm"]["aqm"]
+        root = mm_parm["melodies_monet_parm"]
+        root_aqm = root["aqm"]
+
         found_host = False
-        for k, v in root["models"].items():
+        for k, v in root_aqm["models"].items():
             if v.get("is_host", False):
                 v["expt_dir"] = self.expt_dir
                 found_host = True
         if not found_host:
             raise ValueError("No host model found.")
-        if root["output_dir"] is None:
-            root["output_dir"] = self.mm_output_dir_default
+
+        if root_aqm["output_dir"] is None:
+            root_aqm["output_dir"] = self.mm_output_dir_default
+
+        if "start_datetime" not in root:
+            root["start_datetime"] = self._date_first_cycle_mm
+        if "end_datetime" not in root:
+            root["end_datetime"] = self._date_last_cycle_mm
 
         return Config.from_yaml(mm_parm)
 
     @cached_property
-    def datetime_first_cycl(self) -> datetime:
-        return datetime.strptime(self.date_first_cycle_srw, "%Y%m%d%H")
+    def _datetime_first_cycl(self) -> datetime:
+        return datetime.strptime(self._date_first_cycle_srw, "%Y%m%d%H")
 
     @cached_property
-    def datetime_last_cycl(self) -> datetime:
-        return datetime.strptime(self.date_last_cycle_srw, "%Y%m%d%H")
+    def _datetime_last_cycl(self) -> datetime:
+        return datetime.strptime(self._date_last_cycle_srw, "%Y%m%d%H")
 
     @cached_property
     def yaml_data(self) -> dict[Path, YAMLConfig]:
