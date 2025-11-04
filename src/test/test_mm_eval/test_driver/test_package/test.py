@@ -45,10 +45,13 @@ class StatsFileCollection(BaseModel):
     model_config = {"frozen": True}
 
     stats_files: tuple[StatsFile, ...]
+    index_name: str = "id"
 
     def as_dataframe(self) -> pd.DataFrame:
         dfs = [sfile.as_dataframe() for sfile in self.stats_files]
-        return pd.concat(dfs, ignore_index=True)
+        ret = pd.concat(dfs, ignore_index=True)
+        ret.index.name = self.index_name
+        return ret
 
 def test(tmp_path: Path, bin_dir: Path) -> None:
     fns = ("stats.TOLUENE.all.CONUS.2023-08-01_12.2023-08-31_12.csv",
@@ -65,7 +68,7 @@ def test(tmp_path: Path, bin_dir: Path) -> None:
     df = sfile_coll.as_dataframe()
 
     out_path = tmp_path / "out.csv"
-    df.to_csv(out_path, index_label="index")
+    df.to_csv(out_path)
     out_df = pd.read_csv(out_path)
     print(out_df)
     os.startfile(str(out_path))
