@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.config import PackageKey
 from pydantic import BaseModel, computed_field
 import shutil
@@ -37,7 +38,7 @@ class StatsFile(BaseModel):
     def as_dataframe(self) -> pd.DataFrame:
         df = pd.read_csv(self.path)
         id_vars = ("Stat_ID", "Stat_FullName")
-        value_vars = set(df.columns) - set(id_vars)
+        value_vars = tuple(set(df.columns) - set(id_vars))
         df = df.melt(id_vars=id_vars, value_vars=value_vars, var_name="model", value_name="value")
         for k, v in self.model_dump().items():
             df[k] = v
@@ -60,6 +61,7 @@ class StatsFileCollection(BaseModel):
                     package_key = ii
                     break
             sfile = StatsFile.from_path(path, package_key=package_key)
+            LOGGER(f"found stats file: {sfile}")
             stats_files.append(sfile)
         return cls(stats_files=stats_files)
 

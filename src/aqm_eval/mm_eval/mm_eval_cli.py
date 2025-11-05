@@ -9,6 +9,7 @@ from aqm_eval.mm_eval.driver.context.yaml_eval import YAMLContext
 from aqm_eval.mm_eval.driver.package.core import package_key_to_class
 from aqm_eval.mm_eval.driver.config import TaskKey, PackageKey
 from aqm_eval.mm_eval.rocoto.srw_render import render_task_group
+from test.test_mm_eval.test_driver.test_package.test import StatsFileCollection
 
 os.environ["NO_COLOR"] = "1"
 app = typer.Typer(pretty_exceptions_enable=False)
@@ -81,6 +82,19 @@ def srw_task_group(
 ) -> None:
     render_task_group(out_dir)
 
+
+@app.command(
+    name="concat-stats",
+    help="Concatenate MM stats files from all packages and tasks into a single CSV file.",
+)
+def concat_stats(
+    root_dir: Path = typer.Option(..., "--root-dir", help="Root directory containing MM stats files.", file_okay=False),
+    out_path: Path = typer.Option(..., "--out-path", help="Output path for the concatenated CSV file."),
+
+) -> None:
+    sfile_coll = StatsFileCollection.from_dir(root_dir)
+    df = sfile_coll.as_dataframe()
+    df.to_csv(out_path)
 
 if __name__ == "__main__":
     app()

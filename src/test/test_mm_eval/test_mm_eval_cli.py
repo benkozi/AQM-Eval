@@ -11,7 +11,7 @@ from aqm_eval.mm_eval.mm_eval_cli import app
 def test_help() -> None:
     """Test that the help message can be displayed."""
     runner = CliRunner()
-    for subcommand in ("yaml-init", "yaml-run", "srw-init", "srw-run"):
+    for subcommand in ("yaml-init", "yaml-run", "srw-init", "srw-run", "concat-stats"):
         result = runner.invoke(app, [subcommand, "--help"], catch_exceptions=False)
         print(result.output)
         assert result.exit_code == 0
