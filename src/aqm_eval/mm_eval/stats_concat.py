@@ -57,6 +57,7 @@ class StatsFileCollection(BaseModel):
                 if ii.value in path.parts:
                     package_key = ii
                     break
+            LOGGER(f"parsing {path=}, {package_key=}")
             sfile = StatsFile.from_path(path, package_key=package_key)
             LOGGER(f"found stats file: {sfile}")
             stats_files.append(sfile)
