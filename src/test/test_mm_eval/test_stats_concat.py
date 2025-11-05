@@ -12,9 +12,15 @@ from aqm_eval.mm_eval.stats_concat import StatsFile, StatsFileCollection
 @pytest.fixture
 def mm_filenames() -> tuple[str, ...]:
     return ("stats.TOLUENE.all.CONUS.2023-08-01_12.2023-08-31_12.csv",
-            "stats.PROPANE.epa_region.R1.2023-08-01_12.2023-08-31_12.csv")
+            "stats.PROPANE.epa_region.R1.2023-08-01_12.2023-08-31_12.csv",
+            "stats.dew_pt_temp.country.US.2023-08-01_12.2023-08-31_12.csv")
 
-def test_as_dataframe(tmp_path: Path, bin_dir: Path, mm_filenames: tuple[str, ...]) -> None:
+
+@pytest.fixture
+def expected_n_rows(mm_filenames: tuple[str, ...]) -> int:
+    return len(mm_filenames) * 24
+
+def test_as_dataframe(tmp_path: Path, bin_dir: Path, mm_filenames: tuple[str, ...], expected_n_rows: int) -> None:
     stats_files = []
     for fn in mm_filenames:
         dst = tmp_path / fn
@@ -32,11 +38,11 @@ def test_as_dataframe(tmp_path: Path, bin_dir: Path, mm_filenames: tuple[str, ..
     # print(out_df)
     # os.startfile(str(out_path))
 
-    assert len(out_df) == 48
+    assert len(out_df) == expected_n_rows
     assert out_df.columns.tolist() == ['id', 'Stat_ID', 'Stat_FullName', 'model', 'value', 'variable', 'region_type', 'region_id', 'start_date', 'end_date', 'package_key', 'path', 'created_at']
 
 
-def test_from_dir(tmp_path: Path, bin_dir: Path, mm_filenames: tuple[str, ...]) -> None:
+def test_from_dir(tmp_path: Path, bin_dir: Path, mm_filenames: tuple[str, ...], expected_n_rows: int) -> None:
     for package_key in PackageKey:
         out_dir = tmp_path / package_key.value
         out_dir.mkdir()
@@ -54,7 +60,7 @@ def test_from_dir(tmp_path: Path, bin_dir: Path, mm_filenames: tuple[str, ...]) 
     # print(out_df)
     # os.startfile(str(out_path))
 
-    assert len(out_df) == 48 * len(PackageKey)
+    assert len(out_df) == expected_n_rows * len(PackageKey)
     expected_package_key = set([ii.value for ii in PackageKey])
     assert set(out_df.package_key.unique()) == expected_package_key
     for ii in out_df["package_key"].tolist():
