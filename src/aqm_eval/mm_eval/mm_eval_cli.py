@@ -89,7 +89,7 @@ def srw_task_group(
 )
 def concat_stats(
     root_dir: Path = typer.Option(..., "--root-dir", help="Root directory containing MM stats files.", file_okay=False),
-    out_path: Path = typer.Option(..., "--out-path", help="Output path for the concatenated CSV file."),
+    out_path: Path = typer.Option(..., "--out-path", help="Output path for the concatenated CSV file.", exists=False, dir_okay=False),
 
 ) -> None:
     sfile_coll = StatsFileCollection.from_dir(root_dir)
