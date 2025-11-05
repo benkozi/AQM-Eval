@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 
 import pandas as pd
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.config import PackageKey
@@ -39,6 +39,11 @@ class StatsFile(BaseModel):
         for k, v in self.model_dump().items():
             df[k] = v
         return df
+
+    @field_validator("path", mode="before")
+    @classmethod
+    def _validate_path_(cls, value: Path) -> Path:
+        return value.absolute().resolve(strict=True)
 
 
 class StatsFileCollection(BaseModel):
