@@ -22,6 +22,10 @@ def test(tmp_path: Path, bin_dir: Path) -> None:
     new_content = yaml.safe_load(srw_config_raw)
     new_content["melodies_monet_parm"]["aqm"]["output_dir"] = str(tmp_path)
     new_content["melodies_monet_parm"]["aqm"]["models"]["eval"]["expt_dir"] = str(tmp_path)
+    new_content["melodies_monet_parm"]["start_datetime"] = "2023-06-01-12:00:00"
+    new_content["melodies_monet_parm"]["end_datetime"] = "2023-06-02-12:00:00"
+
+
     cfg = Config.from_yaml(new_content)
     data = cfg.to_yaml()
     data["platform"] = {"SCHED_NATIVE_CMD": "__run__"}

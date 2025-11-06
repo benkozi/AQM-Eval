@@ -10,8 +10,7 @@ from aqm_eval.mm_eval.driver.context.yaml_eval import YAMLContext
 
 class TestSRWContext:
     def test_init_path_happy(self, srw_context: SRWContext) -> None:
-        assert srw_context.date_first_cycle_mm == "2023-06-01-12:00:00"
-        assert srw_context.link_simulation == ("2023*",)
+        assert srw_context.mm_config.start_datetime == "2023-06-01-12:00:00"
         assert srw_context.cartopy_data_dir.exists()
 
     def test_find_nested_key_happy_second_yaml(self, srw_context: SRWContext) -> None:

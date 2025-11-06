@@ -71,6 +71,14 @@ class ConfigFactory(ModelFactory[Config]):
     def aqm(cls):
         return AQMConfigFactory.build()
 
+    @classmethod
+    def start_datetime(cls) -> str:
+        return "2023-06-01-12:00:00"
+
+    @classmethod
+    def end_datetime(cls) -> str:
+        return "2023-06-02-12:00:00"
+
 
 @pytest.fixture
 def config(tmp_path: Path) -> Config:

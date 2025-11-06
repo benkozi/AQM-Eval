@@ -241,3 +241,8 @@ class Config(BaseModel):
                 Config.update_left(data_left[key], value)
             else:
                 data_left[key] = value
+
+    @model_validator(mode="after")
+    def _validate_model_after_(self) -> "Config":
+        _ = self.date_range
+        return self

@@ -163,7 +163,7 @@ class AbstractEvalPackage(ABC, BaseModel):
     def iter_forecast_file_specs(self) -> Iterator[ForecastFileSpec]:
         for model in self.mm_models:
             expt_dir = model.cfg.expt_dir
-            for curr_dt in self.ctx.date_range.iter_by_step():
+            for curr_dt in self.ctx.mm_config.date_range.iter_by_step():
                 dir_path = expt_dir / self.ctx.date_range.to_srw_str(curr_dt)
                 assert_directory_exists(dir_path)
                 yield ForecastFileSpec(
