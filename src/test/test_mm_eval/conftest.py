@@ -79,6 +79,22 @@ class ConfigFactory(ModelFactory[Config]):
     def end_datetime(cls) -> str:
         return "2023-06-02-12:00:00"
 
+    @classmethod
+    def cartopy_data_dir(cls) -> Path:
+        ret = _TEST_GLOBALS["tmp_path"] / "cartopy_data"
+        ret.mkdir(exist_ok=True, parents=True)
+        return ret
+
+    @classmethod
+    def output_dir(cls) -> Path:
+        ret = _TEST_GLOBALS["tmp_path"] / "mm_output"
+        return ret
+
+    @classmethod
+    def run_dir(cls) -> Path:
+        ret = _TEST_GLOBALS["tmp_path"] / "mm_run"
+        return ret
+
 
 @pytest.fixture
 def config(tmp_path: Path) -> Config:

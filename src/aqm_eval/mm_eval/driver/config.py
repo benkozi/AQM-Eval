@@ -169,7 +169,6 @@ class AQMModelConfig(BaseModel):
 class AQMConfig(BaseModel):
     model_config = {"frozen": True}
 
-    output_dir: Path  # tdk:doc: existing directory
     models: dict[str, AQMModelConfig] = Field(
         max_length=4)
     packages: dict[PackageKey, PackageConfig] = Field(min_length=1)
@@ -209,6 +208,9 @@ class Config(BaseModel):
     aqm: AQMConfig
     start_datetime: str = Field(description="Evaluation start time in yyyy-mm-dd-HH:MM:SS UTC format.")
     end_datetime: str = Field(description="Evaluation end time in yyyy-mm-dd-HH:MM:SS UTC format.")
+    cartopy_data_dir: PathExistingDir = Field(description="Path to the Cartopy data directory.")
+    output_dir: Path  # tdk:doc: existing directory
+    run_dir: Path
 
     _key: str = "melodies_monet_parm"
 

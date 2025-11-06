@@ -68,7 +68,7 @@ class AbstractEvalPackage(ABC, BaseModel):
     @computed_field(description="Run directory for the MM evaluation package.")
     @cached_property
     def run_dir(self) -> Path:
-        return self.ctx.mm_run_dir / self.key.value
+        return self.ctx.mm_config.run_dir / self.key.value
 
     @computed_field(description="Directory containing links or derived files for package.")
     @cached_property
@@ -77,8 +77,8 @@ class AbstractEvalPackage(ABC, BaseModel):
 
     @computed_field(description="Output directory for the MM evaluation package.")
     @cached_property
-    def mm_package_output_dir(self) -> Path:
-        return self.ctx.mm_output_dir / self.key.value
+    def output_dir(self) -> Path:
+        return self.ctx.mm_config.output_dir / self.key.value
 
     # @computed_field(description="Prefix for each model role.")
     # @cached_property
@@ -96,6 +96,10 @@ class AbstractEvalPackage(ABC, BaseModel):
     @cached_property
     def task_control_filenames(self) -> set[str]:
         return set([f"control_{ii.value}.yaml" for ii in self.tasks])
+
+    @cached_property
+    def observation_template(self) -> str:
+        return self.ctx.mm_config.aqm.packages[self.key].observation_template
 
     @cached_property
     def mm_models(self) -> tuple[Model, ...]:
@@ -185,10 +189,10 @@ class AbstractEvalPackage(ABC, BaseModel):
         LOGGER(f"{self.ctx=}")
         LOGGER(f"{self.key=}")
 
-        _ = get_or_create_path(self.ctx.mm_output_dir)
-        _ = get_or_create_path(self.ctx.mm_run_dir)
+        _ = get_or_create_path(self.ctx.mm_config.output_dir)
+        _ = get_or_create_path(self.ctx.mm_config.run_dir)
         _ = get_or_create_path(self.link_alldays_path, exist_ok=False)
-        _ = get_or_create_path(self.mm_package_output_dir, exist_ok=False)
+        _ = get_or_create_path(self.output_dir, exist_ok=False)
 
         LOGGER("creating MM control configs")
         self._create_control_configs_()
@@ -220,10 +224,10 @@ class AbstractEvalPackage(ABC, BaseModel):
 
         try:
             matplotlib.use("Agg")
-            cartopy.config["data_dir"] = self.ctx.cartopy_data_dir
+            cartopy.config["data_dir"] = self.ctx.mm_config.cartopy_data_dir
             dask.config.set({"array.slicing.split_large_chunks": True})
             an = driver.analysis()
-            control_yaml = self.ctx.mm_run_dir / self.key.value / f"control_{task_key.value}.yaml"
+            control_yaml = self.run_dir / f"control_{task_key.value}.yaml"
             LOGGER(f"{control_yaml=}")
             an.control = control_yaml
             an.read_control()

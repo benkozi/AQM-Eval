@@ -94,7 +94,7 @@ def test_all_packages(all_pkgs_test_data: AllPackagesTestData, mocker: MockerFix
 
     package.run(TaskKey.SAVE_PAIRED)
 
-    assert package.mm_package_output_dir.exists()
+    assert package.output_dir.exists()
 
     m_analysis.read_control.assert_called_once()
     m_analysis.open_models.assert_called_once()

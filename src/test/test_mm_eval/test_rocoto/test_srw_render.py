@@ -24,6 +24,9 @@ def test(tmp_path: Path, bin_dir: Path) -> None:
     new_content["melodies_monet_parm"]["aqm"]["models"]["eval"]["expt_dir"] = str(tmp_path)
     new_content["melodies_monet_parm"]["start_datetime"] = "2023-06-01-12:00:00"
     new_content["melodies_monet_parm"]["end_datetime"] = "2023-06-02-12:00:00"
+    new_content["melodies_monet_parm"]["cartopy_data_dir"] = tmp_path
+    new_content["melodies_monet_parm"]["output_dir"] = tmp_path
+    new_content["melodies_monet_parm"]["run_dir"] = tmp_path
 
 
     cfg = Config.from_yaml(new_content)

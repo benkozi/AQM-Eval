@@ -12,11 +12,7 @@ from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.config import Config, PackageKey
 from aqm_eval.shared import PathExisting, assert_directory_exists, assert_file_exists
-
-try:
-    from uwtools.api.config import YAMLConfig, get_yaml_config
-except ImportError as exc:
-    LOGGER("uwtools required for SRW context", exc_info=exc)
+from uwtools.api.config import YAMLConfig, get_yaml_config
 
 
 def _convert_date_string_to_mm_(date_str: str) -> str:
@@ -27,10 +23,10 @@ def _convert_date_string_to_mm_(date_str: str) -> str:
 class SRWContext(AbstractDriverContext):
     expt_dir: PathExisting = Field(description="Experiment directory.")
 
-    @computed_field
-    @cached_property
-    def mm_eval_model_expt_dir(self) -> PathExisting:
-        return self.expt_dir
+    # @computed_field
+    # @cached_property
+    # def mm_eval_model_expt_dir(self) -> PathExisting:
+    #     return self.expt_dir
 
     @computed_field
     @cached_property
@@ -47,69 +43,69 @@ class SRWContext(AbstractDriverContext):
     def config_path_var_defns(self) -> PathExisting:
         return assert_file_exists(self.expt_dir / "var_defns.yaml")
 
-    @computed_field
+    # @computed_field
     @cached_property
     def _date_first_cycle_srw(self) -> str:
-        return self.find_nested_key(("workflow", "DATE_FIRST_CYCL"))
+        return self._find_nested_key_(("workflow", "DATE_FIRST_CYCL"))
 
-    @computed_field
+    # @computed_field
     @cached_property
     def _date_last_cycle_srw(self) -> str:
-        return self.find_nested_key(("workflow", "DATE_LAST_CYCL_MM"))
+        return self._find_nested_key_(("workflow", "DATE_LAST_CYCL_MM"))
 
-    @computed_field
+    # @computed_field
     @cached_property
     def _date_first_cycle_mm(self) -> str:
         return _convert_date_string_to_mm_(self._date_first_cycle_srw)
 
-    @computed_field
+    # @computed_field
     @cached_property
     def _date_last_cycle_mm(self) -> str:
         return _convert_date_string_to_mm_(self._date_last_cycle_srw)
 
-    @computed_field
-    @cached_property
-    def mm_output_dir(self) -> Path:
-        return self.mm_config.aqm.output_dir
+    # @computed_field
+    # @cached_property
+    # def mm_output_dir(self) -> Path:
+    #     return self.mm_config.aqm.output_dir
 
-    @computed_field
+    # @computed_field
     @cached_property
-    def mm_output_dir_default(self) -> Path:
+    def _mm_output_dir_default(self) -> Path:
         return self.expt_dir / "mm_output"
 
-    @computed_field
-    @cached_property
-    def mm_run_dir(self) -> Path:
-        return self.expt_dir / "mm_run"
+    # @computed_field
+    # @cached_property
+    # def mm_run_dir(self) -> Path:
+    #     return self.expt_dir / "mm_run"
 
-    @computed_field
-    @cached_property
-    def mm_package_keys(self) -> tuple[PackageKey, ...]:
-        # return tuple([PackageKey(ii) for ii in self.find_nested_key(("melodies_monet_parm", "aqm", "packages", "packages_to_run"))])
-        ret = [k for k, v in self.mm_config.aqm.packages.items() if v.active]
-        return tuple(ret)
+    # @computed_field
+    # @cached_property
+    # def mm_package_keys(self) -> tuple[PackageKey, ...]:
+    #     # return tuple([PackageKey(ii) for ii in self._find_nested_key_(("melodies_monet_parm", "aqm", "packages", "packages_to_run"))])
+    #     ret = [k for k, v in self.mm_config.aqm.packages.items() if v.active]
+    #     return tuple(ret)
 
-    @computed_field
-    @cached_property
-    def mm_obs_airnow_fn_template(self) -> str:
-        # return self.find_nested_key(("melodies_monet_parm", "aqm", "observation_templates", PackageKey.CHEM.value))
-        return self.mm_config.aqm.packages[PackageKey.CHEM].observation_template
-
-    @computed_field
-    @cached_property
-    def mm_obs_ish_fn_template(self) -> str:
-        return self.mm_config.aqm.packages[PackageKey.ISH].observation_template
-
-    @computed_field
-    @cached_property
-    def mm_obs_aqs_pm_fn_template(self) -> str:
-        # tdk: create single observations representation
-        return self.mm_config.aqm.packages[PackageKey.AQS_PM].observation_template
-
-    @computed_field
-    @cached_property
-    def mm_obs_aqs_voc_fn_template(self) -> str:
-        return self.mm_config.aqm.packages[PackageKey.AQS_VOC].observation_template
+    # @computed_field
+    # @cached_property
+    # def mm_obs_airnow_fn_template(self) -> str:
+    #     # return self._find_nested_key_(("melodies_monet_parm", "aqm", "observation_templates", PackageKey.CHEM.value))
+    #     return self.mm_config.aqm.packages[PackageKey.CHEM].observation_template
+    #
+    # @computed_field
+    # @cached_property
+    # def mm_obs_ish_fn_template(self) -> str:
+    #     return self.mm_config.aqm.packages[PackageKey.ISH].observation_template
+    #
+    # @computed_field
+    # @cached_property
+    # def mm_obs_aqs_pm_fn_template(self) -> str:
+    #     # tdk: create single observations representation
+    #     return self.mm_config.aqm.packages[PackageKey.AQS_PM].observation_template
+    #
+    # @computed_field
+    # @cached_property
+    # def mm_obs_aqs_voc_fn_template(self) -> str:
+    #     return self.mm_config.aqm.packages[PackageKey.AQS_VOC].observation_template
 
     # @computed_field
     # @cached_property
@@ -119,21 +115,21 @@ class SRWContext(AbstractDriverContext):
     # @computed_field
     # @cached_property
     # def mm_base_model_expt_dir(self) -> PathExisting | None:
-    #     ret = self.find_nested_key(("melodies_monet_parm", "aqm", "base_model_expt_dir"))
+    #     ret = self._find_nested_key_(("melodies_monet_parm", "aqm", "base_model_expt_dir"))
     #     if ret is not None:
     #         ret = assert_directory_exists(ret)
     #     return ret
 
-    @computed_field
+    # @computed_field
     @cached_property
-    def cartopy_data_dir(self) -> PathExisting:
-        return assert_directory_exists(self.find_nested_key(("platform", "FIXshp"))).absolute().resolve(strict=True)
+    def _cartopy_data_dir(self) -> Path:
+        return assert_directory_exists(self._find_nested_key_(("platform", "FIXshp"))).absolute().resolve(strict=True)
 
 
     @cached_property
     def mm_config(self) -> Config:
-        mm_parm_left = self.yaml_data[self.config_path_var_defns]["melodies_monet_parm"]
-        mm_parm_right = self.yaml_data[self.config_path_user]["melodies_monet_parm"]
+        mm_parm_left = self._yaml_data[self.config_path_var_defns]["melodies_monet_parm"]
+        mm_parm_right = self._yaml_data[self.config_path_user]["melodies_monet_parm"]
         Config.update_left(mm_parm_left, mm_parm_right)
         mm_parm = {"melodies_monet_parm": mm_parm_left,}
 
@@ -148,13 +144,18 @@ class SRWContext(AbstractDriverContext):
         if not found_host:
             raise ValueError("No host model found.")
 
-        if root_aqm["output_dir"] is None:
-            root_aqm["output_dir"] = self.mm_output_dir_default
+        if root.get("output_dir") is None:
+            root["output_dir"] = self._mm_output_dir_default
+        if root.get("run_dir") is None:
+            root["run_dir"] = self.expt_dir / "mm_run"
 
         if root.get("start_datetime") is None:
             root["start_datetime"] = self._date_first_cycle_mm
         if root.get("end_datetime") is None:
             root["end_datetime"] = self._date_last_cycle_mm
+
+        if root.get("cartopy_data_dir") is None:
+            root["cartopy_data_dir"] = self._cartopy_data_dir
 
         return Config.from_yaml(mm_parm)
 
@@ -167,18 +168,18 @@ class SRWContext(AbstractDriverContext):
         return datetime.strptime(self._date_last_cycle_srw, "%Y%m%d%H")
 
     @cached_property
-    def yaml_data(self) -> dict[Path, YAMLConfig]:
+    def _yaml_data(self) -> dict[Path, YAMLConfig]:
         """Cache loaded YAML data from config files."""
         data = {}
-        for yaml_path in self.yaml_srw_config_paths:
+        for yaml_path in self._yaml_srw_config_paths:
             data[yaml_path] = get_yaml_config(yaml_path)
         return data
 
     @cached_property
-    def yaml_srw_config_paths(self) -> tuple[PathExisting, ...]:
+    def _yaml_srw_config_paths(self) -> tuple[Path, ...]:
         return self.config_path_user, self.config_path_rocoto, self.config_path_var_defns
 
-    def find_nested_key(self, key_tuple: tuple[str, ...]) -> Any:
+    def _find_nested_key_(self, key_tuple: tuple[str, ...]) -> Any:
         """Find a nested key in the YAML dictionaries using a tuple of string keys.
 
         Args:
@@ -188,7 +189,7 @@ class SRWContext(AbstractDriverContext):
         -------
             The value found at the nested key location
         """
-        for yaml_path, yaml_dict in self.yaml_data.items():
+        for yaml_path, yaml_dict in self._yaml_data.items():
             current = yaml_dict
             try:
                 for key in key_tuple:
@@ -202,4 +203,4 @@ class SRWContext(AbstractDriverContext):
                     level=logging.ERROR,
                 )
                 raise
-        raise KeyError(f"{key_tuple=} not found in any YAML files: {self.yaml_data.keys()}")
+        raise KeyError(f"{key_tuple=} not found in any YAML files: {self._yaml_data.keys()}")

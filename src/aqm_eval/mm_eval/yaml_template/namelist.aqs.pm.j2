@@ -11,7 +11,7 @@ package_key: aqs_pm
 # Time format: yyyy-mm-dd-HH:MM:SS UTC
 start_time: {{ ctx.mm_config.start_datetime }}
 end_time: {{ ctx.mm_config.end_datetime }}
-output_dir: {{ package.mm_package_output_dir }}
+output_dir: {{ package.output_dir }}
 debug_option: True
 mm_tasks: {{ mm_tasks }}
 
@@ -52,7 +52,7 @@ paired_dataset:
 obs_label: {{ package.key.value }}
 obs_airnow: False
 obs_aqs: True
-obs_file: {{ ctx.mm_obs_aqs_pm_fn_template }}
+obs_file: {{ package.observation_template }}
 obs_variables:
   SO4f:
     unit_scale: 1

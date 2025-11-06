@@ -11,7 +11,7 @@ from aqm_eval.mm_eval.mm_eval_cli import app
 def test_help() -> None:
     """Test that the help message can be displayed."""
     runner = CliRunner()
-    for subcommand in ("yaml-init", "yaml-run", "srw-init", "srw-run", "concat-stats"):
+    for subcommand in ("srw-init", "srw-run", "concat-stats"):
         result = runner.invoke(app, [subcommand, "--help"], catch_exceptions=False)
         print(result.output)
         assert result.exit_code == 0
@@ -42,10 +42,3 @@ def test_srw_task_group(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(app, ["srw-task-group", "--out-dir", str(tmp_path)])
     print(result.output)
-
-
-def test_yaml_init(namelist_chem_yaml_config: Path) -> None:
-    runner = CliRunner()
-    result = runner.invoke(app, ["yaml-init", "--yaml-config", str(namelist_chem_yaml_config)])
-    print(result.output)
-    assert result.exit_code == 0

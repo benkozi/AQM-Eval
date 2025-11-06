@@ -10,7 +10,7 @@ package_key: met
 # Time format: yyyy-mm-dd-HH:MM:SS UTC
 start_time: {{ ctx.mm_config.start_datetime }}
 end_time: {{ ctx.mm_config.end_datetime }}
-output_dir: {{ package.mm_package_output_dir }}
+output_dir: {{ package.output_dir }}
 debug_option: True
 mm_tasks: {{ mm_tasks }}
 
@@ -50,7 +50,7 @@ paired_dataset:
 
 # ==== Obs (ISH by default) ====
 obs_label: ish
-obs_file: {{ ctx.mm_obs_ish_fn_template }}
+obs_file: {{ package.observation_template }}
 obs_variables:
   ws:
     unit_scale: 1    # use 0.514 when convert obs knots-->m/s

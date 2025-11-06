@@ -1,8 +1,8 @@
 melodies_monet_parm:
   start_datetime: null
   end_datetime: null
+  output_dir: null
   aqm:
-    output_dir: null
     models:
       eval:
         expt_dir: null

@@ -5,7 +5,6 @@ from pathlib import Path
 
 import typer
 
-from aqm_eval.mm_eval.driver.context.yaml_eval import YAMLContext
 from aqm_eval.mm_eval.driver.package.core import package_key_to_class
 from aqm_eval.mm_eval.driver.config import TaskKey, PackageKey
 from aqm_eval.mm_eval.rocoto.srw_render import render_task_group
@@ -13,31 +12,6 @@ from aqm_eval.mm_eval.stats_concat import StatsFileCollection
 
 os.environ["NO_COLOR"] = "1"
 app = typer.Typer(pretty_exceptions_enable=False)
-
-
-@app.command(
-    name="yaml-init",
-    help="Initialize the MELODIES MONET UFS-AQM evaluation from a pure YAML file.",
-)
-def yaml_init(yaml_config: Path = typer.Option(..., "--yaml-config", help="The evaluation's YAML configuration.")) -> None:
-    ctx = YAMLContext(yaml_config=yaml_config)
-    klass = package_key_to_class(ctx.mm_package_key)
-    package = klass.model_validate(dict(ctx=ctx))
-    package.initialize()
-
-
-@app.command(
-    name="yaml-run",
-    help="Run the MELODIES MONET UFS-AQM evaluation using a pure YAML file.",
-)
-def yaml_run(
-    yaml_config: Path = typer.Option(..., "--yaml-config", help="The evaluation's YAML configuration."),
-    task_selector: TaskKey = typer.Option(..., "--task", help="Task selector."),
-) -> None:
-    ctx = YAMLContext(yaml_config=yaml_config)
-    klass = package_key_to_class(ctx.mm_package_key)
-    package = klass.model_validate(dict(ctx=ctx))
-    package.run(task_key=task_selector)
 
 
 @app.command(
