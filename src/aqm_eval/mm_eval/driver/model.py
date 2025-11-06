@@ -10,31 +10,16 @@ from aqm_eval.mm_eval.driver.config import AQMModelConfig
 from aqm_eval.mm_eval.driver.helpers import create_symlinks
 from aqm_eval.shared import DateRange
 
-# @unique
-# class ModelRole(StrEnum):
-#     """Model role when generating configuration files."""
-#
-#     EVAL = "eval"
-#     BASE = "base"
-
 
 class Model(BaseModel):
     """Defines a model used for generating MM configuration files."""
 
     model_config = {"frozen": True}
 
-    cfg: AQMModelConfig  # tdk: rename to ModelConfig?
-    # ctx: AbstractDriverContext
-    # expt_dir: PathExisting = Field(description="Experiment directory containing model output.")
-    # label: str = Field(description="Model label used to uniquely identify the model in MM configuration files.")
-    # title: str = Field(description="Model title used in MM plots.")
-    # prefix: str = Field(description="File prefix used when creating symlinks to model output files.")
-    # role: ModelRole = Field(description="Model role when generating configuration files.")
-    # cycle_dir_template: tuple[str, ...] = Field(description="Templates for selecting model output directories.")
+    cfg: AQMModelConfig
     dyn_file_template: tuple[str, ...] = Field(description="Templates for selecting model output dynamics files.")
     link_alldays_path: Path = Field(description="Path to directory where symlinks to model output files will be created.")
     date_range: DateRange
-    # color: str
 
     @computed_field(description="Template for selecting symlinked data files.")
     @cached_property
@@ -46,18 +31,6 @@ class Model(BaseModel):
     @cached_property
     def label(self) -> str:
         return self.cfg.key
-
-    # @computed_field(description="Determines a model's color based on its role.")
-    # @cached_property
-    # def plot_kwargs_color(self) -> str:
-    #     raise NotImplementedError
-    #     # match self.role:
-    #     #     case ModelRole.EVAL:
-    #     #         return "forestgreen"
-    #     #     case ModelRole.BASE:
-    #     #         return "magenta"
-    #     #     case _:
-    #     #         raise ValueError(f"Unknown role: {self.role}")
 
     @log_it
     def create_symlinks(

@@ -23,11 +23,6 @@ def _convert_date_string_to_mm_(date_str: str) -> str:
 class SRWContext(AbstractDriverContext):
     expt_dir: PathExisting = Field(description="Experiment directory.")
 
-    # @computed_field
-    # @cached_property
-    # def mm_eval_model_expt_dir(self) -> PathExisting:
-    #     return self.expt_dir
-
     @computed_field
     @cached_property
     def config_path_user(self) -> PathExisting:
@@ -63,67 +58,14 @@ class SRWContext(AbstractDriverContext):
     def _date_last_cycle_mm(self) -> str:
         return _convert_date_string_to_mm_(self._date_last_cycle_srw)
 
-    # @computed_field
-    # @cached_property
-    # def mm_output_dir(self) -> Path:
-    #     return self.mm_config.aqm.output_dir
-
-    # @computed_field
     @cached_property
     def _mm_output_dir_default(self) -> Path:
         return self.expt_dir / "mm_output"
 
-    # @computed_field
-    # @cached_property
-    # def mm_run_dir(self) -> Path:
-    #     return self.expt_dir / "mm_run"
-
-    # @computed_field
-    # @cached_property
-    # def mm_package_keys(self) -> tuple[PackageKey, ...]:
-    #     # return tuple([PackageKey(ii) for ii in self._find_nested_key_(("melodies_monet_parm", "aqm", "packages", "packages_to_run"))])
-    #     ret = [k for k, v in self.mm_config.aqm.packages.items() if v.active]
-    #     return tuple(ret)
-
-    # @computed_field
-    # @cached_property
-    # def mm_obs_airnow_fn_template(self) -> str:
-    #     # return self._find_nested_key_(("melodies_monet_parm", "aqm", "observation_templates", PackageKey.CHEM.value))
-    #     return self.mm_config.aqm.packages[PackageKey.CHEM].observation_template
-    #
-    # @computed_field
-    # @cached_property
-    # def mm_obs_ish_fn_template(self) -> str:
-    #     return self.mm_config.aqm.packages[PackageKey.ISH].observation_template
-    #
-    # @computed_field
-    # @cached_property
-    # def mm_obs_aqs_pm_fn_template(self) -> str:
-    #     # tdk: create single observations representation
-    #     return self.mm_config.aqm.packages[PackageKey.AQS_PM].observation_template
-    #
-    # @computed_field
-    # @cached_property
-    # def mm_obs_aqs_voc_fn_template(self) -> str:
-    #     return self.mm_config.aqm.packages[PackageKey.AQS_VOC].observation_template
-
-    # @computed_field
-    # @cached_property
-    # def link_simulation(self) -> tuple[str, ...]:
-    #     return tuple(set([f"{str(ii.year)}*" for ii in [self.datetime_first_cycl, self.datetime_last_cycl]]))
-
-    # @computed_field
-    # @cached_property
-    # def mm_base_model_expt_dir(self) -> PathExisting | None:
-    #     ret = self._find_nested_key_(("melodies_monet_parm", "aqm", "base_model_expt_dir"))
-    #     if ret is not None:
-    #         ret = assert_directory_exists(ret)
-    #     return ret
-
-    # @computed_field
     @cached_property
     def _cartopy_data_dir(self) -> Path:
-        return assert_directory_exists(self._find_nested_key_(("platform", "FIXshp"))).absolute().resolve(strict=True)
+        targte_dir = self._find_nested_key_(("platform", "FIXshp"))
+        return assert_directory_exists(targte_dir).absolute().resolve(strict=True)
 
     @cached_property
     def mm_config(self) -> Config:

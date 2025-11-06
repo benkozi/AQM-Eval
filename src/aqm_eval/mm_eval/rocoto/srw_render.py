@@ -20,7 +20,7 @@ class AbstractExecutionData(ABC, BaseModel):
 
     @cached_property
     def nodes(self) -> str:
-        return "{{{{ {host}.nodes }}}}:ppn={{{{ {host}.tasks_per_node }}}}".format(host=self.execution_host)
+        return "{{{{ {host}.nodes }}}}:ppn={{{{ {host}.tasks_per_node }}}}".format(host=self.execution_host)  # noqa: E501
 
     @cached_property
     def nprocs(self) -> str:
@@ -45,13 +45,13 @@ class TaskData(AbstractExecutionData):
 
     @cached_property
     def nodes(self) -> str:
-        return '{{{{ {host}.get("nodes", {fallback_host}.batchargs.nodes) }}}}:ppn={{{{ {host}.get("tasks_per_node", {fallback_host}.batchargs.tasks_per_node) }}}}'.format(
+        return '{{{{ {host}.get("nodes", {fallback_host}.batchargs.nodes) }}}}:ppn={{{{ {host}.get("tasks_per_node", {fallback_host}.batchargs.tasks_per_node) }}}}'.format(  # noqa: E501
             host=self.execution_host, fallback_host=self.fallback_host
         )
 
     @cached_property
     def nprocs(self) -> str:
-        return '{{{{ {host}.get("nodes", {fallback_host}.batchargs.nodes) * {host}.get("tasks_per_node", {fallback_host}.batchargs.tasks_per_node) }}}}'.format(
+        return '{{{{ {host}.get("nodes", {fallback_host}.batchargs.nodes) * {host}.get("tasks_per_node", {fallback_host}.batchargs.tasks_per_node) }}}}'.format(  # noqa: E501
             host=self.execution_host, fallback_host=self.fallback_host
         )
 

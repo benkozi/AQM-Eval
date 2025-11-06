@@ -58,13 +58,6 @@ class Execution(BaseModel):
     batchargs: BatchArgs = Field(default_factory=BatchArgs)
 
 
-# class TaskConfig(BaseModel):
-#     model_config = {"frozen": True}
-#
-#     execution: Execution = Field(default_factory=Execution)
-#     stats_execution: Execution = Field(default_factory=Execution)
-
-
 class PackageExecution(BaseModel):
     model_config = {"frozen": True}
 
@@ -222,12 +215,6 @@ class Config(BaseModel):
     @classmethod
     def from_yaml(cls, data: dict) -> "Config":
         return cls.model_validate(data[cls._key.default])
-
-    #
-    # @classmethod
-    # def from_yaml_overlay(cls, data_left: dict, data_right: dict) -> "Config":
-    #     cls.update_left(data_left[cls._key.default], data_right[cls._key.default])
-    #     return cls.from_yaml(data_left)
 
     @staticmethod
     def update_left(data_left: dict, data_right: dict) -> None:

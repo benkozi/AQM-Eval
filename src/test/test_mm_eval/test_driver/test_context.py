@@ -1,4 +1,3 @@
-
 import pytest
 
 from aqm_eval.mm_eval.driver.context.srw import SRWContext

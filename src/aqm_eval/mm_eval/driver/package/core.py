@@ -30,7 +30,6 @@ class ForecastFileSpec(BaseModel):
     out_dir: PathExisting
     out_prefix: str
     forecast_hours: tuple[int, ...] = tuple(range(1, 25))
-    # forecast_hour: int = Field(ge=0, le=24)
 
     @computed_field
     @cached_property
@@ -79,11 +78,6 @@ class AbstractEvalPackage(ABC, BaseModel):
     def output_dir(self) -> Path:
         return self.ctx.mm_config.output_dir / self.key.value
 
-    # @computed_field(description="Prefix for each model role.")
-    # @cached_property
-    # def model_prefixes(self) -> dict[ModelRole, str]:
-    #     return {ii: ii.value + "_orig" for ii in ModelRole}
-
     @computed_field(description="Tasks that the package will run.")
     @cached_property
     def tasks(self) -> tuple[TaskKey, ...]:
@@ -109,12 +103,7 @@ class AbstractEvalPackage(ABC, BaseModel):
                 continue
             kwds = dict(
                 cfg=v,
-                # expt_dir=v.expt_dir,
-                # label=k,
-                # title=v.title,
-                # color=v.color,
                 dyn_file_template=("dynf*.nc",),
-                # cycle_dir_template=self.ctx.link_simulation,
                 link_alldays_path=self.link_alldays_path,
                 date_range=self.ctx.mm_config.date_range,
             )
