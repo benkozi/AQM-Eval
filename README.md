@@ -9,10 +9,10 @@ branch_or_tag=develop
 git clone -b ${branch_or_tag} https://github.com/NOAA-EPIC/AQM-Eval
 cd AQM-Eval
 conda env create -f environment.yml
-conda run -n aqm-eval pip install .
+conda run -n aqm-eval-dev pip install .
 
 # Optionally run tests
-conda run -n aqm-eval pytest src/test
+conda run -n aqm-eval-dev pytest src/test
 ```
 
 ## _aqm-data-sync_ Utility

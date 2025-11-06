@@ -1,4 +1,4 @@
-name: aqm-eval
+name: aqm-eval-dev
 channels:
   - conda-forge
   - ufs-community # Needed for SRW context
@@ -12,3 +12,11 @@ dependencies:
   - dask=2024.2.1
   - melodies-monet=1.*
   - uwtools # Needed for SRW context
+  # dev only from here
+  - mypy=1.17.*
+  - nco=5.3.*
+  - polyfactory=2.22.*
+  - pre-commit=4.3.*
+  - pytest=8.4.*
+  - pytest-mock=3.14.*
+  - ruff=0.12.*
