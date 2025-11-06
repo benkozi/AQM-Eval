@@ -1,6 +1,6 @@
 from aqm_eval.logging_aqm_eval import log_it
+from aqm_eval.mm_eval.driver.config import PackageKey, TaskKey
 from aqm_eval.mm_eval.driver.package.core import AbstractEvalPackage
-from aqm_eval.mm_eval.driver.config import TaskKey, PackageKey
 
 
 class ChemEvalPackage(AbstractEvalPackage):

@@ -7,10 +7,8 @@ from pydantic import BaseModel, Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.config import AQMModelConfig
-from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.helpers import create_symlinks
 from aqm_eval.shared import DateRange
-
 
 # @unique
 # class ModelRole(StrEnum):
@@ -25,7 +23,7 @@ class Model(BaseModel):
 
     model_config = {"frozen": True}
 
-    cfg: AQMModelConfig #tdk: rename to ModelConfig?
+    cfg: AQMModelConfig  # tdk: rename to ModelConfig?
     # ctx: AbstractDriverContext
     # expt_dir: PathExisting = Field(description="Experiment directory containing model output.")
     # label: str = Field(description="Model label used to uniquely identify the model in MM configuration files.")

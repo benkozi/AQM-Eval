@@ -1,24 +1,26 @@
+import shutil
 from pathlib import Path
 
 import pandas as pd
 import pytest
 
 from aqm_eval.mm_eval.driver.config import PackageKey
-import shutil
-
 from aqm_eval.mm_eval.stats_concat import StatsFile, StatsFileCollection
 
 
 @pytest.fixture
 def mm_filenames() -> tuple[str, ...]:
-    return ("stats.TOLUENE.all.CONUS.2023-08-01_12.2023-08-31_12.csv",
-            "stats.PROPANE.epa_region.R1.2023-08-01_12.2023-08-31_12.csv",
-            "stats.dew_pt_temp.country.US.2023-08-01_12.2023-08-31_12.csv")
+    return (
+        "stats.TOLUENE.all.CONUS.2023-08-01_12.2023-08-31_12.csv",
+        "stats.PROPANE.epa_region.R1.2023-08-01_12.2023-08-31_12.csv",
+        "stats.dew_pt_temp.country.US.2023-08-01_12.2023-08-31_12.csv",
+    )
 
 
 @pytest.fixture
 def expected_n_rows(mm_filenames: tuple[str, ...]) -> int:
     return len(mm_filenames) * 24
+
 
 def test_as_dataframe(tmp_path: Path, bin_dir: Path, mm_filenames: tuple[str, ...], expected_n_rows: int) -> None:
     stats_files = []
@@ -39,7 +41,21 @@ def test_as_dataframe(tmp_path: Path, bin_dir: Path, mm_filenames: tuple[str, ..
     # os.startfile(str(out_path))
 
     assert len(out_df) == expected_n_rows
-    assert out_df.columns.tolist() == ['id', 'Stat_ID', 'Stat_FullName', 'model', 'value', 'variable', 'region_type', 'region_id', 'start_date', 'end_date', 'package_key', 'path', 'created_at']
+    assert out_df.columns.tolist() == [
+        "id",
+        "Stat_ID",
+        "Stat_FullName",
+        "model",
+        "value",
+        "variable",
+        "region_type",
+        "region_id",
+        "start_date",
+        "end_date",
+        "package_key",
+        "path",
+        "created_at",
+    ]
 
 
 def test_from_dir(tmp_path: Path, bin_dir: Path, mm_filenames: tuple[str, ...], expected_n_rows: int) -> None:

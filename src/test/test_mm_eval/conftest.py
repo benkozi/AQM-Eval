@@ -1,29 +1,19 @@
+import tempfile
 from pathlib import Path
 
 import pytest
 import yaml
 from _pytest.fixtures import FixtureRequest
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
-from statsmodels.sandbox.nonparametric.kdecovclass import test_kde_1d
-from uwtools.api.config import get_yaml_config
-
-from aqm_eval.mm_eval.driver.config import Config
-from aqm_eval.mm_eval.driver.context.srw import SRWContext
-
-import tempfile
-from pathlib import Path
-
-import pytest
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-from aqm_eval.mm_eval.driver.config import PackageConfig, AQMModelConfig, AQMConfig, Config, \
-    PlotKwargs, PackageKey
+from aqm_eval.mm_eval.driver.config import AQMConfig, AQMModelConfig, Config, PackageConfig, PackageKey, PlotKwargs
+from aqm_eval.mm_eval.driver.context.srw import SRWContext
 
 _TEST_GLOBALS = {"tmp_path": Path("")}
 
 
 class PackageConfigFactory(ModelFactory[PackageConfig]):
-
     @classmethod
     def active(cls) -> bool:
         return True
@@ -42,7 +32,6 @@ class AQMModelConfigFactory(ModelFactory[AQMModelConfig]):
 
 
 class AQMConfigFactory(ModelFactory[AQMConfig]):
-
     @classmethod
     def output_dir(cls) -> Path:
         return Path(tempfile.mkdtemp()) / "foo" / "bar"
@@ -50,8 +39,7 @@ class AQMConfigFactory(ModelFactory[AQMConfig]):
     @classmethod
     def models(cls):
         global _TEST_GLOBALS
-        data = {"eval1": {"is_host": True}, "base1": {"is_host": False},
-                "base2": {"is_host": False}, "base4": {"is_host": False}}
+        data = {"eval1": {"is_host": True}, "base1": {"is_host": False}, "base2": {"is_host": False}, "base4": {"is_host": False}}
         ret = {}
         for k, v in data.items():
             expt_dir = _TEST_GLOBALS["tmp_path"] / k
@@ -103,7 +91,6 @@ def config(tmp_path: Path) -> Config:
     return ConfigFactory.build()
 
 
-
 @pytest.fixture
 def expt_dir(config: Config) -> Path:
     return list(config.aqm.host_model.values())[0].expt_dir
@@ -112,7 +99,6 @@ def expt_dir(config: Config) -> Path:
 @pytest.fixture(params=["pure", "srw", "srw-no-forecast"])
 def config_content(request: FixtureRequest, config: Config, bin_dir: Path) -> dict:
     return get_config_content(bin_dir, config, request.param)
-
 
 
 @pytest.fixture()
@@ -164,7 +150,7 @@ def config_path_user(expt_dir: Path, bin_dir: Path, config_content: dict) -> Pat
 def get_config_content(bin_dir: Path, config: Config, config_src: str) -> dict:
     match config_src:
         case "pure":
-            new_content = (config.to_yaml())
+            new_content = config.to_yaml()
         case "srw":
             srw_config = bin_dir / "srw-config.yaml"
             srw_config_raw = srw_config.read_text()
@@ -189,7 +175,6 @@ def config_path_rocoto(expt_dir: Path) -> Path:
     with open(yaml_path, "w") as f:
         yaml.dump(yaml_content, f)
     return yaml_path
-
 
 
 @pytest.fixture()

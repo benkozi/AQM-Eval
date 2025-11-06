@@ -1,14 +1,12 @@
-from collections import deque
 from datetime import datetime
-from enum import unique, StrEnum
+from enum import StrEnum, unique
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Annotated, Mapping
+from typing import Any, Mapping
 
-from pydantic import BaseModel, Field, AfterValidator, model_validator, model_serializer, \
-    field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
-from aqm_eval.shared import PathExistingDir, DateRange
+from aqm_eval.shared import DateRange, PathExistingDir
 
 
 @unique
@@ -42,7 +40,7 @@ class PackageKey(StrEnum):
 
 def _is_unique_(v: tuple[Any, ...]) -> tuple[Any, ...]:
     if len(set(v)) != len(v):
-        raise ValueError(f"Values must be unique.")
+        raise ValueError("Values must be unique.")
     return v
 
 
@@ -66,6 +64,7 @@ class Execution(BaseModel):
 #     execution: Execution = Field(default_factory=Execution)
 #     stats_execution: Execution = Field(default_factory=Execution)
 
+
 class PackageExecution(BaseModel):
     model_config = {"frozen": True}
 
@@ -77,13 +76,11 @@ class PackageConfig(BaseModel):
     model_config = {"frozen": True}
 
     key: PackageKey = Field(exclude=True)
-    observation_template: str #tdk: can be null if active is false
+    observation_template: str  # tdk: can be null if active is false
     mapping: dict[str, str]
     active: bool = True
-    tasks_to_exclude: tuple[
-        TaskKey, ...]  = tuple()
+    tasks_to_exclude: tuple[TaskKey, ...] = tuple()
     execution: PackageExecution = Field(default_factory=PackageExecution)
-
 
     @model_validator(mode="before")
     @classmethod
@@ -131,8 +128,8 @@ class PlotKwargs(BaseModel):
     model_config = {"frozen": True}
 
     color: str = "g"
-    marker: str = '^'
-    linestyle: str = '-'
+    marker: str = "^"
+    linestyle: str = "-"
     markersize: int = 4
 
     _possible_colors: tuple[str] = ("g", "m", "k", "r", "b", "y")
@@ -153,7 +150,7 @@ class AQMModelConfig(BaseModel):
     plot_kwargs: PlotKwargs
     is_host: bool = False  # tdk: only one model needs to be host = true but must be one
     type: str = "rrfs"
-    kwargs: dict[str, Any] = {'surf_only': True, 'mech': 'cb6r3_ae6_aq'}
+    kwargs: dict[str, Any] = {"surf_only": True, "mech": "cb6r3_ae6_aq"}
     radius_of_influence: float = 20000
     variables: Any | None = None
     projection: Any | None = None
@@ -169,8 +166,7 @@ class AQMModelConfig(BaseModel):
 class AQMConfig(BaseModel):
     model_config = {"frozen": True}
 
-    models: dict[str, AQMModelConfig] = Field(
-        max_length=4)
+    models: dict[str, AQMModelConfig] = Field(max_length=4)
     packages: dict[PackageKey, PackageConfig] = Field(min_length=1)
     task_defaults: TaskDefaults
     no_forecast: bool = False
@@ -200,8 +196,6 @@ class AQMConfig(BaseModel):
         return values
 
 
-
-
 class Config(BaseModel):
     model_config = {"frozen": True}
 
@@ -228,6 +222,7 @@ class Config(BaseModel):
     @classmethod
     def from_yaml(cls, data: dict) -> "Config":
         return cls.model_validate(data[cls._key.default])
+
     #
     # @classmethod
     # def from_yaml_overlay(cls, data_left: dict, data_right: dict) -> "Config":

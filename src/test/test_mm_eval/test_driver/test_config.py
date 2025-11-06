@@ -1,10 +1,8 @@
-from copy import deepcopy
 from pathlib import Path
 
 import yaml
 
 from aqm_eval.mm_eval.driver.config import Config
-from test.test_mm_eval.conftest import ConfigFactory
 
 
 def test(config: Config, tmp_path: Path) -> None:
@@ -20,6 +18,7 @@ def test(config: Config, tmp_path: Path) -> None:
     assert "key" not in data["melodies_monet_parm"]["aqm"]["models"]["eval1"]
 
     _ = Config.from_yaml(data)
+
 
 #
 # def test_from_yaml_overlay(config: Config) -> None:

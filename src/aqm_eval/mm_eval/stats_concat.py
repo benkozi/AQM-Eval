@@ -22,7 +22,9 @@ class StatsFile(BaseModel):
 
     @classmethod
     def from_path(cls, path: Path, package_key: PackageKey | None = None) -> "StatsFile":
-        pattern = re.compile("stats\.(?P<variable>.+)\.(?P<region_type>all|epa_region|country)\.(?P<region_id>.+)\.(?P<start_date>[0-9-_]+)\.(?P<end_date>[0-9-_]+)\.csv")
+        pattern = re.compile(
+            "stats\.(?P<variable>.+)\.(?P<region_type>all|epa_region|country)\.(?P<region_id>.+)\.(?P<start_date>[0-9-_]+)\.(?P<end_date>[0-9-_]+)\.csv"
+        )
         match = re.match(pattern, path.name)
         data = match.groupdict()
         data["path"] = path

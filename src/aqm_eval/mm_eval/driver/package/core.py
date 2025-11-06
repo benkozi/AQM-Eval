@@ -1,5 +1,5 @@
 """Defines package objects used when generating MM files. A package is a collection of tasks specfiic to an evaluation type."""
-import datetime
+
 import logging
 import re
 from abc import ABC, abstractmethod
@@ -18,12 +18,11 @@ from melodies_monet.driver import analysis  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
-from aqm_eval.mm_eval.driver.config import TaskKey, PackageKey, PackageConfig
+from aqm_eval.mm_eval.driver.config import PackageConfig, PackageKey, TaskKey
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.model import Model
 from aqm_eval.settings import SETTINGS
-from aqm_eval.shared import PathExisting, calc_2d_chunks, get_or_create_path, \
-    assert_directory_exists
+from aqm_eval.shared import PathExisting, assert_directory_exists, calc_2d_chunks, get_or_create_path
 
 
 class ForecastFileSpec(BaseModel):
@@ -104,12 +103,12 @@ class AbstractEvalPackage(ABC, BaseModel):
     @cached_property
     def mm_models(self) -> tuple[Model, ...]:
         ret = []
-        for k,v in self.ctx.mm_config.aqm.models.items():
+        for k, v in self.ctx.mm_config.aqm.models.items():
             if self.ctx.mm_config.aqm.no_forecast and v.is_host:
                 LOGGER(f"skipping host model {k=} as no_forecast is True")
                 continue
             kwds = dict(
-                cfg = v,
+                cfg=v,
                 # expt_dir=v.expt_dir,
                 # label=k,
                 # title=v.title,
@@ -123,7 +122,6 @@ class AbstractEvalPackage(ABC, BaseModel):
         if len(ret) == 0:
             raise ValueError(f"no models found for package {self.key=}. At least one is required.")
         return tuple(ret)
-
 
     @cached_property
     def mm_model_labels(self) -> list[str]:
@@ -176,7 +174,6 @@ class AbstractEvalPackage(ABC, BaseModel):
                     out_dir=model.link_alldays_path,
                     out_prefix=f"{model.label}_{dir_path.name}",
                 )
-
 
     @log_it
     def initialize(self) -> None:
@@ -282,7 +279,7 @@ class AbstractEvalPackage(ABC, BaseModel):
         namelist_config = yaml.safe_load(namelist_config_str)
         with open(package_run_dir / "namelist.yaml", "w") as f:
             f.write(namelist_config_str)
-        namelist_config['package'] = self
+        namelist_config["package"] = self
 
         assert isinstance(cfg["mm_tasks"], tuple)
         for task in cfg["mm_tasks"]:

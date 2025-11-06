@@ -28,7 +28,6 @@ def test(tmp_path: Path, bin_dir: Path) -> None:
     new_content["melodies_monet_parm"]["output_dir"] = tmp_path
     new_content["melodies_monet_parm"]["run_dir"] = tmp_path
 
-
     cfg = Config.from_yaml(new_content)
     data = cfg.to_yaml()
     data["platform"] = {"SCHED_NATIVE_CMD": "__run__"}

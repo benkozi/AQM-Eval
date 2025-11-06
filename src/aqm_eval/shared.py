@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Annotated, Any, Iterator
 
 import numpy as np
-from pydantic import BeforeValidator, PlainSerializer, BaseModel
+from pydantic import BaseModel, BeforeValidator, PlainSerializer
 
 from aqm_eval.logging_aqm_eval import LOGGER
 
@@ -19,6 +19,7 @@ def assert_path_exists(path: Path | str) -> Path:
 
 
 PathExisting = Annotated[Path, BeforeValidator(assert_path_exists), PlainSerializer(lambda x: str(x), return_type=str)]
+
 
 def assert_directory_exists(path: Path | str) -> PathExisting:
     path = assert_path_exists(path)

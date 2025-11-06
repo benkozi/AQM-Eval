@@ -5,8 +5,8 @@ from pathlib import Path
 
 import typer
 
+from aqm_eval.mm_eval.driver.config import PackageKey, TaskKey
 from aqm_eval.mm_eval.driver.package.core import package_key_to_class
-from aqm_eval.mm_eval.driver.config import TaskKey, PackageKey
 from aqm_eval.mm_eval.rocoto.srw_render import render_task_group
 from aqm_eval.mm_eval.stats_concat import StatsFileCollection
 
@@ -63,12 +63,14 @@ def srw_task_group(
 )
 def concat_stats(
     root_dir: Path = typer.Option(..., "--root-dir", help="Root directory containing MM stats files.", file_okay=False),
-    out_path: Path = typer.Option(..., "--out-path", help="Output path for the concatenated CSV file.", exists=False, dir_okay=False),
-
+    out_path: Path = typer.Option(
+        ..., "--out-path", help="Output path for the concatenated CSV file.", exists=False, dir_okay=False
+    ),
 ) -> None:
     sfile_coll = StatsFileCollection.from_dir(root_dir)
     df = sfile_coll.as_dataframe()
     df.to_csv(out_path)
+
 
 if __name__ == "__main__":
     app()

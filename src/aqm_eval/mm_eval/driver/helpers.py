@@ -1,4 +1,5 @@
 """Helper utilities for the MM evaluation driver."""
+
 import platform
 from pathlib import Path
 
@@ -31,10 +32,10 @@ def create_symlinks(
     ctr = 0
     for curr_dt in date_range.iter_by_step():
         subdir = src_dir / date_range.to_srw_str(curr_dt)
-    # for dir_pattern in src_dir_template:
-    #     for subdir in src_dir.glob(dir_pattern):
-    #         if not subdir.is_dir():
-    #             continue
+        # for dir_pattern in src_dir_template:
+        #     for subdir in src_dir.glob(dir_pattern):
+        #         if not subdir.is_dir():
+        #             continue
         # Find files in matching directories that match src_fn_template
         for fn_pattern in src_fn_template:
             for src_file in subdir.glob(fn_pattern):
