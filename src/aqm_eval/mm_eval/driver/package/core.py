@@ -161,21 +161,17 @@ class AbstractEvalPackage(ABC, BaseModel):
         return self.ctx.mm_config.aqm.packages[self.key]
 
     def iter_forecast_file_specs(self) -> Iterator[ForecastFileSpec]:
+        date_range = self.ctx.mm_config.date_range
         for model in self.mm_models:
             expt_dir = model.cfg.expt_dir
-            for curr_dt in self.ctx.mm_config.date_range.iter_by_step():
-                dir_path = expt_dir / self.ctx.date_range.to_srw_str(curr_dt)
+            for curr_dt in date_range.iter_by_step():
+                dir_path = expt_dir / date_range.to_srw_str(curr_dt)
                 assert_directory_exists(dir_path)
                 yield ForecastFileSpec(
                     src_dir=dir_path,
                     out_dir=model.link_alldays_path,
                     out_prefix=f"{model.label}_{dir_path.name}",
-                    # forecast_hour=fhr,
                 )
-
-            # for dir_path in dirlist:
-            #     dir_name = dir_path.name
-                # for fhr in range(1, 25):
 
 
     @log_it

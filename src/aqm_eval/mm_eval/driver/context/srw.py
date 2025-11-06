@@ -151,9 +151,9 @@ class SRWContext(AbstractDriverContext):
         if root_aqm["output_dir"] is None:
             root_aqm["output_dir"] = self.mm_output_dir_default
 
-        if "start_datetime" not in root:
+        if root.get("start_datetime") is None:
             root["start_datetime"] = self._date_first_cycle_mm
-        if "end_datetime" not in root:
+        if root.get("end_datetime") is None:
             root["end_datetime"] = self._date_last_cycle_mm
 
         return Config.from_yaml(mm_parm)
