@@ -19,9 +19,3 @@ class TestSRWContext:
     def test_find_nested_key_sad_no_child(self, srw_context: SRWContext) -> None:
         with pytest.raises(TypeError):
             srw_context._find_nested_key_(("foo", "bar"))
-
-
-# class TestYAMLContext: #tdk:rm yaml stuff
-#     def test_init_happy_path(self, namelist_chem_yaml_config: Path) -> None:
-#         ctx = YAMLContext(yaml_config=namelist_chem_yaml_config)
-#         assert isinstance(ctx, YAMLContext)

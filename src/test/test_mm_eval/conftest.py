@@ -27,7 +27,7 @@ class AQMModelConfigFactory(ModelFactory[AQMModelConfig]):
     __use_defaults__ = True
 
     @classmethod
-    def plot_kwargs(cls):
+    def plot_kwargs(cls) -> PlotKwargs:
         return PlotKwargsFactory.build()
 
 
@@ -37,18 +37,18 @@ class AQMConfigFactory(ModelFactory[AQMConfig]):
         return Path(tempfile.mkdtemp()) / "foo" / "bar"
 
     @classmethod
-    def models(cls):
+    def models(cls) -> dict[str, AQMModelConfig]:
         global _TEST_GLOBALS
         data = {"eval1": {"is_host": True}, "base1": {"is_host": False}, "base2": {"is_host": False}, "base4": {"is_host": False}}
         ret = {}
         for k, v in data.items():
             expt_dir = _TEST_GLOBALS["tmp_path"] / k
             expt_dir.mkdir(exist_ok=True, parents=True)
-            ret[k] = AQMModelConfigFactory.build(**{**data[k], "expt_dir": expt_dir})
+            ret[k] = AQMModelConfigFactory.build(**{**data[k], "expt_dir": expt_dir})  # type: ignore[arg-type]
         return ret
 
     @classmethod
-    def packages(cls):
+    def packages(cls) -> dict[PackageKey, PackageConfig]:
         return {ii: PackageConfigFactory.build() for ii in PackageKey}
 
 
@@ -56,7 +56,7 @@ class ConfigFactory(ModelFactory[Config]):
     __use_defaults__ = True
 
     @classmethod
-    def aqm(cls):
+    def aqm(cls) -> AQMConfig:
         return AQMConfigFactory.build()
 
     @classmethod
@@ -113,32 +113,8 @@ def config_path_user(expt_dir: Path, bin_dir: Path, config_content: dict) -> Pat
             "PREDEF_GRID_NAME": "AQM_NA_13km",
             "CCPP_PHYS_SUITE": "FV3_GFS_v16",
             "DATE_FIRST_CYCL": "2023060112",
-            # "DATE_LAST_CYCL": "2023060212",
             "DATE_LAST_CYCL_MM": "2023060212",
         },
-        # "task_mm_prep": { #tdk:rm
-        #     "MM_OUTPUT_DIR": None,
-        #     "MM_EVAL_PACKAGES": [ii.value for ii in PackageKey],
-        #     "MM_OBS_AIRNOW_FN_TEMPLATE": "AirNow_20230601_20230701.nc",
-        #     "MM_OBS_ISH_FN_TEMPLATE": "ISH_20230601_20230701.nc",
-        #     "MM_OBS_AQS_PM_FN_TEMPLATE": "AQS_20230801_20230901.nc",
-        #     "MM_OBS_AQS_VOC_FN_TEMPLATE": "AQS_20230801_20230901.nc",
-        #     "MM_BASE_MODEL_EXPT_DIR": str(expt_dir) if use_base_model else None,
-        # },
-        # tdk: turn into pydantic model
-        # "melodies_monet_parm": {
-        #     "aqm": {
-        #         "output_dir": None,
-        #         "base_model_expt_dir": str(expt_dir) if use_base_model else None,
-        #         "packages": {"packages_to_run": [ii.value for ii in PackageKey]},
-        #         "observation_templates": {
-        #             "chem": "AirNow_20230601_20230701.nc",
-        #             "ish": "ISH_20230601_20230701.nc",
-        #             "aqs_pm": "AQS_20230801_20230901.nc",
-        #             "aqs_voc": "AQS_20230801_20230901.nc",
-        #         },
-        #     }
-        # },
     }
     yaml_content.update(config_content)
     yaml_path = expt_dir / "config.yaml"

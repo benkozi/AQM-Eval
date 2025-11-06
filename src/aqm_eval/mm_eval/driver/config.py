@@ -73,7 +73,7 @@ class PackageConfig(BaseModel):
     mapping: dict[str, str]
     active: bool = True
     tasks_to_exclude: tuple[TaskKey, ...] = tuple()
-    execution: PackageExecution = Field(default_factory=PackageExecution)
+    execution: PackageExecution = Field(default_factory=lambda x: PackageExecution.model_validate({}))
 
     @model_validator(mode="before")
     @classmethod
@@ -125,7 +125,7 @@ class PlotKwargs(BaseModel):
     linestyle: str = "-"
     markersize: int = 4
 
-    _possible_colors: tuple[str] = ("g", "m", "k", "r", "b", "y")
+    _possible_colors: tuple[str, ...] = ("g", "m", "k", "r", "b", "y")
 
 
 class TaskDefaults(BaseModel):
@@ -214,7 +214,8 @@ class Config(BaseModel):
 
     @classmethod
     def from_yaml(cls, data: dict) -> "Config":
-        return cls.model_validate(data[cls._key.default])
+        key = cls._key.default  # type: ignore[attr-defined]
+        return cls.model_validate(data[key])
 
     @staticmethod
     def update_left(data_left: dict, data_right: dict) -> None:

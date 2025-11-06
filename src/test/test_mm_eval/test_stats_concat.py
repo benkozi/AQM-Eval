@@ -29,7 +29,7 @@ def test_as_dataframe(tmp_path: Path, bin_dir: Path, mm_filenames: tuple[str, ..
         shutil.copy2(bin_dir / "example-mm-stats.csv", dst)
         sfile = StatsFile.from_path(dst, package_key=PackageKey.CHEM)
         stats_files.append(sfile)
-    sfile_coll = StatsFileCollection(stats_files=stats_files)
+    sfile_coll = StatsFileCollection(stats_files=tuple(stats_files))
 
     df = sfile_coll.as_dataframe()
 

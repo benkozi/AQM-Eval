@@ -26,6 +26,8 @@ class StatsFile(BaseModel):
             "stats\.(?P<variable>.+)\.(?P<region_type>all|epa_region|country)\.(?P<region_id>.+)\.(?P<start_date>[0-9-_]+)\.(?P<end_date>[0-9-_]+)\.csv"
         )
         match = re.match(pattern, path.name)
+        if match is None:
+            raise ValueError
         data = match.groupdict()
         data["path"] = path
         data["start_date"] = datetime.datetime.strptime(data["start_date"], "%Y-%m-%d_%H")
@@ -68,7 +70,7 @@ class StatsFileCollection(BaseModel):
             sfile = StatsFile.from_path(path, package_key=package_key)
             LOGGER(f"found stats file: {sfile}")
             stats_files.append(sfile)
-        return cls(stats_files=stats_files)
+        return cls(stats_files=tuple(stats_files))
 
     def as_dataframe(self) -> pd.DataFrame:
         dfs = [sfile.as_dataframe() for sfile in self.stats_files]

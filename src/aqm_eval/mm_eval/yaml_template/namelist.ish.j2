@@ -23,31 +23,6 @@ paired_dataset:
   {{ mm_model.label }}: "ish_{{ mm_model.label }}.nc4"
 {%- endfor %}
 
-{#{% for mm_model in package.mm_models %}#}
-{## ==== Model ====#}
-{#model_{{ mm_model.label }}_label: {{ mm_model.label }}#}
-{#model_{{ mm_model.label }}_files: {{ mm_model.link_alldays_path_template }}#}
-{#model_{{ mm_model.label }}_type: '"rrfs"'#}
-{#model_{{ mm_model.label }}_kwargs:#}
-{#  surf_only: True#}
-{#  mech: "cb6r3_ae6_aq"#}
-{#model_{{ mm_model.label }}_radius: 20_000#}
-{#model_{{ mm_model.label }}_mapping:#}
-{#  tmp2m: "temp"#}
-{#  ws10m: "ws"#}
-{#  dew_temp: "dew_pt_temp"#}
-{#model_{{ mm_model.label }}_variables:#}
-{#  tmp2m:#}
-{#    unit_scale: 273.15   # K -> C#}
-{#    unit_scale_method: "-"#}
-{#model_{{ mm_model.label }}_projection: "~"#}
-{#model_{{ mm_model.label }}_plot_kwargs:#}
-{#  color: {{ mm_model.color }}#}
-{#  marker: "^"#}
-{#  linestyle: "-"#}
-{#  markersize: 4#}
-{#{% endfor %}#}
-
 # ==== Obs (ISH by default) ====
 obs_label: ish
 obs_file: {{ package.observation_template }}
