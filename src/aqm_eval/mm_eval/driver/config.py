@@ -69,7 +69,7 @@ class PackageConfig(BaseModel):
     model_config = {"frozen": True}
 
     key: PackageKey = Field(exclude=True)
-    observation_template: str  # tdk: can be null if active is false
+    observation_template: str | None = Field(default=None, description="May be null if active is false.")
     mapping: dict[str, str]
     active: bool = True
     tasks_to_exclude: tuple[TaskKey, ...] = tuple()
@@ -77,7 +77,7 @@ class PackageConfig(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def _validate_model_(cls, values: dict) -> dict:
+    def _validate_model_before_(cls, values: dict) -> dict:
         if values.get("mapping") is None:
             match values["key"]:
                 case PackageKey.CHEM:
@@ -115,6 +115,12 @@ class PackageConfig(BaseModel):
             values["mapping"] = mapping
 
         return values
+
+    @model_validator(mode="after")
+    def _validate_model_after_(self) -> "PackageConfig":
+        if self.active and self.observation_template is None:
+            raise ValueError("observation_template must be set if active is True.")
+        return self
 
 
 class PlotKwargs(BaseModel):
