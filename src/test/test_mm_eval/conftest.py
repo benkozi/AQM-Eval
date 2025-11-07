@@ -18,6 +18,10 @@ class PackageConfigFactory(ModelFactory[PackageConfig]):
     def active(cls) -> bool:
         return True
 
+    @classmethod
+    def observation_template(cls) -> str:
+        return "a_template*.nc"
+
 
 class PlotKwargsFactory(ModelFactory[PlotKwargs]):
     __use_defaults__ = True

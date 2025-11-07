@@ -145,9 +145,9 @@ class AQMModelConfig(BaseModel):
 
     key: str = Field(exclude=True)
     expt_dir: PathExistingDir
-    title: str  # tdk: unique in coll
+    title: str
     plot_kwargs: PlotKwargs
-    is_host: bool = False  # tdk: only one model needs to be host = true but must be one
+    is_host: bool = False
     type: str = "rrfs"
     kwargs: dict[str, Any] = {"surf_only": True, "mech": "cb6r3_ae6_aq"}
     radius_of_influence: float = 20000
@@ -192,6 +192,8 @@ class AQMConfig(BaseModel):
         is_host = set([k for k, v in values.items() if v.is_host])
         if len(is_host) != 1:
             raise ValueError(f"Only one model can be host. Found {is_host}.")
+        if len(set([ii.title for ii in values.values()])) != len(values):
+            raise ValueError("Model titles must be unique.")
         return values
 
 
@@ -202,7 +204,7 @@ class Config(BaseModel):
     start_datetime: str = Field(description="Evaluation start time in yyyy-mm-dd-HH:MM:SS UTC format.")
     end_datetime: str = Field(description="Evaluation end time in yyyy-mm-dd-HH:MM:SS UTC format.")
     cartopy_data_dir: PathExistingDir = Field(description="Path to the Cartopy data directory.")
-    output_dir: Path  # tdk:doc: existing directory
+    output_dir: Path
     run_dir: Path
 
     _key: str = "melodies_monet_parm"
