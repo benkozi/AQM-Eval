@@ -58,6 +58,7 @@ class AQMConfigFactory(ModelFactory[AQMConfig]):
 
 class ConfigFactory(ModelFactory[Config]):
     __use_defaults__ = True
+    __use_factory_defaults__ = True
 
     @classmethod
     def aqm(cls) -> AQMConfig:
@@ -86,6 +87,10 @@ class ConfigFactory(ModelFactory[Config]):
     def run_dir(cls) -> Path:
         ret = _TEST_GLOBALS["tmp_path"] / "mm_run"
         return ret
+
+    # @classmethod
+    # def platform(cls) -> None:
+
 
 
 @pytest.fixture

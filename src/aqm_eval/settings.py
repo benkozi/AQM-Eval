@@ -1,5 +1,6 @@
 from enum import StrEnum, unique
 from functools import cached_property
+from pathlib import Path
 
 from pydantic import computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -36,6 +37,11 @@ class AQM_EvalSettings(BaseSettings):
             if target is not None:
                 return target
         return 1
+
+    @computed_field
+    @cached_property
+    def eval_template_dir(self) -> Path:
+        return Path(__file__).parent / "mm_eval" / "yaml_template"
 
     @field_validator("aqm_eval_log_level", mode="before")
     @classmethod

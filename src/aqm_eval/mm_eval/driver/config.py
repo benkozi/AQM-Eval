@@ -4,9 +4,11 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Mapping
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+import yaml
+from pydantic import BaseModel, Field, field_validator, model_validator, computed_field
 
-from aqm_eval.shared import DateRange, PathExistingDir
+from aqm_eval.settings import SETTINGS
+from aqm_eval.shared import DateRange, PathExistingDir, update_left, get_str_nested, set_str_nested
 
 
 @unique
@@ -38,10 +40,37 @@ class PackageKey(StrEnum):
     AQS_VOC = "aqs_voc"
 
 
+@unique
+class PlatformKey(StrEnum):
+    URSA = "ursa"
+    GAEAC6 = "gaeac6"
+    DERECHO = "derecho"
+    ORION = "orion"
+    HERCULES = "hercules"
+
+
 def _is_unique_(v: tuple[Any, ...]) -> tuple[Any, ...]:
     if len(set(v)) != len(v):
         raise ValueError("Values must be unique.")
     return v
+
+
+class PlatformConfig(BaseModel):
+    model_config = {"frozen": True}
+
+    ncores_per_node: int = Field(ge=1)
+
+    # @computed_field
+    # @cached_property
+    # def ncores_per_node(self) -> int:
+    #     mapping = {
+    #         PlatformKey.URSA: 192,
+    #         PlatformKey.GAEAC6: 128,
+    #         PlatformKey.DERECHO: 128,
+    #         PlatformKey.ORION: 40,
+    #         PlatformKey.HERCULES: 80,
+    #     }
+    #     return mapping[self.key]
 
 
 class BatchArgs(BaseModel):
@@ -64,6 +93,10 @@ class PackageExecution(BaseModel):
     prep: Execution
     tasks: dict[TaskKey, Execution]
 
+    @classmethod
+    def from_key(cls, key: PackageKey, defaults: dict = None) -> "PackageExecution":
+        return cls(prep=Execution(), tasks={ii: Execution() for ii in TaskKey})
+
 
 class PackageConfig(BaseModel):
     model_config = {"frozen": True}
@@ -75,46 +108,47 @@ class PackageConfig(BaseModel):
     tasks_to_exclude: tuple[TaskKey, ...] = tuple()
     execution: PackageExecution = Field(default_factory=lambda x: PackageExecution.model_validate({}))
 
-    @model_validator(mode="before")
-    @classmethod
-    def _validate_model_before_(cls, values: dict) -> dict:
-        if values.get("mapping") is None:
-            match values["key"]:
-                case PackageKey.CHEM:
-                    mapping = {
-                        "o3_ave": "OZONE",
-                        "pm25_ave": "PM2.5",
-                        "no2_ave": "NO2",
-                        "co": "CO",
-                    }
-                case PackageKey.ISH:
-                    mapping = {
-                        "tmp2m": "temp",
-                        "ws10m": "ws",
-                        "dew_temp": "dew_pt_temp",
-                    }
-                case PackageKey.AQS_VOC:
-                    mapping = {
-                        "etha": "ETHANE",
-                        "prpa": "PROPANE",
-                        "benzene": "BENZENE",
-                        "tol": "TOLUENE",
-                        "isop": "ISOPRENE",
-                    }
-                case PackageKey.AQS_PM:
-                    mapping = {
-                        "pm25_so4": "SO4f",
-                        "pm25_no3": "NO3f",
-                        "pm25_nh4": "NH4+f",
-                        "pm25_ec": "ECf",
-                        "pm25_oc": "OCPM2.5LCTOT",
-                    }
-
-                case _:
-                    raise ValueError(values["key"])
-            values["mapping"] = mapping
-
-        return values
+    # @model_validator(mode="before")
+    # @classmethod
+    # def _validate_model_before_(cls, values: dict) -> dict:
+    #     if values.get("mapping") is None:
+    #         match values["key"]:
+    #             #tdk: this should be attached to the package object
+    #             case PackageKey.CHEM:
+    #                 mapping = {
+    #                     "o3_ave": "OZONE",
+    #                     "pm25_ave": "PM2.5",
+    #                     "no2_ave": "NO2",
+    #                     "co": "CO",
+    #                 }
+    #             case PackageKey.ISH:
+    #                 mapping = {
+    #                     "tmp2m": "temp",
+    #                     "ws10m": "ws",
+    #                     "dew_temp": "dew_pt_temp",
+    #                 }
+    #             case PackageKey.AQS_VOC:
+    #                 mapping = {
+    #                     "etha": "ETHANE",
+    #                     "prpa": "PROPANE",
+    #                     "benzene": "BENZENE",
+    #                     "tol": "TOLUENE",
+    #                     "isop": "ISOPRENE",
+    #                 }
+    #             case PackageKey.AQS_PM:
+    #                 mapping = {
+    #                     "pm25_so4": "SO4f",
+    #                     "pm25_no3": "NO3f",
+    #                     "pm25_nh4": "NH4+f",
+    #                     "pm25_ec": "ECf",
+    #                     "pm25_oc": "OCPM2.5LCTOT",
+    #                 }
+    #
+    #             case _:
+    #                 raise ValueError(values["key"])
+    #         values["mapping"] = mapping
+    #
+    #     return values
 
     @model_validator(mode="after")
     def _validate_model_after_(self) -> "PackageConfig":
@@ -144,7 +178,7 @@ class AQMModelConfig(BaseModel):
     model_config = {"frozen": True}
 
     key: str = Field(exclude=True)
-    expt_dir: PathExistingDir
+    expt_dir: Path
     title: str
     plot_kwargs: PlotKwargs
     is_host: bool = False
@@ -165,10 +199,10 @@ class AQMModelConfig(BaseModel):
 class AQMConfig(BaseModel):
     model_config = {"frozen": True}
 
+    no_forecast: bool = False
     models: dict[str, AQMModelConfig] = Field(max_length=4)
     packages: dict[PackageKey, PackageConfig] = Field(min_length=1)
     task_defaults: TaskDefaults
-    no_forecast: bool = False
 
     @cached_property
     def host_model(self) -> dict[str, AQMModelConfig]:
@@ -200,14 +234,18 @@ class AQMConfig(BaseModel):
 class Config(BaseModel):
     model_config = {"frozen": True}
 
-    aqm: AQMConfig
     start_datetime: str = Field(description="Evaluation start time in yyyy-mm-dd-HH:MM:SS UTC format.")
     end_datetime: str = Field(description="Evaluation end time in yyyy-mm-dd-HH:MM:SS UTC format.")
-    cartopy_data_dir: PathExistingDir = Field(description="Path to the Cartopy data directory.")
+    cartopy_data_dir: Path = Field(description="Path to the Cartopy data directory.")
     output_dir: Path
     run_dir: Path
+    aqm: AQMConfig
+    platform_defaults: dict[PlatformKey, PlatformConfig]
 
     _key: str = "melodies_monet_parm"
+
+    # def platform_defaults(self) -> dict[PlatformKey, PlatformConfig]:
+    #     return {ii: PlatformConfig(key=ii) for ii in PlatformKey}
 
     @cached_property
     def date_range(self) -> DateRange:
@@ -225,15 +263,18 @@ class Config(BaseModel):
         key = cls._key.default  # type: ignore[attr-defined]
         return cls.model_validate(data[key])
 
-    @staticmethod
-    def update_left(data_left: dict, data_right: dict) -> None:
-        for key, value in data_right.items():
-            # if key not in data_left:
-            #     data_left[key] = value
-            if isinstance(data_left.get(key), Mapping):
-                Config.update_left(data_left[key], value)
-            else:
-                data_left[key] = value
+    @classmethod
+    def from_default_yaml(cls, platform_key: PlatformKey, overrides: dict) -> "Config":
+        raw = (SETTINGS.eval_template_dir / "config-default.yaml").read_text()
+        data = yaml.safe_load(raw)[cls._key.default]
+        update_left(data, overrides)
+        for package_key in PackageKey:
+            kp = f"aqm.packages.{package_key.value}.execution.prep.batchargs.tasks_per_node"
+            actual = get_str_nested(data, kp)
+            if actual == "auto":
+                data_kp = f"platform_defaults.{platform_key.value}.ncores_per_node"
+                set_str_nested(data, kp, get_str_nested(data, data_kp))
+        return cls.from_yaml({cls._key.default: data})
 
     @model_validator(mode="after")
     def _validate_model_after_(self) -> "Config":

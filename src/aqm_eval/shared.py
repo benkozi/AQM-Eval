@@ -3,7 +3,7 @@ import logging
 import subprocess
 from copy import deepcopy
 from pathlib import Path
-from typing import Annotated, Any, Iterator
+from typing import Annotated, Any, Iterator, Mapping
 
 import numpy as np
 from pydantic import BaseModel, BeforeValidator, PlainSerializer
@@ -76,3 +76,23 @@ class DateRange(BaseModel):
     @staticmethod
     def to_srw_str(target: datetime.datetime) -> str:
         return target.strftime("%Y%m%d%H")
+
+
+def update_left(data_left: dict, data_right: dict) -> None:
+    for key, value in data_right.items():
+        if isinstance(data_left.get(key), Mapping):
+            update_left(data_left[key], value)
+        else:
+            data_left[key] = value
+
+
+def get_str_nested(data: dict, key: str) -> Any:
+    for k in key.split('.'):
+        data = data[k]
+    return data
+
+def set_str_nested(data: dict, key: str, value: Any) -> None:
+    keys = key.split(".")
+    for key in keys[:-1]:
+        data = data[key]
+    data[keys[-1]] = value

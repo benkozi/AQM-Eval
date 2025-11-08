@@ -12,7 +12,7 @@ from uwtools.api.config import YAMLConfig, get_yaml_config
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.config import Config
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
-from aqm_eval.shared import PathExisting, assert_directory_exists, assert_file_exists
+from aqm_eval.shared import PathExisting, assert_directory_exists, assert_file_exists, update_left
 
 
 def _convert_date_string_to_mm_(date_str: str) -> str:
@@ -71,7 +71,7 @@ class SRWContext(AbstractDriverContext):
     def mm_config(self) -> Config:
         mm_parm_left = self._yaml_data[self.config_path_var_defns]["melodies_monet_parm"]
         mm_parm_right = self._yaml_data[self.config_path_user]["melodies_monet_parm"]
-        Config.update_left(mm_parm_left, mm_parm_right)
+        update_left(mm_parm_left, mm_parm_right)
         mm_parm = {
             "melodies_monet_parm": mm_parm_left,
         }
