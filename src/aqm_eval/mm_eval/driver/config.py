@@ -93,10 +93,6 @@ class PackageExecution(BaseModel):
     prep: Execution
     tasks: dict[TaskKey, Execution]
 
-    @classmethod
-    def from_key(cls, key: PackageKey, defaults: dict = None) -> "PackageExecution":
-        return cls(prep=Execution(), tasks={ii: Execution() for ii in TaskKey})
-
 
 class PackageConfig(BaseModel):
     model_config = {"frozen": True}
@@ -210,6 +206,13 @@ class AQMConfig(BaseModel):
             if v.is_host:
                 return {k: v}
         raise ValueError("No host model found.")
+
+    @cached_property
+    def n_models_to_evaluate(self) -> int:
+        n_models = len(self.models)
+        if self.no_forecast:
+            n_models -= 1
+        return n_models
 
     @model_validator(mode="before")
     @classmethod
