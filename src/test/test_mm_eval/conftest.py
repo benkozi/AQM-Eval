@@ -147,7 +147,8 @@ def get_config_content(bin_dir: Path, config: Config, config_src: str) -> dict:
             srw_config_raw = srw_config_raw.replace("!int '{{ platform.NCORES_PER_NODE }}'", "100")
             new_content = yaml.safe_load(srw_config_raw)
             new_content["melodies_monet_parm"]["aqm"]["no_forecast"] = True
-            new_content["melodies_monet_parm"]["aqm"]["models"]["base1"] = config.aqm.models["base1"].model_dump(mode="json")
+            models = new_content["melodies_monet_parm"]["aqm"].setdefault("models", {})
+            models["base1"] = config.aqm.models["base1"].model_dump(mode="json")
         case _:
             raise NotImplementedError(config_src)
     return new_content

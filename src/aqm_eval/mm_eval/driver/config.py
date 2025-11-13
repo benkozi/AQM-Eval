@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from enum import StrEnum, unique
 from functools import cached_property
@@ -7,6 +8,7 @@ from typing import Any, Mapping
 import yaml
 from pydantic import BaseModel, Field, field_validator, model_validator, computed_field
 
+from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.settings import SETTINGS
 from aqm_eval.shared import DateRange, PathExistingDir, update_left, get_str_nested, set_str_nested
 
@@ -273,12 +275,19 @@ class Config(BaseModel):
         raw = (SETTINGS.eval_template_dir / "config-default.yaml").read_text()
         data = yaml.safe_load(raw)[cls._key.default]
         update_left(data, overrides)
+
+        root_aqm = data["aqm"]
+        if len([v for v in root_aqm["models"].values() if v.get("is_host", False)]) != 1:
+            LOGGER(f"removing default host model (key=eval) since another was provided", level=logging.WARNING)
+            root_aqm["models"].pop("eval")
+
         for package_key in PackageKey:
             kp = f"aqm.packages.{package_key.value}.execution.prep.batchargs.tasks_per_node"
             actual = get_str_nested(data, kp)
             if actual == "auto":
                 data_kp = f"platform_defaults.{platform_key.value}.ncores_per_node"
                 set_str_nested(data, kp, get_str_nested(data, data_kp))
+
         return cls.from_yaml({cls._key.default: data})
 
     @model_validator(mode="after")

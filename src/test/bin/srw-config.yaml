@@ -1,66 +1,19 @@
 melodies_monet_parm:
-  start_datetime: null
-  end_datetime: null
-  output_dir: null
   aqm:
+    no_forecast: false
     models:
       eval:
         expt_dir: null
         title: "Evaluation Target"
         plot_kwargs:
           color: g
-          marker: ^
-          linestyle: '-'
-          markersize: 4
-        is_host: True
+        is_host: true
     packages:
       aqs_pm:
         observation_template: /gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/data/aqm-use-case-download/Observations/AQS/pm25_spec_daily/AQS_20230601_20230701.nc
-        active: true
-        tasks_to_exclude: [ ]
-        execution:
-          prep:
-            batchargs:
-              nodes: 1
-              tasks_per_node: !int '{{ platform.NCORES_PER_NODE }}'
-              walltime: 00:30:00
-          tasks: {}
       aqs_voc:
         observation_template: /gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/data/aqm-use-case-download/Observations/AQS/vocs/AQS_20230601_20230701.nc
-        active: true
-        tasks_to_exclude: [ ]
-        execution:
-          prep:
-            batchargs:
-              nodes: 1
-              tasks_per_node: 1
-              walltime: 00:05:00
-          tasks: {}
       chem:
         observation_template: /gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/data/aqm-use-case-download/Observations/AirNow/AirNow_20230601_20230701.nc
-        active: true
-        tasks_to_exclude: [ ]
-        execution:
-          prep:
-            batchargs:
-              nodes: 1
-              tasks_per_node: 1
-              walltime: 00:05:00
-          tasks: {}
       ish:
         observation_template: /gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/data/aqm-use-case-download/Observations/ISH/ISH-Lite_20230601_20230701.nc
-        tasks_to_exclude: [ ]
-        active: true
-        execution:
-          prep:
-            batchargs:
-              nodes: 1
-              tasks_per_node: !int '{{ platform.NCORES_PER_NODE }}'
-              walltime: 00:15:00
-          tasks: {}
-    task_defaults:
-      execution:
-        batchargs:
-          nodes: 1
-          tasks_per_node: !int '{{ platform.NCORES_PER_NODE }}'
-          walltime: 01:00:00

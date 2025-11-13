@@ -5,7 +5,7 @@ melodies_monet_parm:
   output_dir: null
   run_dir: null
   aqm:
-    no_forecast: true #tdk: respond to this
+    no_forecast: true
     models:
       eval:
         expt_dir: null

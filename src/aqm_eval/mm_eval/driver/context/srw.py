@@ -11,7 +11,7 @@ from pydantic import Field, computed_field
 from uwtools.api.config import YAMLConfig, get_yaml_config
 
 from aqm_eval.logging_aqm_eval import LOGGER
-from aqm_eval.mm_eval.driver.config import Config
+from aqm_eval.mm_eval.driver.config import Config, PlatformKey
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.settings import SETTINGS
 from aqm_eval.shared import PathExisting, assert_directory_exists, assert_file_exists, update_left
@@ -93,10 +93,6 @@ class SRWContext(AbstractDriverContext):
         if not found_host:
             raise ValueError("No host model found.")
 
-        if len([v for v in root_aqm["models"].values() if v.get("is_host", False)]) != 1:
-            LOGGER(f"removing default host model (key=eval) since another was provided", level=logging.WARNING)
-            root_aqm["models"].pop("eval")
-
         if root.get("output_dir") is None:
             root["output_dir"] = self._mm_output_dir_default
         if root.get("run_dir") is None:
@@ -110,7 +106,7 @@ class SRWContext(AbstractDriverContext):
         if root.get("cartopy_data_dir") is None:
             root["cartopy_data_dir"] = self._cartopy_data_dir
 
-        return Config.from_yaml(mm_parm)
+        return Config.from_default_yaml(PlatformKey.URSA, mm_parm["melodies_monet_parm"]) #tdk: need platform as an argument
 
     @cached_property
     def _datetime_first_cycl(self) -> datetime:
