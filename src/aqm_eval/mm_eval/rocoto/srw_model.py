@@ -13,7 +13,7 @@ class AbstractAqmTask(ABC, BaseModel):
     nodes: str
     walltime: str
     command: str
-    nprocs: str
+    # nprocs: str
     package_key: PackageKey = Field(exclude=True)
 
     account: str = "&ACCOUNT;"
@@ -113,7 +113,8 @@ class AqmTaskGroup(BaseModel):
                 data = {"nodes": str(package_batchargs.nodes),
                                "walltime": package_batchargs.walltime,
                                "package_key": package.key,
-                               "nprocs": str(package_batchargs.tasks_per_node)}
+                               # "nprocs": str(package_batchargs.tasks_per_node)
+                        }
                 packages.append(AqmPrep.model_validate(data))
                 package_class = package_key_to_class(package.key)
                 for task_key in package_class.model_fields["tasks_default"].default:
@@ -125,7 +126,8 @@ class AqmTaskGroup(BaseModel):
                                 "walltime": task_batchargs.walltime,
                                 "package_key": package.key,
                                 "task_key": task_key,
-                                "nprocs": str(task_batchargs.tasks_per_node)}
+                                # "nprocs": str(task_batchargs.tasks_per_node)
+                                }
                         tasks.append(AqmEvalTask.model_validate(data))
         return AqmTaskGroup(packages=tuple(packages), tasks=tuple(tasks))
 

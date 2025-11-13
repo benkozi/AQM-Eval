@@ -72,7 +72,7 @@ def srw_task_group(
     ctx = SRWContext.model_validate(data_from_srw)
     tg = AqmTaskGroup.from_config(ctx.mm_config)
     tg_yaml = tg.to_yaml()
-    LOGGER(f"{tg_yaml=}")
+    # LOGGER(f"{tg_yaml=}")
     print(json_to_cli_arg(tg_yaml))
 
 
