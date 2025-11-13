@@ -110,10 +110,10 @@ class AqmTaskGroup(BaseModel):
         for package in config.aqm.packages.values():
             if package.active:
                 package_batchargs = package.execution.prep.batchargs
-                data = {"nodes": package_batchargs.nodes,
+                data = {"nodes": str(package_batchargs.nodes),
                                "walltime": package_batchargs.walltime,
                                "package_key": package.key,
-                               "nprocs": package_batchargs.tasks_per_node}
+                               "nprocs": str(package_batchargs.tasks_per_node)}
                 packages.append(AqmPrep.model_validate(data))
                 package_class = package_key_to_class(package.key)
                 for task_key in package_class.model_fields["tasks_default"].default:
@@ -121,11 +121,11 @@ class AqmTaskGroup(BaseModel):
                         continue
                     if task_key not in package.tasks_to_exclude:
                         task_batchargs = package.execution.tasks.get(task_key, config.aqm.task_defaults.execution).batchargs
-                        data = {"nodes": task_batchargs.nodes,
+                        data = {"nodes": str(task_batchargs.nodes),
                                 "walltime": task_batchargs.walltime,
                                 "package_key": package.key,
                                 "task_key": task_key,
-                                "nprocs": task_batchargs.tasks_per_node}
+                                "nprocs": str(task_batchargs.tasks_per_node)}
                         tasks.append(AqmEvalTask.model_validate(data))
         return AqmTaskGroup(packages=tuple(packages), tasks=tuple(tasks))
 
