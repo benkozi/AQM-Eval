@@ -60,7 +60,9 @@ class AqmPrep(AbstractAqmTask):
 
     @computed_field
     def envars(self) -> dict:
-        return self._envars_default | {"nprocs": self.nprocs, "MM_EVAL_PACKAGE": self.package_key.value}
+        return self._envars_default | {
+            # "nprocs": self.nprocs,
+                                       "MM_EVAL_PACKAGE": self.package_key.value}
 
     @computed_field
     def task_name(self) -> str:
