@@ -55,6 +55,7 @@ class SRWContext(AbstractDriverContext):
     workflow: SrwWorkflow
     platform: SrwPlatform
     user: SrwUser
+    melodies_monet_parm: dict
 
     @computed_field
     @cached_property
@@ -114,8 +115,7 @@ class SRWContext(AbstractDriverContext):
 
         raw = (SETTINGS.eval_template_dir / "config-default.yaml").read_text()
         mm_parm_left = yaml.safe_load(raw)["melodies_monet_parm"]
-
-        mm_parm_right = self._yaml_data[self.config_path_user]["melodies_monet_parm"]
+        mm_parm_right = self.melodies_monet_parm
         update_left(mm_parm_left, mm_parm_right)
         mm_parm = {
             "melodies_monet_parm": mm_parm_left,
