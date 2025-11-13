@@ -9,6 +9,7 @@ import typer
 from aqm_eval.mm_eval.driver.config import PackageKey, TaskKey
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
 from aqm_eval.mm_eval.driver.package.core import package_key_to_class
+from aqm_eval.mm_eval.rocoto.srw_model import AqmTaskGroup
 from aqm_eval.mm_eval.rocoto.srw_render import render_task_group
 from aqm_eval.mm_eval.stats_concat import StatsFileCollection
 
@@ -67,7 +68,8 @@ def srw_task_group(
 
     data = cli_arg_to_json(srw_data)
     ctx = SRWContext.model_validate(data)
-    print(json_to_cli_arg(ctx.mm_config.to_yaml()))
+    tg = AqmTaskGroup.from_config(ctx.mm_config)
+    print(json_to_cli_arg(tg.to_yaml()))
 
 
 @app.command(
