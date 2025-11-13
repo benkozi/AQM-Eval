@@ -28,7 +28,7 @@ def srw_init(
 ) -> None:
     from aqm_eval.mm_eval.driver.context.srw import SRWContext
 
-    ctx = SRWContext(expt_dir=expt_dir)
+    ctx = SRWContext.from_expt_dir(expt_dir)
     klass = package_key_to_class(package_selector)
     package = klass.model_validate(dict(ctx=ctx))
     package.initialize()
@@ -45,7 +45,7 @@ def srw_run(
 ) -> None:
     from aqm_eval.mm_eval.driver.context.srw import SRWContext
 
-    ctx = SRWContext(expt_dir=expt_dir)
+    ctx = SRWContext.from_expt_dir(expt_dir)
     klass = package_key_to_class(package_selector)
     package = klass.model_validate(dict(ctx=ctx))
     package.run(task_key=task_selector)

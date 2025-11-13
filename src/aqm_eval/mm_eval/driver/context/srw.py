@@ -62,6 +62,12 @@ class SRWContext(AbstractDriverContext):
     def expt_dir(self) -> Path:
         return self.workflow.EXPT_BASEDIR / self.workflow.EXPT_SUBDIR
 
+    @classmethod
+    def from_expt_dir(cls, path: Path) -> "SRWContext":
+        path = path / "var_defns.yaml"
+        data = get_yaml_config(path)["__mm_runtime__"]
+        return cls.model_validate(data)
+
     # @computed_field
     # @cached_property
     # def config_path_user(self) -> PathExisting:
@@ -74,7 +80,7 @@ class SRWContext(AbstractDriverContext):
     #
     # @computed_field
     # @cached_property
-    # def config_path_var_defns(self) -> PathExisting:
+    # def _config_path_var_defns(self) -> Path:
     #     return assert_file_exists(self.expt_dir / "var_defns.yaml")
 
     # @computed_field
