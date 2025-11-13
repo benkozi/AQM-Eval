@@ -11,7 +11,6 @@ from aqm_eval.mm_eval.driver.context.srw import SRWContext
 from aqm_eval.mm_eval.driver.package.core import package_key_to_class
 from aqm_eval.mm_eval.rocoto.srw_render import render_task_group
 from aqm_eval.mm_eval.stats_concat import StatsFileCollection
-from test.test_mm_eval.conftest import expt_dir
 
 os.environ["NO_COLOR"] = "1"
 app = typer.Typer(pretty_exceptions_enable=False)
