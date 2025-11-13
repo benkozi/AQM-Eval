@@ -289,10 +289,7 @@ class Config(BaseModel):
                 set_str_nested(data, kp, get_str_nested(data, data_kp))
 
         if root_aqm["task_defaults"]["execution"]["batchargs"]["tasks_per_node"] == "auto":
-            root_aqm["task_defaults"]["execution"]["batchargs"]["tasks_per_node"] = [
-                get_str_nested(data, f"platform_defaults.{platform_key.value}.ncores_per_node")
-                for platform_key in PlatformKey
-            ]
+            root_aqm["task_defaults"]["execution"]["batchargs"]["tasks_per_node"] = get_str_nested(data, f"platform_defaults.{platform_key.value}.ncores_per_node")
 
         return cls.from_yaml({cls._key.default: data})
 
