@@ -10,10 +10,10 @@ from aqm_eval.mm_eval.driver.package.core import package_key_to_class
 class AbstractAqmTask(ABC, BaseModel):
     model_config = {"frozen": True}
 
-    nodes: str
+    node_count: str = Field(exclude=True)
     walltime: str
     command: str
-    # nprocs: str
+    nprocs: str = Field(exclude=True)
     package_key: PackageKey = Field(exclude=True)
 
     account: str = "&ACCOUNT;"
@@ -37,6 +37,10 @@ class AbstractAqmTask(ABC, BaseModel):
     @computed_field
     def dependency(self) -> dict:
         raise NotImplementedError
+
+    @computed_field
+    def nodes(self) -> str:
+        return f"{self.node_count}:ppn={self.nprocs}"
 
     def to_yaml(self) -> dict:
         data = self.model_dump(mode="json", exclude=["task_name"])
@@ -114,10 +118,10 @@ class AqmTaskGroup(BaseModel):
         for package in config.aqm.packages.values():
             if package.active:
                 package_batchargs = package.execution.prep.batchargs
-                data = {"nodes": str(package_batchargs.nodes),
+                data = {"node_count": str(package_batchargs.nodes),
                                "walltime": package_batchargs.walltime,
                                "package_key": package.key,
-                               # "nprocs": str(package_batchargs.tasks_per_node)
+                               "nprocs": str(package_batchargs.tasks_per_node)
                         }
                 packages.append(AqmPrep.model_validate(data))
                 package_class = package_key_to_class(package.key)
@@ -126,11 +130,11 @@ class AqmTaskGroup(BaseModel):
                         continue
                     if task_key not in package.tasks_to_exclude:
                         task_batchargs = package.execution.tasks.get(task_key, config.aqm.task_defaults.execution).batchargs
-                        data = {"nodes": str(task_batchargs.nodes),
+                        data = {"node_count": str(task_batchargs.nodes),
                                 "walltime": task_batchargs.walltime,
                                 "package_key": package.key,
                                 "task_key": task_key,
-                                # "nprocs": str(task_batchargs.tasks_per_node)
+                                "nprocs": str(task_batchargs.tasks_per_node)
                                 }
                         tasks.append(AqmEvalTask.model_validate(data))
         return AqmTaskGroup(packages=tuple(packages), tasks=tuple(tasks))
