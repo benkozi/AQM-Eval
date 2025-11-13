@@ -65,7 +65,8 @@ def srw_task_group(
         json_bytes = json.dumps(data).encode("utf-8")
         return base64.urlsafe_b64encode(json_bytes).decode("ascii")
 
-    ctx = SRWContext.model_validate(cli_arg_to_json(srw_data))
+    data = cli_arg_to_json(srw_data)
+    ctx = SRWContext.model_validate(data)
     print(ctx)
     return json_to_cli_arg(ctx.mm_config.to_yaml())
 
