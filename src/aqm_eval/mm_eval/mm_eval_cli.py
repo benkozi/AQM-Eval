@@ -1,14 +1,17 @@
 """The CLI definition for the MELODIES MONET UFS-AQM evaluation suite."""
-
+import base64
+import json
 import os
 from pathlib import Path
 
 import typer
 
 from aqm_eval.mm_eval.driver.config import PackageKey, TaskKey
+from aqm_eval.mm_eval.driver.context.srw import SRWContext
 from aqm_eval.mm_eval.driver.package.core import package_key_to_class
 from aqm_eval.mm_eval.rocoto.srw_render import render_task_group
 from aqm_eval.mm_eval.stats_concat import StatsFileCollection
+from test.test_mm_eval.conftest import expt_dir
 
 os.environ["NO_COLOR"] = "1"
 app = typer.Typer(pretty_exceptions_enable=False)
@@ -52,9 +55,20 @@ def srw_run(
     help="Create a YAML-based SRW task group for all packages and tasks.",
 )
 def srw_task_group(
-    out_dir: Path = typer.Option(..., "--out-dir", help="Output directory for the task group YAML.", file_okay=False),
-) -> None:
-    render_task_group(out_dir)
+    srw_data: str = typer.Option(..., "--srw-data"),
+) -> str:
+
+    def cli_arg_to_json(arg: str) -> dict:
+        json_bytes = base64.urlsafe_b64decode(arg.encode("ascii"))
+        return json.loads(json_bytes.decode("utf-8"))
+
+    def json_to_cli_arg(data: dict) -> str:
+        json_bytes = json.dumps(data).encode("utf-8")
+        return base64.urlsafe_b64encode(json_bytes).decode("ascii")
+
+    ctx = SRWContext.model_validate(cli_arg_to_json(srw_data))
+    print(ctx)
+    return json_to_cli_arg(ctx.mm_config.to_yaml())
 
 
 @app.command(
@@ -67,6 +81,7 @@ def concat_stats(
         ..., "--out-path", help="Output path for the concatenated CSV file.", exists=False, dir_okay=False
     ),
 ) -> None:
+    #tdk:doc
     sfile_coll = StatsFileCollection.from_dir(root_dir)
     df = sfile_coll.as_dataframe()
     df.to_csv(out_path)
