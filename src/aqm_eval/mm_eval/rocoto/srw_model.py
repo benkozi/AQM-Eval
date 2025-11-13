@@ -10,10 +10,10 @@ from aqm_eval.mm_eval.driver.package.core import package_key_to_class
 class AbstractAqmTask(ABC, BaseModel):
     model_config = {"frozen": True}
 
-    nodes: int
+    nodes: str
     walltime: str
     command: str
-    nprocs: int
+    nprocs: str
     package_key: PackageKey = Field(exclude=True)
 
     account: str = "&ACCOUNT;"
