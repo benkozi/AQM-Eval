@@ -55,7 +55,7 @@ def srw_run(
 )
 def srw_task_group(
     srw_data: str = typer.Option(..., "--srw-data"),
-) -> str:
+) -> None:
 
     def cli_arg_to_json(arg: str) -> dict:
         json_bytes = base64.urlsafe_b64decode(arg.encode("ascii"))
@@ -67,8 +67,7 @@ def srw_task_group(
 
     data = cli_arg_to_json(srw_data)
     ctx = SRWContext.model_validate(data)
-    print(ctx)
-    return json_to_cli_arg(ctx.mm_config.to_yaml())
+    print(json_to_cli_arg(ctx.mm_config.to_yaml()))
 
 
 @app.command(
