@@ -6,10 +6,10 @@ from aqm_eval.mm_eval.rocoto.srw_model import AqmPrep, AqmEvalTask, AqmTaskGroup
 
 
 def test_task_group():
-    data = {"nodes": "1", "walltime": "00:05:00", "envars_custom": {}, "package_key": PackageKey.CHEM, "nprocs": "10"}
+    data = {"nodes": "1", "walltime": "00:05:00", "package_key": PackageKey.CHEM, "nprocs": "10"}
     prep = AqmPrep.model_validate(data)
 
-    data = {"nodes": "1", "walltime": "00:05:00", "package_key": PackageKey.CHEM, "task_key": TaskKey.SAVE_PAIRED, "nprocs": "10"}
+    data["task_key"] = TaskKey.SAVE_PAIRED
     chem = AqmEvalTask.model_validate(data)
 
     data["task_key"] = TaskKey.BOXPLOT

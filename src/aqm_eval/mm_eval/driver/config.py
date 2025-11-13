@@ -196,7 +196,7 @@ class AQMConfig(BaseModel):
     model_config = {"frozen": True}
 
     no_forecast: bool = False
-    models: dict[str, AQMModelConfig] = Field(max_length=4)
+    models: dict[str, AQMModelConfig]
     packages: dict[PackageKey, PackageConfig] = Field(min_length=1)
     task_defaults: TaskDefaults
 
@@ -221,6 +221,8 @@ class AQMConfig(BaseModel):
             for k, v in values[target].items():
                 if isinstance(values[target][k], Mapping):
                     values[target][k]["key"] = k
+        if len(values.get("models", {})) == 0:
+            raise ValueError("At least one model must be specified.")
         return values
 
     @field_validator("models", mode="after")
