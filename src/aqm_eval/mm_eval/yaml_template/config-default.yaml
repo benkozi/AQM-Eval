@@ -86,13 +86,13 @@ melodies_monet_parm:
       execution:
         batchargs:
           nodes: 1
-          tasks_per_node: 1
+          tasks_per_node: auto
           walltime: 01:00:00
   platform_defaults:
     ursa:
       ncores_per_node: 192
     gaeac6:
-      ncores_per_node: 128
+      ncores_per_node: 192
     derecho:
       ncores_per_node: 128
     orion:
