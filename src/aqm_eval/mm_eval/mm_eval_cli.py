@@ -6,6 +6,7 @@ from pathlib import Path
 
 import typer
 
+from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.config import PackageKey, TaskKey
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
 from aqm_eval.mm_eval.driver.package.core import package_key_to_class
@@ -66,10 +67,13 @@ def srw_task_group(
         json_bytes = json.dumps(data).encode("utf-8")
         return base64.urlsafe_b64encode(json_bytes).decode("ascii")
 
-    data = cli_arg_to_json(srw_data)
-    ctx = SRWContext.model_validate(data)
+    data_from_srw = cli_arg_to_json(srw_data)
+    LOGGER(f"{data_from_srw=}")
+    ctx = SRWContext.model_validate(data_from_srw)
     tg = AqmTaskGroup.from_config(ctx.mm_config)
-    print(json_to_cli_arg(tg.to_yaml()))
+    tg_yaml = tg.to_yaml()
+    LOGGER(f"{tg_yaml=}")
+    print(json_to_cli_arg(tg_yaml))
 
 
 @app.command(
