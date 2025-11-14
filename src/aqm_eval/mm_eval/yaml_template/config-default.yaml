@@ -4,6 +4,7 @@ melodies_monet_parm:
   cartopy_data_dir: null
   output_dir: null
   run_dir: null
+  active: true
   aqm:
     no_forecast: true
     models:

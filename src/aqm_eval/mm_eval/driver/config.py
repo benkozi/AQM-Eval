@@ -244,15 +244,13 @@ class Config(BaseModel):
     start_datetime: str = Field(description="Evaluation start time in yyyy-mm-dd-HH:MM:SS UTC format.")
     end_datetime: str = Field(description="Evaluation end time in yyyy-mm-dd-HH:MM:SS UTC format.")
     cartopy_data_dir: Path = Field(description="Path to the Cartopy data directory.")
+    active: bool
     output_dir: Path
     run_dir: Path
     aqm: AQMConfig
     platform_defaults: dict[PlatformKey, PlatformConfig]
 
     _key: str = "melodies_monet_parm"
-
-    # def platform_defaults(self) -> dict[PlatformKey, PlatformConfig]:
-    #     return {ii: PlatformConfig(key=ii) for ii in PlatformKey}
 
     @cached_property
     def date_range(self) -> DateRange:
