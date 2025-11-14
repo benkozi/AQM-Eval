@@ -11,7 +11,7 @@ from polyfactory.factories.pydantic_factory import ModelFactory
 from aqm_eval.mm_eval.driver.config import AQMConfig, AQMModelConfig, Config, PackageConfig, PackageKey, PlatformKey, PlotKwargs
 from aqm_eval.mm_eval.driver.context.srw import SRWContext, SrwPlatform, SrwUser, SrwWorkflow
 
-_TEST_GLOBALS: dict[str, Any] = {"tmp_path": Path(""), "bin_dir": Path(""), "host_key": "eval1"}
+_TEST_GLOBALS: dict[str, Any] = {"tmp_path": None, "bin_dir": None, "host_key": "eval1"}
 
 
 class PackageConfigFactory(ModelFactory[PackageConfig]):

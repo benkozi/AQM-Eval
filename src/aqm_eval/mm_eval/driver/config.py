@@ -62,18 +62,6 @@ class PlatformConfig(BaseModel):
 
     ncores_per_node: int = Field(ge=1)
 
-    # @computed_field
-    # @cached_property
-    # def ncores_per_node(self) -> int:
-    #     mapping = {
-    #         PlatformKey.URSA: 192,
-    #         PlatformKey.GAEAC6: 128,
-    #         PlatformKey.DERECHO: 128,
-    #         PlatformKey.ORION: 40,
-    #         PlatformKey.HERCULES: 80,
-    #     }
-    #     return mapping[self.key]
-
 
 class BatchArgs(BaseModel):
     model_config = {"frozen": True}
@@ -105,48 +93,6 @@ class PackageConfig(BaseModel):
     active: bool = True
     tasks_to_exclude: tuple[TaskKey, ...] = tuple()
     execution: PackageExecution = Field(default_factory=lambda x: PackageExecution.model_validate({}))
-
-    # @model_validator(mode="before")
-    # @classmethod
-    # def _validate_model_before_(cls, values: dict) -> dict:
-    #     if values.get("mapping") is None:
-    #         match values["key"]:
-    #             #tdk: this should be attached to the package object
-    #             case PackageKey.CHEM:
-    #                 mapping = {
-    #                     "o3_ave": "OZONE",
-    #                     "pm25_ave": "PM2.5",
-    #                     "no2_ave": "NO2",
-    #                     "co": "CO",
-    #                 }
-    #             case PackageKey.ISH:
-    #                 mapping = {
-    #                     "tmp2m": "temp",
-    #                     "ws10m": "ws",
-    #                     "dew_temp": "dew_pt_temp",
-    #                 }
-    #             case PackageKey.AQS_VOC:
-    #                 mapping = {
-    #                     "etha": "ETHANE",
-    #                     "prpa": "PROPANE",
-    #                     "benzene": "BENZENE",
-    #                     "tol": "TOLUENE",
-    #                     "isop": "ISOPRENE",
-    #                 }
-    #             case PackageKey.AQS_PM:
-    #                 mapping = {
-    #                     "pm25_so4": "SO4f",
-    #                     "pm25_no3": "NO3f",
-    #                     "pm25_nh4": "NH4+f",
-    #                     "pm25_ec": "ECf",
-    #                     "pm25_oc": "OCPM2.5LCTOT",
-    #                 }
-    #
-    #             case _:
-    #                 raise ValueError(values["key"])
-    #         values["mapping"] = mapping
-    #
-    #     return values
 
     @model_validator(mode="after")
     def _validate_model_after_(self) -> "PackageConfig":

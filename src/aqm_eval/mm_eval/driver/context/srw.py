@@ -13,8 +13,6 @@ from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.settings import SETTINGS
 from aqm_eval.shared import assert_directory_exists, update_left
 
-# tdk: remove uwtools dependency
-
 
 def _convert_date_string_to_mm_(date_str: str) -> str:
     dt = datetime.strptime(date_str, "%Y%m%d%H")
@@ -43,13 +41,6 @@ class SrwUser(BaseModel):
 
 
 class SRWContext(AbstractDriverContext):
-    # expt_dir: PathExisting = Field(description="Experiment directory.")
-    # default_config["workflow"]["EXPT_BASEDIR"]
-    # default_config["workflow"]["EXPT_SUBDIR"]
-    # default_config["platform"]["FIXshp"]
-    # default_config["workflow"]["DATE_LAST_CYCL_MM"]
-    # default_config["workflow"]["DATE_FIRST_CYCL"]
-
     workflow: SrwWorkflow
     platform: SrwPlatform
     user: SrwUser
@@ -66,39 +57,18 @@ class SRWContext(AbstractDriverContext):
         data = get_yaml_config(path)["__mm_runtime__"]
         return cls.model_validate(data)
 
-    # @computed_field
-    # @cached_property
-    # def config_path_user(self) -> PathExisting:
-    #     return assert_file_exists(self.expt_dir / "config.yaml")
-    #
-    # @computed_field
-    # @cached_property
-    # def config_path_rocoto(self) -> PathExisting:
-    #     return assert_file_exists(self.expt_dir / "rocoto_defns.yaml")
-    #
-    # @computed_field
-    # @cached_property
-    # def _config_path_var_defns(self) -> Path:
-    #     return assert_file_exists(self.expt_dir / "var_defns.yaml")
-
-    # @computed_field
     @cached_property
     def _date_first_cycle_srw(self) -> str:
-        # return self._find_nested_key_(("workflow", "DATE_FIRST_CYCL"))
         return self.workflow.DATE_FIRST_CYCL
 
-    # @computed_field
     @cached_property
     def _date_last_cycle_srw(self) -> str:
-        # return self._find_nested_key_(("workflow", "DATE_LAST_CYCL_MM"))
         return self.workflow.DATE_LAST_CYCL_MM
 
-    # @computed_field
     @cached_property
     def _date_first_cycle_mm(self) -> str:
         return _convert_date_string_to_mm_(self._date_first_cycle_srw)
 
-    # @computed_field
     @cached_property
     def _date_last_cycle_mm(self) -> str:
         return _convert_date_string_to_mm_(self._date_last_cycle_srw)
@@ -109,14 +79,11 @@ class SRWContext(AbstractDriverContext):
 
     @cached_property
     def _cartopy_data_dir(self) -> Path:
-        # targte_dir = self._find_nested_key_(("platform", "FIXshp"))
         target_dir = self.platform.FIXshp
         return assert_directory_exists(target_dir).absolute().resolve(strict=True)
 
     @cached_property
     def mm_config(self) -> Config:
-        # mm_parm_left = self._yaml_data[self.config_path_var_defns]["melodies_monet_parm"]
-
         raw = (SETTINGS.eval_template_dir / "config-default.yaml").read_text()
         mm_parm_left = yaml.safe_load(raw)["melodies_monet_parm"]
         mm_parm_right = self.melodies_monet_parm
@@ -153,7 +120,6 @@ class SRWContext(AbstractDriverContext):
 
     @cached_property
     def _platform(self) -> PlatformKey:
-        # return PlatformKey(self._find_nested_key_(("user", "MACHINE")).lower())
         return PlatformKey(self.user.MACHINE.lower())
 
     @cached_property
@@ -163,41 +129,3 @@ class SRWContext(AbstractDriverContext):
     @cached_property
     def _datetime_last_cycl(self) -> datetime:
         return datetime.strptime(self._date_last_cycle_srw, "%Y%m%d%H")
-
-    # @cached_property
-    # def _yaml_data(self) -> dict[Path, YAMLConfig]:
-    #     """Cache loaded YAML data from config files."""
-    #     data = {}
-    #     for yaml_path in self._yaml_srw_config_paths:
-    #         data[yaml_path] = get_yaml_config(yaml_path)
-    #     return data
-
-    # @cached_property
-    # def _yaml_srw_config_paths(self) -> tuple[Path, ...]:
-    #     return self.config_path_user, self.config_path_rocoto, self.config_path_var_defns
-
-    # def _find_nested_key_(self, key_tuple: tuple[str, ...]) -> Any:
-    #     """Find a nested key in the YAML dictionaries using a tuple of string keys.
-    #
-    #     Args:
-    #         key_tuple: Tuple of strings representing nested dictionary keys
-    #
-    #     Returns
-    #     -------
-    #         The value found at the nested key location
-    #     """
-    #     for yaml_path, yaml_dict in self._yaml_data.items():
-    #         current = yaml_dict
-    #         try:
-    #             for key in key_tuple:
-    #                 current = current[key]
-    #             return current
-    #         except KeyError:
-    #             continue
-    #         except:
-    #             LOGGER(
-    #                 f"unexpected error: {key_tuple=}, {type(current)=}",
-    #                 level=logging.ERROR,
-    #             )
-    #             raise
-    #     raise KeyError(f"{key_tuple=} not found in any YAML files: {self._yaml_data.keys()}")
