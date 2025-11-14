@@ -25,9 +25,10 @@ melodies_monet_parm:
       chem:
         observation_template: null
         mapping:
-          tmp2m: temp
-          ws10m: ws
-          dew_temp: dew_pt_temp
+          o3_ave: OZONE
+          pm25_ave: PM2.5
+          no2_ave: NO2
+          co: CO
         active: true
         tasks_to_exclude: [ ]
         execution:
@@ -40,10 +41,9 @@ melodies_monet_parm:
       ish:
         observation_template: null
         mapping:
-          o3_ave: OZONE
-          pm25_ave: PM2.5
-          no2_ave: NO2
-          co: CO
+          tmp2m: temp
+          ws10m: ws
+          dew_temp: dew_pt_temp
         active: true
         tasks_to_exclude: [ ]
         execution:
@@ -56,9 +56,11 @@ melodies_monet_parm:
       aqs_pm:
         observation_template: null
         mapping:
-          tmp2m: temp
-          ws10m: ws
-          dew_temp: dew_pt_temp
+          pm25_so4: SO4f
+          pm25_no3: NO3f
+          pm25_nh4: "NH4+f"
+          pm25_ec: ECf
+          pm25_oc: OCPM2.5LCTOT
         active: true
         tasks_to_exclude: [ ]
         execution:
@@ -71,9 +73,11 @@ melodies_monet_parm:
       aqs_voc:
         observation_template: null
         mapping:
-          tmp2m: temp
-          ws10m: ws
-          dew_temp: dew_pt_temp
+          etha: ETHANE
+          prpa: PROPANE
+          benzene: BENZENE
+          tol: TOLUENE
+          isop: ISOPRENE
         active: true
         tasks_to_exclude: [ ]
         execution:

@@ -1,27 +1,3 @@
-{#model:#}
-{#  {{ model_eval_label }}: # model label#}
-{#   files: {{ model_eval_files }}#}
-{#   mod_type: {{ model_eval_type }}#}
-{#   mod_kwargs: {{ model_eval_kwargs }}#}
-{#   radius_of_influence: {{ model_eval_radius}}#}
-{#   mapping:#}
-{#     {{ obs_label }}: {{ model_eval_mapping }}#}
-{#   variables: {{ model_eval_variables }}#}
-{#   projection: {{ model_eval_projection }}#}
-{#   plot_kwargs: {{ model_eval_plot_kwargs }}#}
-{#{% if model_base_label is defined %}#}
-{#  {{ model_base_label }}: # model label#}
-{#   files: {{ model_base_files }}#}
-{#   mod_type: {{ model_base_type }}#}
-{#   mod_kwargs: {{ model_base_kwargs }}#}
-{#   radius_of_influence: {{ model_base_radius}}#}
-{#   mapping:#}
-{#     {{ obs_label }}: {{ model_base_mapping }}#}
-{#   variables: {{ model_base_variables }}#}
-{#   projection: {{ model_base_projection }}#}
-{#   plot_kwargs: {{ model_base_plot_kwargs }}#}
-{#{% endif %}#}
-
 model:
 {% for mm_model in package.mm_models %}
   {{ mm_model.label }}: # model label
