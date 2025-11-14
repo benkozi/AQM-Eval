@@ -1,17 +1,12 @@
 """The CLI definition for the MELODIES MONET UFS-AQM evaluation suite."""
-import base64
-import json
 import os
 from pathlib import Path
 
 import typer
 
-from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.config import PackageKey, TaskKey
-from aqm_eval.mm_eval.driver.context.srw import SRWContext
 from aqm_eval.mm_eval.driver.package.core import package_key_to_class
-from aqm_eval.mm_eval.rocoto.srw_model import AqmTaskGroup
-# from aqm_eval.mm_eval.rocoto.srw_render import render_task_group
+from aqm_eval.mm_eval.rocoto.srw_task_group import srw_data_to_json
 from aqm_eval.mm_eval.stats_concat import StatsFileCollection
 
 os.environ["NO_COLOR"] = "1"
@@ -58,24 +53,7 @@ def srw_run(
 def srw_task_group(
     srw_data: str = typer.Option(..., "--srw-data"),
 ) -> None:
-
-    #tdk: move logic out of this function
-
-    def cli_arg_to_json(arg: str) -> dict:
-        json_bytes = base64.urlsafe_b64decode(arg.encode("ascii"))
-        return json.loads(json_bytes.decode("utf-8"))
-
-    def json_to_cli_arg(data: dict) -> str:
-        json_bytes = json.dumps(data).encode("utf-8")
-        return base64.urlsafe_b64encode(json_bytes).decode("ascii")
-
-    data_from_srw = cli_arg_to_json(srw_data)
-    LOGGER(f"{data_from_srw=}")
-    ctx = SRWContext.model_validate(data_from_srw)
-    tg = AqmTaskGroup.from_config(ctx.mm_config)
-    tg_yaml = tg.to_yaml()
-    # LOGGER(f"{tg_yaml=}")
-    print(json_to_cli_arg(tg_yaml))
+    srw_data_to_json(srw_data)
 
 
 @app.command(
