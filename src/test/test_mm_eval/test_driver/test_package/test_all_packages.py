@@ -31,7 +31,7 @@ def package_key(request: pytest.FixtureRequest) -> PackageKey:
 @pytest.fixture
 def all_pkgs_test_data(srw_context: SRWContext, package_key: PackageKey) -> AllPackagesTestData:
     package_class = package_key_to_class(package_key)
-    expected_n_links = (25 + 25) * 2  # (25 dynf hourly files + 25 phyf hourly files) * 2 cycle directories
+    expected_n_links = 25 * 2  # 25 dynf hourly files * 2 cycle directories
     expected_n_dask_run_calls = 0
 
     match package_key:

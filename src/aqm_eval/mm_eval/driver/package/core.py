@@ -106,7 +106,7 @@ class AbstractEvalPackage(ABC, BaseModel):
                 continue
             kwds = dict(
                 cfg=v,
-                file_template=("dynf*.nc", "phyf*.nc"),
+                file_template=("dynf*.nc",),
                 link_alldays_path=self.link_alldays_path,
                 date_range=self.ctx.mm_config.date_range,
             )
