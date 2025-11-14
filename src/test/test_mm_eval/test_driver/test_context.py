@@ -1,8 +1,4 @@
-import pytest
-
-from aqm_eval.mm_eval.driver.context.srw import SRWContext
-
-#tdk:rm
+# tdk:rm
 
 # class TestSRWContext:
 #     def test_init_path_happy(self, srw_context: SRWContext) -> None:

@@ -10,6 +10,7 @@ def cli_arg_to_json(arg: str) -> dict:
     json_bytes = base64.urlsafe_b64decode(arg.encode("ascii"))
     return json.loads(json_bytes.decode("utf-8"))
 
+
 def json_to_cli_arg(data: dict) -> str:
     json_bytes = json.dumps(data).encode("utf-8")
     return base64.urlsafe_b64encode(json_bytes).decode("ascii")

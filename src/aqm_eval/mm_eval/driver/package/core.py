@@ -92,7 +92,10 @@ class AbstractEvalPackage(ABC, BaseModel):
 
     @cached_property
     def observation_template(self) -> str:
-        return self.ctx.mm_config.aqm.packages[self.key].observation_template
+        ret = self.ctx.mm_config.aqm.packages[self.key].observation_template
+        if ret is None:
+            raise ValueError
+        return ret
 
     @cached_property
     def mm_models(self) -> tuple[Model, ...]:
@@ -103,7 +106,7 @@ class AbstractEvalPackage(ABC, BaseModel):
                 continue
             kwds = dict(
                 cfg=v,
-                file_template=("dynf*.nc","phyf*.nc"),
+                file_template=("dynf*.nc", "phyf*.nc"),
                 link_alldays_path=self.link_alldays_path,
                 date_range=self.ctx.mm_config.date_range,
             )

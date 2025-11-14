@@ -87,9 +87,10 @@ def update_left(data_left: dict, data_right: dict) -> None:
 
 
 def get_str_nested(data: dict, key: str) -> Any:
-    for k in key.split('.'):
+    for k in key.split("."):
         data = data[k]
     return data
+
 
 def set_str_nested(data: dict, key: str, value: Any) -> None:
     keys = key.split(".")

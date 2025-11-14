@@ -1,10 +1,11 @@
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
 
 from aqm_eval.mm_eval.driver.config import Config, PackageConfig, PackageKey, PlatformKey
-from test.test_mm_eval.conftest import PackageConfigFactory, ConfigFactory
+from test.test_mm_eval.conftest import ConfigFactory, PackageConfigFactory
 
 
 def test(config: Config, tmp_path: Path) -> None:
@@ -40,17 +41,20 @@ def test_package_config_allows_none_observation_template() -> None:
 @pytest.mark.parametrize("platform_key", PlatformKey)
 def test_config_from_default_yaml(platform_key: PlatformKey) -> None:
     a_config = ConfigFactory.build()
-    overrides = {
+    overrides: dict[str, Any] = {
         "start_datetime": a_config.start_datetime,
         "end_datetime": a_config.end_datetime,
         "cartopy_data_dir": a_config.cartopy_data_dir,
         "output_dir": a_config.output_dir,
         "run_dir": a_config.run_dir,
-        "aqm": {"models": {"eval": {"expt_dir": a_config.aqm.models["eval1"].expt_dir}}, "packages": {}}
+        "aqm": {"models": {"eval": {"expt_dir": a_config.aqm.models["eval1"].expt_dir}}, "packages": {}},
     }
 
     for package_key in PackageKey:
         overrides["aqm"]["packages"][package_key.value] = {}
-        overrides["aqm"]["packages"][package_key.value]["observation_template"] = a_config.aqm.packages[package_key.value].observation_template
+        overrides["aqm"]["packages"][package_key.value]["observation_template"] = a_config.aqm.packages[
+            package_key
+        ].observation_template
     actual = Config.from_default_yaml(platform_key, overrides)
-    print(yaml.safe_dump(actual.to_yaml(), sort_keys=False))
+    assert isinstance(actual, Config)
+    # print(yaml.safe_dump(actual.to_yaml(), sort_keys=False))

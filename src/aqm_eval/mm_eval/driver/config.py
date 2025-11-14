@@ -6,11 +6,11 @@ from pathlib import Path
 from typing import Any, Mapping
 
 import yaml
-from pydantic import BaseModel, Field, field_validator, model_validator, computed_field
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.settings import SETTINGS
-from aqm_eval.shared import DateRange, PathExistingDir, update_left, get_str_nested, set_str_nested
+from aqm_eval.shared import DateRange, get_str_nested, set_str_nested, update_left
 
 
 @unique
@@ -271,12 +271,12 @@ class Config(BaseModel):
     @classmethod
     def from_default_yaml(cls, platform_key: PlatformKey, overrides: dict) -> "Config":
         raw = (SETTINGS.eval_template_dir / "config-default.yaml").read_text()
-        data = yaml.safe_load(raw)[cls._key.default]
+        data = yaml.safe_load(raw)[cls.get_key()]
         update_left(data, overrides)
 
         root_aqm = data["aqm"]
         if len([v for v in root_aqm["models"].values() if v.get("is_host", False)]) != 1:
-            LOGGER(f"removing default host model (key=eval) since another was provided", level=logging.WARNING)
+            LOGGER("removing default host model (key=eval) since another was provided", level=logging.WARNING)
             root_aqm["models"].pop("eval")
 
         for package_key in PackageKey:
@@ -287,9 +287,15 @@ class Config(BaseModel):
                 set_str_nested(data, kp, get_str_nested(data, data_kp))
 
         if root_aqm["task_defaults"]["execution"]["batchargs"]["tasks_per_node"] == "auto":
-            root_aqm["task_defaults"]["execution"]["batchargs"]["tasks_per_node"] = get_str_nested(data, f"platform_defaults.{platform_key.value}.ncores_per_node")
+            root_aqm["task_defaults"]["execution"]["batchargs"]["tasks_per_node"] = get_str_nested(
+                data, f"platform_defaults.{platform_key.value}.ncores_per_node"
+            )
 
-        return cls.from_yaml({cls._key.default: data})
+        return cls.from_yaml({cls.get_key(): data})
+
+    @classmethod
+    def get_key(cls) -> str:
+        return cls._key.default  # type: ignore[attr-defined]
 
     @model_validator(mode="after")
     def _validate_model_after_(self) -> "Config":

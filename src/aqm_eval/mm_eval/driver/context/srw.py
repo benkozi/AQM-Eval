@@ -1,22 +1,20 @@
 """Implements the Short-Range Weather (SRW) App driver context."""
 
-import logging
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
-from typing import Any
 
 import yaml
-from pydantic import Field, computed_field, BaseModel
-from uwtools.api.config import YAMLConfig, get_yaml_config
+from pydantic import BaseModel, computed_field
+from uwtools.api.config import get_yaml_config
 
-from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.config import Config, PlatformKey
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.settings import SETTINGS
-from aqm_eval.shared import PathExisting, assert_directory_exists, assert_file_exists, update_left
+from aqm_eval.shared import assert_directory_exists, update_left
 
-#tdk: remove uwtools dependency
+# tdk: remove uwtools dependency
+
 
 def _convert_date_string_to_mm_(date_str: str) -> str:
     dt = datetime.strptime(date_str, "%Y%m%d%H")
@@ -157,7 +155,6 @@ class SRWContext(AbstractDriverContext):
     def _platform(self) -> PlatformKey:
         # return PlatformKey(self._find_nested_key_(("user", "MACHINE")).lower())
         return PlatformKey(self.user.MACHINE.lower())
-
 
     @cached_property
     def _datetime_first_cycl(self) -> datetime:

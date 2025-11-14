@@ -2,7 +2,7 @@ import yaml
 
 from aqm_eval.mm_eval.driver.config import PackageKey, TaskKey
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
-from aqm_eval.mm_eval.rocoto.srw_model import AqmPrep, AqmEvalTask, AqmTaskGroup
+from aqm_eval.mm_eval.rocoto.srw_model import AqmEvalTask, AqmPrep, AqmTaskGroup
 
 
 def test_task_group() -> None:

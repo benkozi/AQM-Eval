@@ -4,10 +4,9 @@ from abc import ABC, abstractmethod
 from functools import cached_property
 from pathlib import Path
 
-from pydantic import BaseModel, computed_field, model_validator
+from pydantic import BaseModel, model_validator
 
 from aqm_eval.mm_eval.driver.config import Config
-from aqm_eval.shared import PathExisting
 
 
 class AbstractDriverContext(ABC, BaseModel):

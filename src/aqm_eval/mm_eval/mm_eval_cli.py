@@ -1,4 +1,5 @@
 """The CLI definition for the MELODIES MONET UFS-AQM evaluation suite."""
+
 import os
 from pathlib import Path
 
@@ -66,7 +67,7 @@ def concat_stats(
         ..., "--out-path", help="Output path for the concatenated CSV file.", exists=False, dir_okay=False
     ),
 ) -> None:
-    #tdk:doc
+    # tdk:doc
     sfile_coll = StatsFileCollection.from_dir(root_dir)
     df = sfile_coll.as_dataframe()
     df.to_csv(out_path)

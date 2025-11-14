@@ -1,9 +1,8 @@
 from abc import ABC
-from typing import Any
 
-from pydantic import BaseModel, model_validator, computed_field, Field
+from pydantic import BaseModel, Field, computed_field, model_validator
 
-from aqm_eval.mm_eval.driver.config import Config, TaskKey, PackageKey
+from aqm_eval.mm_eval.driver.config import Config, PackageKey, TaskKey
 from aqm_eval.mm_eval.driver.package.core import package_key_to_class
 
 
@@ -18,13 +17,16 @@ class AbstractAqmTask(ABC, BaseModel):
 
     account: str = "&ACCOUNT;"
     attrs: dict = {"cycledefs": "at_end", "maxtries": "1"}
-    native: str = '{{ platform.SCHED_NATIVE_CMD }}'
+    native: str = "{{ platform.SCHED_NATIVE_CMD }}"
     partition: str = '{{ "&PARTITION_DEFAULT;" if platform.get("PARTITION_DEFAULT") }}'
-    queue: str = '&QUEUE_DEFAULT;'
-    join: dict = {"cyclestr": {"value": '&LOGDIR;/{{ jobname }}_@Y@m@d@H&LOGEXT;'}}
+    queue: str = "&QUEUE_DEFAULT;"
+    join: dict = {"cyclestr": {"value": "&LOGDIR;/{{ jobname }}_@Y@m@d@H&LOGEXT;"}}
 
-    _envars_default: dict = {"GLOBAL_VAR_DEFNS_FP": "&GLOBAL_VAR_DEFNS_FP;", "HOMEdir": "&HOMEdir;",
-                             "LOGDIR": {"cyclestr": {"value": "&LOGDIR;"}}}
+    _envars_default: dict = {
+        "GLOBAL_VAR_DEFNS_FP": "&GLOBAL_VAR_DEFNS_FP;",
+        "HOMEdir": "&HOMEdir;",
+        "LOGDIR": {"cyclestr": {"value": "&LOGDIR;"}},
+    }
 
     @computed_field
     def envars(self) -> dict:
@@ -43,7 +45,7 @@ class AbstractAqmTask(ABC, BaseModel):
         return f"{self.node_count}:ppn={self.nprocs}"
 
     def to_yaml(self) -> dict:
-        data = self.model_dump(mode="json", exclude=["task_name"])
+        data = self.model_dump(mode="json", exclude={"task_name"})
         ret = {self.task_name: data}
         return ret
 
@@ -58,15 +60,21 @@ class AqmPrep(AbstractAqmTask):
 
     @computed_field
     def dependency(self) -> dict:
-        return {"and": {"or": {"not": {"taskvalid": {"attrs": {"task": "run_fcst_mem000"}}},
-                               "and": {"taskvalid": {"attrs": {"task": "run_fcst_mem000"}},
-                                       "taskdep": {"attrs": {"task": "run_fcst_mem000"}}}}}}
+        return {
+            "and": {
+                "or": {
+                    "not": {"taskvalid": {"attrs": {"task": "run_fcst_mem000"}}},
+                    "and": {"taskvalid": {"attrs": {"task": "run_fcst_mem000"}}, "taskdep": {"attrs": {"task": "run_fcst_mem000"}}},
+                }
+            }
+        }
 
     @computed_field
     def envars(self) -> dict:
         return self._envars_default | {
             # "nprocs": self.nprocs,
-                                       "MM_EVAL_PACKAGE": self.package_key.value}
+            "MM_EVAL_PACKAGE": self.package_key.value
+        }
 
     @computed_field
     def task_name(self) -> str:
@@ -91,8 +99,9 @@ class AqmEvalTask(AbstractAqmTask):
     def envars(self) -> dict:
         return self._envars_default | {
             # "nprocs": self.nprocs,
-                                       "MM_EVAL_PACKAGE": self.package_key.value,
-                                       "MM_EVAL_TASK": self.task_key.value}
+            "MM_EVAL_PACKAGE": self.package_key.value,
+            "MM_EVAL_TASK": self.task_key.value,
+        }
 
     @computed_field
     def task_name(self) -> str:
@@ -107,8 +116,8 @@ class AqmTaskGroup(BaseModel):
         ret = {}
         for ii in self.packages:
             ret.update(ii.to_yaml())
-        for ii in self.tasks:
-            ret.update(ii.to_yaml())
+        for jj in self.tasks:
+            ret.update(jj.to_yaml())
         return ret
 
     @classmethod
@@ -118,11 +127,12 @@ class AqmTaskGroup(BaseModel):
         for package in config.aqm.packages.values():
             if package.active:
                 package_batchargs = package.execution.prep.batchargs
-                data = {"node_count": str(package_batchargs.nodes),
-                               "walltime": package_batchargs.walltime,
-                               "package_key": package.key,
-                               "nprocs": str(package_batchargs.tasks_per_node)
-                        }
+                data = {
+                    "node_count": str(package_batchargs.nodes),
+                    "walltime": package_batchargs.walltime,
+                    "package_key": package.key,
+                    "nprocs": str(package_batchargs.tasks_per_node),
+                }
                 packages.append(AqmPrep.model_validate(data))
                 package_class = package_key_to_class(package.key)
                 for task_key in package_class.model_fields["tasks_default"].default:
@@ -130,12 +140,12 @@ class AqmTaskGroup(BaseModel):
                         continue
                     if task_key not in package.tasks_to_exclude:
                         task_batchargs = package.execution.tasks.get(task_key, config.aqm.task_defaults.execution).batchargs
-                        data = {"node_count": str(task_batchargs.nodes),
-                                "walltime": task_batchargs.walltime,
-                                "package_key": package.key,
-                                "task_key": task_key,
-                                "nprocs": str(task_batchargs.tasks_per_node)
-                                }
+                        data = {
+                            "node_count": str(task_batchargs.nodes),
+                            "walltime": task_batchargs.walltime,
+                            "package_key": package.key,
+                            "task_key": task_key,
+                            "nprocs": str(task_batchargs.tasks_per_node),
+                        }
                         tasks.append(AqmEvalTask.model_validate(data))
         return AqmTaskGroup(packages=tuple(packages), tasks=tuple(tasks))
-

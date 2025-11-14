@@ -1,5 +1,6 @@
 import tempfile
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
@@ -7,12 +8,10 @@ from _pytest.fixtures import FixtureRequest
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-from aqm_eval.mm_eval.driver.config import AQMConfig, AQMModelConfig, Config, PackageConfig, PackageKey, PlotKwargs, PlatformKey
-from aqm_eval.mm_eval.driver.context.srw import SRWContext, SrwWorkflow, SrwPlatform, SrwUser
+from aqm_eval.mm_eval.driver.config import AQMConfig, AQMModelConfig, Config, PackageConfig, PackageKey, PlatformKey, PlotKwargs
+from aqm_eval.mm_eval.driver.context.srw import SRWContext, SrwPlatform, SrwUser, SrwWorkflow
 
-_TEST_GLOBALS = {"tmp_path": Path(""),
-                 "bin_dir": Path(""),
-                 "host_key": "eval1"}
+_TEST_GLOBALS: dict[str, Any] = {"tmp_path": Path(""), "bin_dir": Path(""), "host_key": "eval1"}
 
 
 class PackageConfigFactory(ModelFactory[PackageConfig]):
@@ -45,7 +44,12 @@ class AQMConfigFactory(ModelFactory[AQMConfig]):
     @classmethod
     def models(cls) -> dict[str, AQMModelConfig]:
         global _TEST_GLOBALS
-        data = {_TEST_GLOBALS["host_key"]: {"is_host": True}, "base1": {"is_host": False}, "base2": {"is_host": False}, "base4": {"is_host": False}}
+        data = {
+            _TEST_GLOBALS["host_key"]: {"is_host": True},
+            "base1": {"is_host": False},
+            "base2": {"is_host": False},
+            "base4": {"is_host": False},
+        }
         ret = {}
         for k, v in data.items():
             expt_dir = _TEST_GLOBALS["tmp_path"] / k
@@ -92,7 +96,6 @@ class ConfigFactory(ModelFactory[Config]):
 
 
 class SrwWorkflowFactory(ModelFactory[SrwWorkflow]):
-
     @classmethod
     def EXPT_BASEDIR(cls) -> Path:
         global _TEST_GLOBALS
@@ -111,15 +114,18 @@ class SrwWorkflowFactory(ModelFactory[SrwWorkflow]):
     def DATE_LAST_CYCL_MM(cls) -> str:
         return "2023060212"
 
+
 class SrwPlatformFactory(ModelFactory[SrwPlatform]):
     @classmethod
     def FIXshp(cls) -> Path:
         return ConfigFactory.cartopy_data_dir()
 
+
 class SrwUserFactory(ModelFactory[SrwUser]):
     @classmethod
     def MACHINE(cls) -> str:
         return PlatformKey.GAEAC6.value.upper()
+
 
 class SRWContextFactory(ModelFactory[SRWContext]):
     __use_defaults__ = True
@@ -143,9 +149,10 @@ class SRWContextFactory(ModelFactory[SRWContext]):
         srw_config_path = _TEST_GLOBALS["bin_dir"] / "srw-config.yaml"
         data = yaml.safe_load(srw_config_path.read_text())
         for package_key in PackageKey:
-            data["melodies_monet_parm"]["aqm"]["packages"].setdefault(package_key.value, {})["observation_template"] = PackageConfigFactory.build().observation_template
+            data["melodies_monet_parm"]["aqm"]["packages"].setdefault(package_key.value, {})["observation_template"] = (
+                PackageConfigFactory.build().observation_template
+            )
         return data["melodies_monet_parm"]
-
 
 
 @pytest.fixture

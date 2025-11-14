@@ -6,7 +6,7 @@ from typer.testing import CliRunner
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
 from aqm_eval.mm_eval.driver.package.core import AbstractEvalPackage
 from aqm_eval.mm_eval.mm_eval_cli import app
-from aqm_eval.mm_eval.rocoto.srw_task_group import json_to_cli_arg, cli_arg_to_json
+from aqm_eval.mm_eval.rocoto.srw_task_group import cli_arg_to_json, json_to_cli_arg
 
 
 def test_help() -> None:
@@ -26,7 +26,7 @@ def test_srw_run_package_and_task_selector(tmp_path: Path, srw_context: SRWConte
         [
             "srw-run",
             "--expt-dir",
-            srw_context.expt_dir,
+            str(srw_context.expt_dir),
             "--task",
             "save_paired",
             "--package",
