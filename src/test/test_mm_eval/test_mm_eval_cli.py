@@ -11,7 +11,7 @@ from aqm_eval.mm_eval.mm_eval_cli import app
 def test_help() -> None:
     """Test that the help message can be displayed."""
     runner = CliRunner()
-    for subcommand in ("srw-init", "srw-run", "concat-stats"):
+    for subcommand in ("srw-init", "srw-run", "srw-task-group", "concat-stats"):
         result = runner.invoke(app, [subcommand, "--help"], catch_exceptions=False)
         print(result.output)
         assert result.exit_code == 0
@@ -25,7 +25,7 @@ def test_srw_run_package_and_task_selector(tmp_path: Path, srw_context: SRWConte
         [
             "srw-run",
             "--expt-dir",
-            str(tmp_path),
+            srw_context.expt_dir,
             "--task",
             "save_paired",
             "--package",
@@ -42,3 +42,4 @@ def test_srw_task_group(tmp_path: Path) -> None:
     runner = CliRunner()
     result = runner.invoke(app, ["srw-task-group", "--out-dir", str(tmp_path)])
     print(result.output)
+    assert result.exit_code == 0

@@ -7,10 +7,12 @@ from _pytest.fixtures import FixtureRequest
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-from aqm_eval.mm_eval.driver.config import AQMConfig, AQMModelConfig, Config, PackageConfig, PackageKey, PlotKwargs
-from aqm_eval.mm_eval.driver.context.srw import SRWContext
+from aqm_eval.mm_eval.driver.config import AQMConfig, AQMModelConfig, Config, PackageConfig, PackageKey, PlotKwargs, PlatformKey
+from aqm_eval.mm_eval.driver.context.srw import SRWContext, SrwWorkflow, SrwPlatform, SrwUser
 
-_TEST_GLOBALS = {"tmp_path": Path("")}
+_TEST_GLOBALS = {"tmp_path": Path(""),
+                 "bin_dir": Path(""),
+                 "host_key": "eval1"}
 
 
 class PackageConfigFactory(ModelFactory[PackageConfig]):
@@ -43,7 +45,7 @@ class AQMConfigFactory(ModelFactory[AQMConfig]):
     @classmethod
     def models(cls) -> dict[str, AQMModelConfig]:
         global _TEST_GLOBALS
-        data = {"eval1": {"is_host": True}, "base1": {"is_host": False}, "base2": {"is_host": False}, "base4": {"is_host": False}}
+        data = {_TEST_GLOBALS["host_key"]: {"is_host": True}, "base1": {"is_host": False}, "base2": {"is_host": False}, "base4": {"is_host": False}}
         ret = {}
         for k, v in data.items():
             expt_dir = _TEST_GLOBALS["tmp_path"] / k
@@ -88,15 +90,69 @@ class ConfigFactory(ModelFactory[Config]):
         ret = _TEST_GLOBALS["tmp_path"] / "mm_run"
         return ret
 
-    # @classmethod
-    # def platform(cls) -> None:
+
+class SrwWorkflowFactory(ModelFactory[SrwWorkflow]):
+
+    @classmethod
+    def EXPT_BASEDIR(cls) -> Path:
+        global _TEST_GLOBALS
+        return _TEST_GLOBALS["tmp_path"]
+
+    @classmethod
+    def EXPT_SUBDIR(cls) -> str:
+        global _TEST_GLOBALS
+        return _TEST_GLOBALS["host_key"]
+
+    @classmethod
+    def DATE_FIRST_CYCL(cls) -> str:
+        return "2023060112"
+
+    @classmethod
+    def DATE_LAST_CYCL_MM(cls) -> str:
+        return "2023060212"
+
+class SrwPlatformFactory(ModelFactory[SrwPlatform]):
+    @classmethod
+    def FIXshp(cls) -> Path:
+        return ConfigFactory.cartopy_data_dir()
+
+class SrwUserFactory(ModelFactory[SrwUser]):
+    @classmethod
+    def MACHINE(cls) -> str:
+        return PlatformKey.GAEAC6.value.upper()
+
+class SRWContextFactory(ModelFactory[SRWContext]):
+    __use_defaults__ = True
+    __use_factory_defaults__ = True
+
+    @classmethod
+    def workflow(cls) -> SrwWorkflow:
+        return SrwWorkflowFactory.build()
+
+    @classmethod
+    def platform(cls) -> SrwPlatform:
+        return SrwPlatformFactory.build()
+
+    @classmethod
+    def user(cls) -> SrwUser:
+        return SrwUserFactory.build()
+
+    @classmethod
+    def melodies_monet_parm(cls) -> dict:
+        global _TEST_GLOBALS
+        srw_config_path = _TEST_GLOBALS["bin_dir"] / "srw-config.yaml"
+        data = yaml.safe_load(srw_config_path.read_text())
+        for package_key in PackageKey:
+            data["melodies_monet_parm"]["aqm"]["packages"].setdefault(package_key.value, {})["observation_template"] = PackageConfigFactory.build().observation_template
+        return data["melodies_monet_parm"]
 
 
 
 @pytest.fixture
-def config(tmp_path: Path) -> Config:
+def config(tmp_path: Path, bin_dir: Path) -> Config:
     global _TEST_GLOBALS
     _TEST_GLOBALS["tmp_path"] = tmp_path
+    _TEST_GLOBALS["bin_dir"] = bin_dir
     return ConfigFactory.build()
 
 
@@ -110,26 +166,26 @@ def config_content(request: FixtureRequest, config: Config, bin_dir: Path) -> di
     return get_config_content(bin_dir, config, request.param)
 
 
-@pytest.fixture()
-def config_path_user(expt_dir: Path, bin_dir: Path, config_content: dict) -> Path:
-    yaml_content = {
-        "metadata": {"description": "config for SRW-AQM, AQM_NA_13km, AEROMMA field campaign"},
-        "user": {"RUN_ENVIR": "community", "MACHINE": "GAEAC6", "ACCOUNT": "bil-fire8"},
-        "workflow": {
-            "USE_CRON_TO_RELAUNCH": True,
-            "CRON_RELAUNCH_INTVL_MNTS": 3,
-            "EXPT_SUBDIR": "aqm_AQMNA13km_AEROMMA",
-            "PREDEF_GRID_NAME": "AQM_NA_13km",
-            "CCPP_PHYS_SUITE": "FV3_GFS_v16",
-            "DATE_FIRST_CYCL": "2023060112",
-            "DATE_LAST_CYCL_MM": "2023060212",
-        },
-    }
-    yaml_content.update(config_content)
-    yaml_path = expt_dir / "config.yaml"
-    with open(yaml_path, "w") as f:
-        yaml.dump(yaml_content, f)
-    return yaml_path
+# @pytest.fixture()
+# def config_path_user(expt_dir: Path, bin_dir: Path, config_content: dict) -> Path:
+#     yaml_content = {
+#         "metadata": {"description": "config for SRW-AQM, AQM_NA_13km, AEROMMA field campaign"},
+#         "user": {"RUN_ENVIR": "community", "MACHINE": "GAEAC6", "ACCOUNT": "bil-fire8"},
+#         "workflow": {
+#             "USE_CRON_TO_RELAUNCH": True,
+#             "CRON_RELAUNCH_INTVL_MNTS": 3,
+#             "EXPT_SUBDIR": "aqm_AQMNA13km_AEROMMA",
+#             "PREDEF_GRID_NAME": "AQM_NA_13km",
+#             "CCPP_PHYS_SUITE": "FV3_GFS_v16",
+#             "DATE_FIRST_CYCL": "2023060112",
+#             "DATE_LAST_CYCL_MM": "2023060212",
+#         },
+#     }
+#     yaml_content.update(config_content)
+#     yaml_path = expt_dir / "config.yaml"
+#     with open(yaml_path, "w") as f:
+#         yaml.dump(yaml_content, f)
+#     return yaml_path
 
 
 def get_config_content(bin_dir: Path, config: Config, config_src: str) -> dict:
@@ -139,12 +195,10 @@ def get_config_content(bin_dir: Path, config: Config, config_src: str) -> dict:
         case "srw":
             srw_config = bin_dir / "srw-config.yaml"
             srw_config_raw = srw_config.read_text()
-            srw_config_raw = srw_config_raw.replace("!int '{{ platform.NCORES_PER_NODE }}'", "100")
             new_content = yaml.safe_load(srw_config_raw)
         case "srw-no-forecast":
             srw_config = bin_dir / "srw-config.yaml"
             srw_config_raw = srw_config.read_text()
-            srw_config_raw = srw_config_raw.replace("!int '{{ platform.NCORES_PER_NODE }}'", "100")
             new_content = yaml.safe_load(srw_config_raw)
             new_content["melodies_monet_parm"]["aqm"]["no_forecast"] = True
             models = new_content["melodies_monet_parm"]["aqm"].setdefault("models", {})
@@ -154,24 +208,28 @@ def get_config_content(bin_dir: Path, config: Config, config_src: str) -> dict:
     return new_content
 
 
-@pytest.fixture()
-def config_path_rocoto(expt_dir: Path) -> Path:
-    yaml_content = {"foo": "bar", "foo2": {"second": "baz"}}
-    yaml_path = expt_dir / "rocoto_defns.yaml"
-    with open(yaml_path, "w") as f:
-        yaml.dump(yaml_content, f)
-    return yaml_path
+# @pytest.fixture()
+# def config_path_rocoto(expt_dir: Path) -> Path:
+#     yaml_content = {"foo": "bar", "foo2": {"second": "baz"}}
+#     yaml_path = expt_dir / "rocoto_defns.yaml"
+#     with open(yaml_path, "w") as f:
+#         yaml.dump(yaml_content, f)
+#     return yaml_path
 
 
 @pytest.fixture()
 def config_path_var_defns(tmp_path: Path, expt_dir: Path, config_content: dict) -> Path:
-    path = tmp_path / "NaturalEarth"
-    path.mkdir(exist_ok=True, parents=True)
-    yaml_content = {"platform": {"FIXshp": f"{str(path)}"}}
-    yaml_content.update(config_content)
+    ctx = SRWContextFactory.build()
+    data = {"__mm_runtime__": ctx.model_dump(mode="json")}
     yaml_path = expt_dir / "var_defns.yaml"
-    with open(yaml_path, "w") as f:
-        yaml.dump(yaml_content, f)
+    yaml_path.write_text(yaml.safe_dump(data))
+    # path = tmp_path / "NaturalEarth"
+    # path.mkdir(exist_ok=True, parents=True)
+    # yaml_content = {"platform": {"FIXshp": f"{str(path)}"}}
+    # yaml_content.update(config_content)
+    # yaml_path = expt_dir / "var_defns.yaml"
+    # with open(yaml_path, "w") as f:
+    #     yaml.dump(yaml_content, f)
     return yaml_path
 
 
@@ -190,12 +248,12 @@ def dummy_phy_dyn_files(config: Config) -> None:
 @pytest.fixture
 def srw_context(
     expt_dir: Path,
-    config_path_user: Path,
-    config_path_rocoto: Path,
+    # config_path_user: Path,
+    # config_path_rocoto: Path,
     config_path_var_defns: Path,
     dummy_phy_dyn_files: None,
 ) -> SRWContext:
-    return SRWContext(expt_dir=expt_dir)
+    return SRWContext.from_expt_dir(expt_dir)
 
 
 @pytest.fixture

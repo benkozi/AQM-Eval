@@ -4,7 +4,7 @@ import jinja2
 import yaml
 
 from aqm_eval.mm_eval.driver.config import Config
-from aqm_eval.mm_eval.rocoto.srw_render import render_task_group
+# from aqm_eval.mm_eval.rocoto.srw_render import render_task_group
 
 #tdk:rm
 # def test(tmp_path: Path, bin_dir: Path) -> None:

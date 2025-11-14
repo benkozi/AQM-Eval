@@ -11,7 +11,7 @@ from aqm_eval.mm_eval.driver.config import PackageKey, TaskKey
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
 from aqm_eval.mm_eval.driver.package.core import package_key_to_class
 from aqm_eval.mm_eval.rocoto.srw_model import AqmTaskGroup
-from aqm_eval.mm_eval.rocoto.srw_render import render_task_group
+# from aqm_eval.mm_eval.rocoto.srw_render import render_task_group
 from aqm_eval.mm_eval.stats_concat import StatsFileCollection
 
 os.environ["NO_COLOR"] = "1"
@@ -58,6 +58,8 @@ def srw_run(
 def srw_task_group(
     srw_data: str = typer.Option(..., "--srw-data"),
 ) -> None:
+
+    #tdk: move logic out of this function
 
     def cli_arg_to_json(arg: str) -> dict:
         json_bytes = base64.urlsafe_b64decode(arg.encode("ascii"))
