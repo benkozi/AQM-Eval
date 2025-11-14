@@ -17,7 +17,7 @@ class Model(BaseModel):
     model_config = {"frozen": True}
 
     cfg: AQMModelConfig
-    dyn_file_template: tuple[str, ...] = Field(description="Templates for selecting model output dynamics files.")
+    file_template: tuple[str, ...] = Field(description="Templates for selecting model output files.")
     link_alldays_path: Path = Field(description="Path to directory where symlinks to model output files will be created.")
     date_range: DateRange
 
@@ -48,5 +48,5 @@ class Model(BaseModel):
             self.link_alldays_path,
             self.label,
             self.date_range,
-            self.dyn_file_template,
+            self.file_template,
         )
