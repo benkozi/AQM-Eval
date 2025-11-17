@@ -1,5 +1,4 @@
 from abc import ABC
-from functools import cached_property
 from pathlib import Path
 
 from pydantic import BaseModel, Field, computed_field, model_validator
@@ -181,5 +180,8 @@ class AqmTaskGroup(BaseModel):
                             "nprocs": str(task_batchargs.tasks_per_node),
                         }
                         tasks.append(AqmEvalTask.model_validate(data))
-        return AqmTaskGroup(packages=tuple(packages), tasks=tuple(tasks),
-                            concat_task=AqmConcatStatsTask(active_package_keys=tuple(active_package_keys), output_dir=config.output_dir))
+        return AqmTaskGroup(
+            packages=tuple(packages),
+            tasks=tuple(tasks),
+            concat_task=AqmConcatStatsTask(active_package_keys=tuple(active_package_keys), output_dir=config.output_dir),
+        )
