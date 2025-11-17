@@ -113,9 +113,9 @@ class AqmEvalTask(AbstractAqmTask):
 class AqmConcatStatsTask(AbstractAqmTask):
     active_package_keys: tuple[PackageKey, ...] = Field(exclude=True)
     output_dir: Path = Field(exclude=True)
-    node_count: str = "1"
+    node_count: str = Field(default="1", exclude=True)
     walltime: str = "00:05:00"
-    nprocs: str = "1"
+    nprocs: str = Field(default="1", exclude=True)
     command: str = '&LOAD_MODULES_RUN_TASK; "mm_concat_stats" "&HOMEdir;/jobs/JSRW_AQM_MELODIES_MONET_CONCAT_STATS"'
 
     @computed_field
