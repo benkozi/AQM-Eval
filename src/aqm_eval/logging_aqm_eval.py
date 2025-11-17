@@ -112,7 +112,7 @@ class LoggerWrapper:
         }
         logging.config.dictConfig(logging_config)
         self.logger = logging.getLogger(_PROJECT_NAME)
-        self("logging initialized")
+        self("logging initialized", level=logging.DEBUG)
 
     def _get_logger_(self) -> logging.Logger:
         if self.logger is None:
@@ -122,7 +122,7 @@ class LoggerWrapper:
 
 LOGGER = LoggerWrapper()
 LOGGER.initialize(log_level=SETTINGS.aqm_eval_log_level)
-LOGGER(f"{SETTINGS=}")
+LOGGER(f"{SETTINGS=}", level=logging.DEBUG)
 
 
 P = ParamSpec("P")

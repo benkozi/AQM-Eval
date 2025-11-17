@@ -234,7 +234,7 @@ class AbstractS3SyncRunner(ABC, Generic[T]):
 
     def _run_impl_(self) -> None:
         cmd = self._create_sync_cmd_()
-        LOGGER(f"{cmd=}")
+        LOGGER(f"{cmd=}", level=logging.DEBUG)
 
         if self._ctx.max_concurrent_requests is not None:
             LOGGER("setting max concurrent requests")

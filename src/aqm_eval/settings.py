@@ -25,7 +25,7 @@ class LogLevel(StrEnum):
 class AQM_EvalSettings(BaseSettings):
     model_config = SettingsConfigDict(frozen=True)
 
-    aqm_eval_log_level: LogLevel = LogLevel.DEBUG
+    aqm_eval_log_level: LogLevel = LogLevel.INFO
 
     slurm_tasks_per_node: int | None = None
 
