@@ -1,4 +1,5 @@
 from abc import ABC
+from functools import cached_property
 
 from pydantic import BaseModel, Field, computed_field, model_validator
 
@@ -13,7 +14,6 @@ class AbstractAqmTask(ABC, BaseModel):
     walltime: str
     command: str
     nprocs: str = Field(exclude=True)
-    package_key: PackageKey = Field(exclude=True)
 
     account: str = "&ACCOUNT;"
     attrs: dict = {"cycledefs": "at_end", "maxtries": "1"}
@@ -56,6 +56,7 @@ class AbstractAqmTask(ABC, BaseModel):
 
 
 class AqmPrep(AbstractAqmTask):
+    package_key: PackageKey = Field(exclude=True)
     command: str = '&LOAD_MODULES_RUN_TASK; "mm_prep" "&HOMEdir;/jobs/JSRW_AQM_MELODIES_MONET_PREP"'
 
     @computed_field
@@ -82,6 +83,7 @@ class AqmPrep(AbstractAqmTask):
 
 
 class AqmEvalTask(AbstractAqmTask):
+    package_key: PackageKey = Field(exclude=True)
     task_key: TaskKey = Field(exclude=True)
 
     command: str = '&LOAD_MODULES_RUN_TASK; "mm_run" "&HOMEdir;/jobs/JSRW_AQM_MELODIES_MONET_RUN"'
@@ -108,9 +110,33 @@ class AqmEvalTask(AbstractAqmTask):
         return f"task_mm_{self.package_key.value}_run_{self.task_key.value}"
 
 
+class AqmConcatStatsTask(AbstractAqmTask):
+    active_package_keys: tuple[PackageKey, ...] = Field(exclude=True)
+    node_count: str = "1"
+    walltime: str = "00:05:00"
+    nprocs: str = "1"
+    command: str = '&LOAD_MODULES_RUN_TASK; "mm_concat_stats" "&HOMEdir;/jobs/JSRW_AQM_MELODIES_MONET_CONCAT_STATS"'
+
+    @computed_field
+    def envars(self) -> dict:
+        return self._envars_default
+
+    @computed_field
+    def task_name(self) -> str:
+        return "task_mm_concat_stats"
+
+    @computed_field
+    def dependency(self) -> dict:
+        ret = {}
+        for package_key in self.active_package_keys:
+            ret[f"taskdep_{package_key.value}"] = {"attrs": {"task": f"mm_run_{package_key.value}_{TaskKey.STATS.value}"}}
+        return {"and": ret}
+
+
 class AqmTaskGroup(BaseModel):
     packages: tuple[AqmPrep, ...]
     tasks: tuple[AqmEvalTask, ...]
+    concat_task: AqmConcatStatsTask
 
     def to_yaml(self) -> dict:
         ret = {}
@@ -118,14 +144,17 @@ class AqmTaskGroup(BaseModel):
             ret.update(ii.to_yaml())
         for jj in self.tasks:
             ret.update(jj.to_yaml())
+        ret.update(self.concat_task.to_yaml())
         return ret
 
     @classmethod
     def from_config(cls, config: Config) -> "AqmTaskGroup":
         packages = []
         tasks = []
+        active_package_keys = []
         for package in config.aqm.packages.values():
             if package.active:
+                active_package_keys.append(package.key)
                 package_batchargs = package.execution.prep.batchargs
                 data = {
                     "node_count": str(package_batchargs.nodes),
@@ -148,4 +177,4 @@ class AqmTaskGroup(BaseModel):
                             "nprocs": str(task_batchargs.tasks_per_node),
                         }
                         tasks.append(AqmEvalTask.model_validate(data))
-        return AqmTaskGroup(packages=tuple(packages), tasks=tuple(tasks))
+        return AqmTaskGroup(packages=tuple(packages), tasks=tuple(tasks), concat_task=AqmConcatStatsTask(active_package_keys=tuple(active_package_keys)))

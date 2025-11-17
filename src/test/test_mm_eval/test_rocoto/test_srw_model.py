@@ -2,7 +2,7 @@ import yaml
 
 from aqm_eval.mm_eval.driver.config import PackageKey, TaskKey
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
-from aqm_eval.mm_eval.rocoto.srw_model import AqmEvalTask, AqmPrep, AqmTaskGroup
+from aqm_eval.mm_eval.rocoto.srw_model import AqmEvalTask, AqmPrep, AqmTaskGroup, AqmConcatStatsTask
 
 
 def test_task_group() -> None:
@@ -15,7 +15,10 @@ def test_task_group() -> None:
     data["task_key"] = TaskKey.BOXPLOT
     boxplot = AqmEvalTask.model_validate(data)
 
-    tg = AqmTaskGroup(packages=(prep,), tasks=(chem, boxplot))
+    concat = AqmConcatStatsTask.model_validate({'active_package_keys': tuple(PackageKey)})
+    # print(yaml.safe_dump(concat.to_yaml(), sort_keys=False))
+
+    tg = AqmTaskGroup(packages=(prep,), tasks=(chem, boxplot), concat_task=concat)
     print(yaml.safe_dump(tg.to_yaml(), sort_keys=False))
 
 
