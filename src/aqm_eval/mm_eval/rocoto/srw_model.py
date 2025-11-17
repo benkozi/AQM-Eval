@@ -1,5 +1,6 @@
 from abc import ABC
 from functools import cached_property
+from pathlib import Path
 
 from pydantic import BaseModel, Field, computed_field, model_validator
 
@@ -112,6 +113,7 @@ class AqmEvalTask(AbstractAqmTask):
 
 class AqmConcatStatsTask(AbstractAqmTask):
     active_package_keys: tuple[PackageKey, ...] = Field(exclude=True)
+    output_dir: Path = Field(exclude=True)
     node_count: str = "1"
     walltime: str = "00:05:00"
     nprocs: str = "1"
@@ -119,7 +121,7 @@ class AqmConcatStatsTask(AbstractAqmTask):
 
     @computed_field
     def envars(self) -> dict:
-        return self._envars_default
+        return self._envars_default | {"MM_OUTPUT_DIR": str(self.output_dir)}
 
     @computed_field
     def task_name(self) -> str:
@@ -144,7 +146,8 @@ class AqmTaskGroup(BaseModel):
             ret.update(ii.to_yaml())
         for jj in self.tasks:
             ret.update(jj.to_yaml())
-        ret.update(self.concat_task.to_yaml())
+        if len(self.concat_task.active_package_keys) >= 1:
+            ret.update(self.concat_task.to_yaml())
         return ret
 
     @classmethod
@@ -154,7 +157,6 @@ class AqmTaskGroup(BaseModel):
         active_package_keys = []
         for package in config.aqm.packages.values():
             if package.active:
-                active_package_keys.append(package.key)
                 package_batchargs = package.execution.prep.batchargs
                 data = {
                     "node_count": str(package_batchargs.nodes),
@@ -168,6 +170,8 @@ class AqmTaskGroup(BaseModel):
                     if config.aqm.n_models_to_evaluate == 1 and task_key.value.startswith("scorecard"):
                         continue
                     if task_key not in package.tasks_to_exclude:
+                        if task_key == TaskKey.STATS:
+                            active_package_keys.append(package.key)
                         task_batchargs = package.execution.tasks.get(task_key, config.aqm.task_defaults.execution).batchargs
                         data = {
                             "node_count": str(task_batchargs.nodes),
@@ -177,4 +181,5 @@ class AqmTaskGroup(BaseModel):
                             "nprocs": str(task_batchargs.tasks_per_node),
                         }
                         tasks.append(AqmEvalTask.model_validate(data))
-        return AqmTaskGroup(packages=tuple(packages), tasks=tuple(tasks), concat_task=AqmConcatStatsTask(active_package_keys=tuple(active_package_keys)))
+        return AqmTaskGroup(packages=tuple(packages), tasks=tuple(tasks),
+                            concat_task=AqmConcatStatsTask(active_package_keys=tuple(active_package_keys), output_dir=config.output_dir))
