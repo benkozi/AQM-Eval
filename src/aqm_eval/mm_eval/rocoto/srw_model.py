@@ -130,7 +130,7 @@ class AqmConcatStatsTask(AbstractAqmTask):
     def dependency(self) -> dict:
         ret = {}
         for package_key in self.active_package_keys:
-            ret[f"taskdep_{package_key.value}"] = {"attrs": {"task": f"mm_run_{package_key.value}_{TaskKey.STATS.value}"}}
+            ret[f"taskdep_{package_key.value}"] = {"attrs": {"task": f"mm_{package_key.value}_run_{TaskKey.STATS.value}"}}
         return {"and": ret}
 
 
