@@ -181,6 +181,8 @@ class AQMConfig(BaseModel):
             raise ValueError(f"Only one model can be host. Found {is_host}.")
         if len(set([ii.title for ii in values.values()])) != len(values):
             raise ValueError("Model titles must be unique.")
+        if len(set(ii.plot_kwargs.color for ii in values.values())) != len(values):
+            raise ValueError("models[].plot_kwargs.color must be unique for each model.")
         return values
 
 
