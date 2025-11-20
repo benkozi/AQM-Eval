@@ -21,7 +21,6 @@ class AbstractDriverContext(ABC, BaseModel):
     def mm_config(self) -> Config: ...
 
     @cached_property
-    @abstractmethod
     def template_dir(self) -> Path:
         return (Path(__file__).parent.parent.parent / "yaml_template").absolute().resolve()
 
