@@ -31,10 +31,6 @@ class PlotKwargsFactory(ModelFactory[PlotKwargs]):
 class AQMModelConfigFactory(ModelFactory[AQMModelConfig]):
     __use_defaults__ = True
 
-    @classmethod
-    def plot_kwargs(cls) -> PlotKwargs:
-        return PlotKwargsFactory.build()
-
 
 class AQMConfigFactory(ModelFactory[AQMConfig]):
     @classmethod
@@ -45,10 +41,10 @@ class AQMConfigFactory(ModelFactory[AQMConfig]):
     def models(cls) -> dict[str, AQMModelConfig]:
         global _TEST_GLOBALS
         data = {
-            _TEST_GLOBALS["host_key"]: {"is_host": True},
-            "base1": {"is_host": False},
-            "base2": {"is_host": False},
-            "base4": {"is_host": False},
+            _TEST_GLOBALS["host_key"]: {"is_host": True, "plot_kwargs": {"color": "g"}},
+            "base1": {"is_host": False, "plot_kwargs": {"color": "r"}},
+            "base2": {"is_host": False, "plot_kwargs": {"color": "b"}},
+            "base4": {"is_host": False, "plot_kwargs": {"color": "w"}},
         }
         ret = {}
         for k, v in data.items():
