@@ -8,7 +8,16 @@ from _pytest.fixtures import FixtureRequest
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from polyfactory.factories.pydantic_factory import ModelFactory
 
-from aqm_eval.mm_eval.driver.config import AQMConfig, AQMModelConfig, Config, PackageConfig, PackageKey, PlatformKey, PlotKwargs
+from aqm_eval.mm_eval.driver.config import (
+    AQMConfig,
+    AQMModelConfig,
+    Config,
+    ModelRole,
+    PackageConfig,
+    PackageKey,
+    PlatformKey,
+    PlotKwargs,
+)
 from aqm_eval.mm_eval.driver.context.srw import SRWContext, SrwPlatform, SrwUser, SrwWorkflow
 
 _TEST_GLOBALS: dict[str, Any] = {"tmp_path": None, "bin_dir": None, "host_key": "eval1"}
@@ -34,6 +43,14 @@ class AQMModelConfigFactory(ModelFactory[AQMModelConfig]):
 
 class AQMConfigFactory(ModelFactory[AQMConfig]):
     @classmethod
+    def active(cls) -> bool:
+        return True
+
+    @classmethod
+    def enable_scorecards(cls) -> bool:
+        return True
+
+    @classmethod
     def output_dir(cls) -> Path:
         return Path(tempfile.mkdtemp()) / "foo" / "bar"
 
@@ -41,10 +58,10 @@ class AQMConfigFactory(ModelFactory[AQMConfig]):
     def models(cls) -> dict[str, AQMModelConfig]:
         global _TEST_GLOBALS
         data = {
-            _TEST_GLOBALS["host_key"]: {"is_host": True, "plot_kwargs": {"color": "g"}},
-            "base1": {"is_host": False, "plot_kwargs": {"color": "r"}},
-            "base2": {"is_host": False, "plot_kwargs": {"color": "b"}},
-            "base4": {"is_host": False, "plot_kwargs": {"color": "w"}},
+            _TEST_GLOBALS["host_key"]: {"is_host": True, "plot_kwargs": {"color": "g"}, "role": ModelRole.UNDEFINED},
+            "base1": {"is_host": False, "plot_kwargs": {"color": "r"}, "role": ModelRole.CONTROL},
+            "base2": {"is_host": False, "plot_kwargs": {"color": "b"}, "role": ModelRole.SENSITIVITY},
+            "base4": {"is_host": False, "plot_kwargs": {"color": "w"}, "role": ModelRole.UNDEFINED},
         }
         ret = {}
         for k, v in data.items():
@@ -156,7 +173,9 @@ def config(tmp_path: Path, bin_dir: Path) -> Config:
     global _TEST_GLOBALS
     _TEST_GLOBALS["tmp_path"] = tmp_path
     _TEST_GLOBALS["bin_dir"] = bin_dir
-    return ConfigFactory.build()
+    ret = ConfigFactory.build()
+    assert ret.aqm.enable_scorecards is True
+    return ret
 
 
 @pytest.fixture
@@ -164,36 +183,14 @@ def expt_dir(config: Config) -> Path:
     return list(config.aqm.host_model.values())[0].expt_dir
 
 
-@pytest.fixture(params=["pure", "srw", "srw-no-forecast"])
+@pytest.fixture(params=["polyfactory-only", "srw", "srw-no-forecast"])
 def config_content(request: FixtureRequest, config: Config, bin_dir: Path) -> dict:
     return get_config_content(bin_dir, config, request.param)
 
 
-# @pytest.fixture()
-# def config_path_user(expt_dir: Path, bin_dir: Path, config_content: dict) -> Path:
-#     yaml_content = {
-#         "metadata": {"description": "config for SRW-AQM, AQM_NA_13km, AEROMMA field campaign"},
-#         "user": {"RUN_ENVIR": "community", "MACHINE": "GAEAC6", "ACCOUNT": "bil-fire8"},
-#         "workflow": {
-#             "USE_CRON_TO_RELAUNCH": True,
-#             "CRON_RELAUNCH_INTVL_MNTS": 3,
-#             "EXPT_SUBDIR": "aqm_AQMNA13km_AEROMMA",
-#             "PREDEF_GRID_NAME": "AQM_NA_13km",
-#             "CCPP_PHYS_SUITE": "FV3_GFS_v16",
-#             "DATE_FIRST_CYCL": "2023060112",
-#             "DATE_LAST_CYCL_MM": "2023060212",
-#         },
-#     }
-#     yaml_content.update(config_content)
-#     yaml_path = expt_dir / "config.yaml"
-#     with open(yaml_path, "w") as f:
-#         yaml.dump(yaml_content, f)
-#     return yaml_path
-
-
 def get_config_content(bin_dir: Path, config: Config, config_src: str) -> dict:
     match config_src:
-        case "pure":
+        case "polyfactory-only":
             new_content = config.to_yaml()
         case "srw":
             srw_config = bin_dir / "srw-config.yaml"
@@ -211,28 +208,12 @@ def get_config_content(bin_dir: Path, config: Config, config_src: str) -> dict:
     return new_content
 
 
-# @pytest.fixture()
-# def config_path_rocoto(expt_dir: Path) -> Path:
-#     yaml_content = {"foo": "bar", "foo2": {"second": "baz"}}
-#     yaml_path = expt_dir / "rocoto_defns.yaml"
-#     with open(yaml_path, "w") as f:
-#         yaml.dump(yaml_content, f)
-#     return yaml_path
-
-
 @pytest.fixture()
 def config_path_var_defns(tmp_path: Path, expt_dir: Path, config_content: dict) -> Path:
-    ctx = SRWContextFactory.build()
+    ctx = SRWContextFactory.build(melodies_monet_parm=config_content["melodies_monet_parm"])
     data = {"__mm_runtime__": ctx.model_dump(mode="json")}
     yaml_path = expt_dir / "var_defns.yaml"
     yaml_path.write_text(yaml.safe_dump(data))
-    # path = tmp_path / "NaturalEarth"
-    # path.mkdir(exist_ok=True, parents=True)
-    # yaml_content = {"platform": {"FIXshp": f"{str(path)}"}}
-    # yaml_content.update(config_content)
-    # yaml_path = expt_dir / "var_defns.yaml"
-    # with open(yaml_path, "w") as f:
-    #     yaml.dump(yaml_content, f)
     return yaml_path
 
 
@@ -251,8 +232,6 @@ def dummy_phy_dyn_files(config: Config) -> None:
 @pytest.fixture
 def srw_context(
     expt_dir: Path,
-    # config_path_user: Path,
-    # config_path_rocoto: Path,
     config_path_var_defns: Path,
     dummy_phy_dyn_files: None,
 ) -> SRWContext:

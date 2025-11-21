@@ -7,6 +7,7 @@ class ChemEvalPackage(AbstractEvalPackage):
     """Defines a chemistry evaluation package."""
 
     key: PackageKey = PackageKey.CHEM
+    observations_title: str = "AirNow"
     namelist_template: str = "namelist.chem.j2"
     tasks_default: tuple[TaskKey, ...] = tuple(TaskKey)
 

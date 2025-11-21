@@ -6,6 +6,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, model_validator
 
+from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.config import Config
 
 
@@ -26,5 +27,7 @@ class AbstractDriverContext(ABC, BaseModel):
 
     @model_validator(mode="after")
     def _validate_(self) -> "AbstractDriverContext":
+        if not self.mm_config.aqm.active:
+            LOGGER(exc_info=ValueError("AQM evaluation is not active"))
         _ = self.model_dump()
         return self

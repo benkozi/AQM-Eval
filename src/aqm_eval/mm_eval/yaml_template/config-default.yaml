@@ -4,11 +4,13 @@ melodies_monet_parm:
   cartopy_data_dir: null
   output_dir: null
   run_dir: null
-  active: true
   aqm:
+    active: true
     no_forecast: true
+    enable_scorecards: false
     models:
       eval:
+        role: undefined
         expt_dir: null
         title: "Evaluation Target"
         plot_kwargs:

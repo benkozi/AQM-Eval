@@ -228,6 +228,7 @@ class AQS_PM_EvalPackage(AbstractDaskEvalPackage):
     """Defines a AQS PM evaluation package."""
 
     key: PackageKey = PackageKey.AQS_PM
+    observations_title: str = "AQS"
     namelist_template: str = "namelist.aqs.pm.j2"
     tasks_default: tuple[TaskKey, ...] = tuple(TaskKey)
     klass_dask_operation: type[AbstractDaskOperation] = AQS_PM_PreprocessDaskOperation

@@ -7,6 +7,7 @@ class AQS_VOC_EvalPackage(AbstractEvalPackage):
     """Defines a AQS VOC evaluation package."""
 
     key: PackageKey = PackageKey.AQS_VOC
+    observations_title: str = "AQS"
     namelist_template: str = "namelist.aqs.voc.j2"
     tasks_default: tuple[TaskKey, ...] = (
         TaskKey.SAVE_PAIRED,

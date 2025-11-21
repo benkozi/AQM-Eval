@@ -26,6 +26,6 @@ def test_task_group(tmp_path: Path) -> None:
 
 def test_task_group_from_config(srw_context: SRWContext) -> None:
     mm_config = srw_context.mm_config
-    assert mm_config.active is True
+    assert mm_config.aqm.active is True
     tg = AqmTaskGroup.from_config(mm_config)
     print(yaml.safe_dump(tg.to_yaml(), sort_keys=False))

@@ -53,6 +53,7 @@ class ISH_EvalPackage(AbstractDaskEvalPackage):
     """Defines an ISH (Integrated Surface Hourly) meteorological evaluation package."""
 
     key: PackageKey = PackageKey.ISH
+    observations_title: str = "ISH"
     namelist_template: str = "namelist.ish.j2"
     tasks_default: tuple[TaskKey, ...] = (
         TaskKey.SAVE_PAIRED,

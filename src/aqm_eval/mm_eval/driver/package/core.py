@@ -18,7 +18,7 @@ from melodies_monet.driver import analysis  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
-from aqm_eval.mm_eval.driver.config import PackageConfig, PackageKey, TaskKey
+from aqm_eval.mm_eval.driver.config import ModelRole, PackageConfig, PackageKey, TaskKey
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.model import Model
 from aqm_eval.settings import SETTINGS
@@ -59,6 +59,7 @@ class AbstractEvalPackage(ABC, BaseModel):
     model_config = {"frozen": True}
     ctx: AbstractDriverContext
 
+    observations_title: str
     key: PackageKey = Field(description="MM package key.")
     namelist_template: str = Field(description="Package template file.")
     tasks_default: tuple[TaskKey, ...] = Field(description="Default tasks for the package.")
@@ -81,10 +82,35 @@ class AbstractEvalPackage(ABC, BaseModel):
     @computed_field(description="Tasks that the package will run.")
     @cached_property
     def tasks(self) -> tuple[TaskKey, ...]:
-        if len(self.ctx.mm_config.aqm.models) > 1:
+        if self.ctx.mm_config.aqm.enable_scorecards:
             return self.tasks_default
         else:
             return tuple([ii for ii in self.tasks_default if not ii.name.startswith("SCORECARD")])
+
+    @cached_property
+    def enable_scorecards(self) -> bool:
+        return self.ctx.mm_config.aqm.enable_scorecards
+
+    @cached_property
+    def mm_model_scorecard_labels(self) -> list[str]:
+        return [ii.label for ii in self.mm_scorecard_models]
+
+    @cached_property
+    def mm_model_scorecard_titles_j2(self) -> str:
+        return ", ".join([f'"{ii.cfg.title}"' for ii in self.mm_scorecard_models])
+
+    @cached_property
+    def mm_scorecard_models(self) -> tuple[Model, Model]:
+        if not self.enable_scorecards:
+            raise ValueError("scorecards are not enabled")
+        models: list[Model] = []
+        for role in [ModelRole.SENSITIVITY, ModelRole.CONTROL]:
+            for model in self.mm_models:
+                if model.cfg.role == role:
+                    models.append(model)
+        if len(models) != 2:
+            raise ValueError
+        return models[0], models[1]
 
     @cached_property
     def task_control_filenames(self) -> set[str]:

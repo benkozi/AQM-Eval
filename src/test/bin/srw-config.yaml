@@ -1,6 +1,8 @@
 melodies_monet_parm:
   aqm:
     no_forecast: false
+    enable_scorecards: false
+    active: true
     models:
       eval:
         expt_dir: null

@@ -224,7 +224,7 @@ multi_boxplot_urban_rural_name: ["msa_name"]
 multi_boxplot_urban_rural_value: '""'
 multi_boxplot_eval_method: '"NME"'  # support 'RMSE', 'IOA' ,' NMB', 'NME'
 multi_boxplot_dataset: {{ package.mm_model_labels }}
-multi_boxplot_dataset_label: ["AQS", {{ package.mm_model_titles_j2 }}]
+multi_boxplot_dataset_label: ["{{ package.observations_title }}", {{ package.mm_model_titles_j2 }}]
 multi_boxplot_data_proc:
   rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
   set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
