@@ -109,8 +109,6 @@ class PlotKwargs(BaseModel):
     linestyle: str = "-"
     markersize: int = 4
 
-    _possible_colors: tuple[str, ...] = ("g", "m", "k", "r", "b", "y")
-
 
 class TaskDefaults(BaseModel):
     model_config = {"frozen": True}
