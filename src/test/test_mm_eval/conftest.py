@@ -29,8 +29,8 @@ class PackageConfigFactory(ModelFactory[PackageConfig]):
         return True
 
     @classmethod
-    def observation_template(cls) -> list[str]:
-        return ["a_template*.nc", "b_template*.nc"]
+    def observation_template(cls) -> str:
+        return "a_template*.nc"
 
 
 class PlotKwargsFactory(ModelFactory[PlotKwargs]):
