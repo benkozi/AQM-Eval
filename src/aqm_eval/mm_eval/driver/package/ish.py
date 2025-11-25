@@ -1,6 +1,7 @@
 import dask
 import dask.array
 import xarray as xr
+import numpy as np
 
 from aqm_eval.mm_eval.driver.config import PackageKey, TaskKey
 from aqm_eval.mm_eval.driver.package.core import (
@@ -12,12 +13,12 @@ from aqm_eval.mm_eval.driver.package.core import (
 class ISH_PreprocessDaskOperation(AbstractDaskOperation):
     dyn_varnames: tuple[str, ...] = ("time_iso", "lat", "lon", "pfull", "phalf", "delz", "dpres", "hgtsfc", "pressfc", "tmp")
     phy_varnames: tuple[str, ...] = ("tmp2m", "spfh2m", "ugrd10m", "vgrd10m")
-    derived_varnames: tuple[str, ...] = ("vapor", "dew_temp", "ws10m", "wd10m")
+    derived_varnames: tuple[str, ...] = ("vapor", "dew_temp", "ws10m", "wd10m", "rh2m")
 
     @dask.delayed
     def _compute_derived_fields_(self, ds: xr.Dataset) -> xr.Dataset:
         """
-        Extract/calculate necessary variables from phy files for ISH meteorological evaluation.
+        Calculate derived variables for ISH meteorological evaluation.
 
         References:
             https://nco.sourceforge.net/nco.html#Examples-ncap2
@@ -41,10 +42,27 @@ class ISH_PreprocessDaskOperation(AbstractDaskOperation):
         ds["ws10m"].attrs["units"] = "m/s"
 
         ds["wd10m"] = 270 - (dask.array.arctan2(ds["vgrd10m"], ds["ugrd10m"]) * 180 / 3.1415)
+        ds["wd10m"] = xr.where(ds["wd10m"] > 360, ds["wd10m"] - 360, ds["wd10m"])
         ds["wd10m"].attrs["long_name"] = "10 meter wind direction"
         ds["wd10m"].attrs["units"] = "degree"
 
-        ds["wd10m"] = xr.where(ds["wd10m"] > 360, ds["wd10m"] - 360, ds["wd10m"])
+        # Convert temperature fields to Celsius
+        ds["tmp"] -= 273.15
+        ds["tmp"].attrs["units"] = "C"
+        ds["tmp2m"] -= 273.15
+        ds["tmp2m"].attrs["units"] = "C"
+
+        # Calculate RH from specific humidity per Zach Moon's calc-met.py (spike/calc-met.py)
+        #   Note: ds["spfh2m"].attrs["units"] == "kg/kg"
+        pres = 1000_00  # Pa
+        e_s = 6.1094 * 100 * dask.array.exp(17.625 * ds["tmp2m"] / (ds["tmp2m"] + 243.04))  # saturation VP; Pa
+        w_s = 0.622 * e_s / pres
+        rh = 100 * ds["spfh2m"] / w_s
+        if not(rh.min() > 0 and rh.quantile(0.9) < 100):
+            raise ValueError(f"rh quantile check failed: {rh.quantile(0.9)=}")
+        rh = rh.astype(np.float32)
+        ds["rh2m"] = rh
+        ds["rh2m"].attrs.update(long_name="2-m relative humidity", units="%")
 
         return ds
 
