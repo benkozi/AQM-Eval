@@ -422,10 +422,13 @@ class AbstractDaskEvalPackage(AbstractEvalPackage):
     @log_it
     def _run_dask_operations_(self) -> None:
         for spec in self.iter_forecast_file_specs():
-            LOGGER(f"{spec.out_path=}")
             if self.run_mode == RunMode.RESUME and spec.out_path.exists():
                 LOGGER(f"{spec.out_path=} already exists and {self.run_mode=}. skipping.")
                 continue
+            else:
+                LOGGER(f"running dask operation {spec.out_path=}")
+                if spec.out_path.exists():
+                    LOGGER(exc_info=FileExistsError(f"{spec.out_path=} already exists."))
             op = self.klass_dask_operation.model_validate(
                 dict(
                     out_path=spec.out_path,

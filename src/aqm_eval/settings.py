@@ -28,15 +28,17 @@ class AQM_EvalSettings(BaseSettings):
     aqm_eval_log_level: LogLevel = LogLevel.INFO
 
     slurm_tasks_per_node: int | None = None
+    slurm_nnodes: int | None = 1
 
     @computed_field
     @cached_property
     def dask_num_workers(self) -> int:
         targets = (self.slurm_tasks_per_node,)
+        ppn = 1
         for target in targets:
             if target is not None:
-                return target
-        return 1
+                ppn = target
+        return ppn * self.slurm_nnodes
 
     @computed_field
     @cached_property
