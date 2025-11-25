@@ -41,6 +41,11 @@ class PackageKey(StrEnum):
     AQS_PM = "aqs_pm"
     AQS_VOC = "aqs_voc"
 
+@unique
+class RunMode(StrEnum):
+    STRICT = "strict"
+    RESUME = "resume"
+
 
 @unique
 class PlatformKey(StrEnum):
@@ -155,6 +160,7 @@ class AQMConfig(BaseModel):
     packages: dict[PackageKey, PackageConfig] = Field(min_length=1)
     task_defaults: TaskDefaults
     enable_scorecards: bool
+    run_mode: RunMode
 
     @cached_property
     def host_model(self) -> dict[str, AQMModelConfig]:

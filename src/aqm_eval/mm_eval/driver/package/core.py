@@ -18,7 +18,7 @@ from melodies_monet.driver import analysis  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
-from aqm_eval.mm_eval.driver.config import ModelRole, PackageConfig, PackageKey, TaskKey
+from aqm_eval.mm_eval.driver.config import ModelRole, PackageConfig, PackageKey, TaskKey, RunMode
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.model import Model
 from aqm_eval.settings import SETTINGS
@@ -180,6 +180,10 @@ class AbstractEvalPackage(ABC, BaseModel):
     def cfg(self) -> PackageConfig:
         return self.ctx.mm_config.aqm.packages[self.key]
 
+    @property
+    def run_mode(self) -> RunMode:
+        return self.ctx.mm_config.aqm.run_mode
+
     def iter_forecast_file_specs(self) -> Iterator[ForecastFileSpec]:
         date_range = self.ctx.mm_config.date_range
         for model in self.mm_models:
@@ -206,8 +210,15 @@ class AbstractEvalPackage(ABC, BaseModel):
 
         _ = get_or_create_path(self.ctx.mm_config.output_dir)
         _ = get_or_create_path(self.ctx.mm_config.run_dir)
-        _ = get_or_create_path(self.link_alldays_path, exist_ok=False)
-        _ = get_or_create_path(self.output_dir, exist_ok=False)
+        match self.run_mode:
+            case RunMode.STRICT:
+                exist_ok = False
+            case RunMode.RESUME:
+                exist_ok = True
+            case _:
+                raise NotImplementedError(self.run_mode)
+        _ = get_or_create_path(self.link_alldays_path, exist_ok=exist_ok)
+        _ = get_or_create_path(self.output_dir, exist_ok=exist_ok)
 
         LOGGER("creating MM control configs")
         self._create_control_configs_()
@@ -411,7 +422,10 @@ class AbstractDaskEvalPackage(AbstractEvalPackage):
     @log_it
     def _run_dask_operations_(self) -> None:
         for spec in self.iter_forecast_file_specs():
-            LOGGER(f"{spec=}")
+            LOGGER(f"{spec.out_path=}")
+            if self.run_mode == RunMode.RESUME and spec.out_path.exists():
+                LOGGER(f"{spec.out_path=} already exists and {self.run_mode=}. skipping.")
+                continue
             op = self.klass_dask_operation.model_validate(
                 dict(
                     out_path=spec.out_path,
