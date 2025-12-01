@@ -268,6 +268,9 @@ class Config(BaseModel):
             if actual == "auto":
                 data_kp = f"platform_defaults.{platform_key.value}.ncores_per_node"
                 set_str_nested(data, kp, get_str_nested(data, data_kp))
+            for task_key, task_value in get_str_nested(data, f"aqm.packages.{package_key.value}.execution.tasks").items():
+                if "tasks_per_node" not in task_value["batchargs"]:
+                    task_value["batchargs"]["tasks_per_node"] = get_str_nested(data, f"platform_defaults.{platform_key.value}.ncores_per_node")
 
         if root_aqm["task_defaults"]["execution"]["batchargs"]["tasks_per_node"] == "auto":
             root_aqm["task_defaults"]["execution"]["batchargs"]["tasks_per_node"] = get_str_nested(
