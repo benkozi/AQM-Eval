@@ -73,7 +73,6 @@ class AqmPrep(AbstractAqmTask):
     @computed_field
     def envars(self) -> dict:
         return self._envars_default | {
-            # "nprocs": self.nprocs,
             "MM_EVAL_PACKAGE": self.package_key.value
         }
 
@@ -100,7 +99,6 @@ class AqmEvalTask(AbstractAqmTask):
     @computed_field
     def envars(self) -> dict:
         return self._envars_default | {
-            # "nprocs": self.nprocs,
             "MM_EVAL_PACKAGE": self.package_key.value,
             "MM_EVAL_TASK": self.task_key.value,
         }
@@ -177,7 +175,7 @@ class AqmTaskGroup(BaseModel):
                             "walltime": task_batchargs.walltime,
                             "package_key": package.key,
                             "task_key": task_key,
-                            "nprocs": str(task_batchargs.tasks_per_node),
+                            "nprocs": str(task_batchargs.tasks_per_node), #tdk: we need an overlay here
                         }
                         tasks.append(AqmEvalTask.model_validate(data))
         return AqmTaskGroup(

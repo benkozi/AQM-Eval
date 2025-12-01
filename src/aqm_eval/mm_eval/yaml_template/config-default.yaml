@@ -8,6 +8,7 @@ melodies_monet_parm:
     active: true
     no_forecast: true
     enable_scorecards: false
+    run_mode: strict
     models:
       eval:
         role: undefined

@@ -3,8 +3,9 @@ from typing import Any
 
 import pytest
 import yaml
+from box import Box
 
-from aqm_eval.mm_eval.driver.config import Config, PackageConfig, PackageKey, PlatformKey
+from aqm_eval.mm_eval.driver.config import Config, PackageConfig, PackageKey, PlatformKey, TaskKey
 from test.test_mm_eval.conftest import PackageConfigFactory
 
 
@@ -40,20 +41,24 @@ def test_package_config_allows_none_observation_template() -> None:
 
 @pytest.mark.parametrize("platform_key", PlatformKey)
 def test_config_from_default_yaml(platform_key: PlatformKey, config: Config) -> None:
-    overrides: dict[str, Any] = {
+    overrides = Box({
         "start_datetime": config.start_datetime,
         "end_datetime": config.end_datetime,
         "cartopy_data_dir": config.cartopy_data_dir,
         "output_dir": config.output_dir,
         "run_dir": config.run_dir,
-        "aqm": {"models": {"eval": {"expt_dir": config.aqm.models["eval1"].expt_dir}}, "packages": {}},
-    }
+        "aqm": {"models": {"eval": {"expt_dir": config.aqm.models["eval1"].expt_dir}}},
+    }, default_box=True)
 
     for package_key in PackageKey:
-        overrides["aqm"]["packages"][package_key.value] = {}
         overrides["aqm"]["packages"][package_key.value]["observation_template"] = config.aqm.packages[
             package_key
         ].observation_template
+        overrides["aqm"]["packages"][package_key.value]["execution"]["tasks"][TaskKey.SPATIAL_OVERLAY]["batchargs"]["nodes"] = 2
     actual = Config.from_default_yaml(platform_key, overrides)
     assert isinstance(actual, Config)
-    # print(yaml.safe_dump(actual.to_yaml(), sort_keys=False))
+    for package_key in PackageKey:
+        batchargs = actual.aqm.packages[package_key].execution.tasks[TaskKey.SPATIAL_OVERLAY].batchargs
+        assert batchargs.nodes == 2
+        assert batchargs.tasks_per_node == actual.platform_defaults[platform_key].ncores_per_node
+    print(yaml.safe_dump(actual.to_yaml(), sort_keys=False))

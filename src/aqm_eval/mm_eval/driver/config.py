@@ -41,6 +41,11 @@ class PackageKey(StrEnum):
     AQS_PM = "aqs_pm"
     AQS_VOC = "aqs_voc"
 
+@unique
+class RunMode(StrEnum):
+    STRICT = "strict"
+    RESUME = "resume"
+
 
 @unique
 class PlatformKey(StrEnum):
@@ -155,6 +160,7 @@ class AQMConfig(BaseModel):
     packages: dict[PackageKey, PackageConfig] = Field(min_length=1)
     task_defaults: TaskDefaults
     enable_scorecards: bool
+    run_mode: RunMode
 
     @cached_property
     def host_model(self) -> dict[str, AQMModelConfig]:
@@ -262,6 +268,9 @@ class Config(BaseModel):
             if actual == "auto":
                 data_kp = f"platform_defaults.{platform_key.value}.ncores_per_node"
                 set_str_nested(data, kp, get_str_nested(data, data_kp))
+            for task_key, task_value in get_str_nested(data, f"aqm.packages.{package_key.value}.execution.tasks").items():
+                if "tasks_per_node" not in task_value["batchargs"]:
+                    task_value["batchargs"]["tasks_per_node"] = get_str_nested(data, f"platform_defaults.{platform_key.value}.ncores_per_node")
 
         if root_aqm["task_defaults"]["execution"]["batchargs"]["tasks_per_node"] == "auto":
             root_aqm["task_defaults"]["execution"]["batchargs"]["tasks_per_node"] = get_str_nested(
