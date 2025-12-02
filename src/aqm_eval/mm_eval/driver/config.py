@@ -187,6 +187,9 @@ class AQMConfig(BaseModel):
     scorecards: dict[str, ScorecardConfig] #tdk: need separate task per key?
     run_mode: RunMode
 
+    def enable_scorecards(self) -> bool:
+        return len(self.aqm.scorecards) > 0
+
     @cached_property
     def host_model(self) -> dict[str, AQMModelConfig]:
         for k, v in self.models.items():

@@ -13,6 +13,7 @@ def test_task_group(tmp_path: Path) -> None:
     prep = AqmPrep.model_validate(data)
 
     data["task_key"] = TaskKey.SAVE_PAIRED
+    data["task_label"] = TaskKey.SAVE_PAIRED.value
     chem = AqmEvalTask.model_validate(data)
 
     data["task_key"] = TaskKey.BOXPLOT

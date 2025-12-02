@@ -37,14 +37,14 @@ def srw_init(
 def srw_run(
     expt_dir: Path = typer.Option(..., "--expt-dir", help="Experiment directory."),
     package_selector: PackageKey = typer.Option(..., "--package", help="Package selector."),
-    task_selector: TaskKey = typer.Option(..., "--task", help="Task selector."),
+    task_selector: str = typer.Option(..., "--task", help="Task selector."),
 ) -> None:
     from aqm_eval.mm_eval.driver.context.srw import SRWContext
 
     ctx = SRWContext.from_expt_dir(expt_dir)
     klass = package_key_to_class(package_selector)
     package = klass.model_validate(dict(ctx=ctx))
-    package.run(task_key=task_selector)
+    package.run(task_label=task_selector)
 
 
 @app.command(

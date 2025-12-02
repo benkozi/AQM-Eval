@@ -238,25 +238,11 @@ class AbstractEvalPackage(ABC, BaseModel):
     @log_it
     def run(
         self,
-        task_key: TaskKey,
+        task_label: str,
         finalize: bool = False,
     ) -> None:
-        """Run the MM evaluation.
-
-        task_key: TaskKey
-            The task to run. The task may be skipped if the package does not support it. If skipped, a warning is issued.
-        finalize: bool = False, optional
-            If True, finalize the runner after the run completes, successfully or not.
-
-        Returns
-        -------
-        None
-        """
-        LOGGER(f"{task_key=}")
+        LOGGER(f"{task_label=}")
         LOGGER(f"{finalize=}")
-
-        if task_key not in self.tasks:
-            LOGGER(exc_info=ValueError(f"{task_key=} not in {self.tasks=}. returning."))
 
         assert self.run_dir.exists()
 
@@ -265,20 +251,24 @@ class AbstractEvalPackage(ABC, BaseModel):
             cartopy.config["data_dir"] = self.ctx.mm_config.cartopy_data_dir
             dask.config.set({"array.slicing.split_large_chunks": True})
             an = driver.analysis()
-            control_yaml = self.run_dir / f"control_{task_key.value}.yaml"
+            control_yaml = self.run_dir / f"control_{task_label}.yaml"
             LOGGER(f"{control_yaml=}")
             an.control = control_yaml
             an.read_control()
 
-            self._run_task_(an, task_key)
+            self._run_task_(an, task_label)
         finally:
             if finalize:
                 self.finalize()
 
     @staticmethod
     @log_it
-    def _run_task_(an: analysis, task: TaskKey) -> None:
-        match task:
+    def _run_task_(an: analysis, task_label: str) -> None:
+        if task_label.startswith("scorecard"):
+            task_key = TaskKey.SCORECARD
+        else:
+            task_key = TaskKey(task_label)
+        match task_key:
             case TaskKey.SAVE_PAIRED:
                 an.open_models()
                 an.open_obs()

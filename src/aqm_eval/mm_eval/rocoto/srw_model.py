@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field, computed_field, model_validator
 
-from aqm_eval.mm_eval.driver.config import Config, PackageKey, TaskKey
+from aqm_eval.mm_eval.driver.config import Config, PackageKey, TaskKey, ScorecardMethod
 from aqm_eval.mm_eval.driver.package.core import package_key_to_class
 
 
@@ -84,6 +84,7 @@ class AqmPrep(AbstractAqmTask):
 class AqmEvalTask(AbstractAqmTask):
     package_key: PackageKey = Field(exclude=True)
     task_key: TaskKey = Field(exclude=True)
+    task_label: str = Field(exclude=True)
 
     command: str = '&LOAD_MODULES_RUN_TASK; "mm_run" "&HOMEdir;/jobs/JSRW_AQM_MELODIES_MONET_RUN"'
 
@@ -100,12 +101,12 @@ class AqmEvalTask(AbstractAqmTask):
     def envars(self) -> dict:
         return self._envars_default | {
             "MM_EVAL_PACKAGE": self.package_key.value,
-            "MM_EVAL_TASK": self.task_key.value,
+            "MM_EVAL_TASK": self.task_label,
         }
 
     @computed_field
     def task_name(self) -> str:
-        return f"task_mm_{self.package_key.value}_run_{self.task_key.value}"
+        return f"task_mm_{self.package_key.value}_run_{self.task_label}"
 
 
 class AqmConcatStatsTask(AbstractAqmTask):
@@ -164,21 +165,35 @@ class AqmTaskGroup(BaseModel):
                 packages.append(AqmPrep.model_validate(data))
                 package_class = package_key_to_class(package.key)
                 for task_key in package_class.model_fields["tasks_default"].default:
-                    #tdk: how to generate scorecard tasks {task_key.value}_{scorecard_key}??
-                    # if not config.aqm.enable_scorecards and task_key.value.startswith("scorecard"):
-                    #     continue
+                    if not config.aqm.enable_scorecards and task_key == TaskKey.SCORECARD:
+                        continue
                     if task_key not in package.tasks_to_exclude:
                         if task_key == TaskKey.STATS:
                             active_package_keys.append(package.key)
                         task_batchargs = package.execution.tasks.get(task_key, config.aqm.task_defaults.execution).batchargs
-                        data = {
-                            "node_count": str(task_batchargs.nodes),
-                            "walltime": task_batchargs.walltime,
-                            "package_key": package.key,
-                            "task_key": task_key,
-                            "nprocs": str(task_batchargs.tasks_per_node), #tdk: we need an overlay here
-                        }
-                        tasks.append(AqmEvalTask.model_validate(data))
+                        if task_key == TaskKey.SCORECARD:
+                            for scorecard_cfg in config.aqm.scorecards.values():
+                                for scorecard_method in ScorecardMethod:
+                                    task_label = f"{TaskKey.SCORECARD.value}_{scorecard_method.value}_{scorecard_cfg.key}"
+                                    data = {
+                                        "node_count": str(task_batchargs.nodes),
+                                        "walltime": task_batchargs.walltime,
+                                        "package_key": package.key,
+                                        "task_key": task_key,
+                                        "task_label": task_label,
+                                        "nprocs": str(task_batchargs.tasks_per_node),
+                                    }
+                                    tasks.append(AqmEvalTask.model_validate(data))
+                        else:
+                            data = {
+                                "node_count": str(task_batchargs.nodes),
+                                "walltime": task_batchargs.walltime,
+                                "package_key": package.key,
+                                "task_key": task_key,
+                                "task_label": task_key.value,
+                                "nprocs": str(task_batchargs.tasks_per_node),
+                            }
+                            tasks.append(AqmEvalTask.model_validate(data))
         return AqmTaskGroup(
             packages=tuple(packages),
             tasks=tuple(tasks),
