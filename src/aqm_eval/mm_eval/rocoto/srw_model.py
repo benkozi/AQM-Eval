@@ -164,8 +164,9 @@ class AqmTaskGroup(BaseModel):
                 packages.append(AqmPrep.model_validate(data))
                 package_class = package_key_to_class(package.key)
                 for task_key in package_class.model_fields["tasks_default"].default:
-                    if not config.aqm.enable_scorecards and task_key.value.startswith("scorecard"):
-                        continue
+                    #tdk: how to generate scorecard tasks {task_key.value}_{scorecard_key}??
+                    # if not config.aqm.enable_scorecards and task_key.value.startswith("scorecard"):
+                    #     continue
                     if task_key not in package.tasks_to_exclude:
                         if task_key == TaskKey.STATS:
                             active_package_keys.append(package.key)

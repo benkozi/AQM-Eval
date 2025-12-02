@@ -56,17 +56,25 @@ class PlatformKey(StrEnum):
     HERCULES = "hercules"
 
 
-@unique
-class ModelRole(StrEnum):
-    UNDEFINED = "undefined"
-    CONTROL = "control"
-    SENSITIVITY = "sensitivity"
+# @unique
+# class ModelRole(StrEnum):
+#     UNDEFINED = "undefined"
+#     CONTROL = "control"
+#     SENSITIVITY = "sensitivity"
 
 
 def _is_unique_(v: tuple[Any, ...]) -> tuple[Any, ...]:
     if len(set(v)) != len(v):
         raise ValueError("Values must be unique.")
     return v
+
+
+class ScorecardConfig(BaseModel):
+    model_config = {"frozen": True}
+
+    key: str = Field(exclude=True)
+    control: str
+    sensitivity: str
 
 
 class PlatformConfig(BaseModel):
@@ -135,7 +143,8 @@ class AQMModelConfig(BaseModel):
     expt_dir: Path
     title: str
     plot_kwargs: PlotKwargs
-    role: ModelRole = ModelRole.UNDEFINED
+    # role: ModelRole = ModelRole.UNDEFINED
+    is_eval_target: bool = True
     is_host: bool = False
     type: str = "rrfs"
     kwargs: dict[str, Any] = {"surf_only": True, "mech": "cb6r3_ae6_aq"}
@@ -159,7 +168,7 @@ class AQMConfig(BaseModel):
     models: dict[str, AQMModelConfig]
     packages: dict[PackageKey, PackageConfig] = Field(min_length=1)
     task_defaults: TaskDefaults
-    enable_scorecards: bool
+    scorecards: dict[str, ScorecardConfig] #tdk: need separate task per key?
     run_mode: RunMode
 
     @cached_property
@@ -179,7 +188,7 @@ class AQMConfig(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def _validate_model_before_(cls, values: dict) -> dict:
-        for target in ["models", "packages"]:
+        for target in ["models", "packages", "scorecards"]:
             for k, v in values[target].items():
                 if isinstance(values[target][k], Mapping):
                     values[target][k]["key"] = k
@@ -189,23 +198,30 @@ class AQMConfig(BaseModel):
 
     @model_validator(mode="after")
     def _validate_model_after_(self) -> "AQMConfig":
-        if self.enable_scorecards:
-            if self.no_forecast:
-                for model in self.models.values():
-                    if model.is_host and model.role != ModelRole.UNDEFINED:
-                        raise ValueError(
-                            "Host model must have an undefined role if enable_scorecards is True and no_forecast is True. "
-                            "The host with no_forecast True will have no data to evaluate!"
-                        )
-            role_check = set([ii.role for ii in self.models.values() if ii.role != ModelRole.UNDEFINED])
-            if len(role_check) != 2 and set(role_check) != {ModelRole.CONTROL, ModelRole.SENSITIVITY}:
-                info = {v.key: v.role for v in self.models.values()}
-                msg = (
-                    f"Scorecards can only be enabled if one model has role 'control' and one other model has role "
-                    f"'sensitivity'. {info}"
-                )
-                raise ValueError(msg)
+        for k, v in self.scorecards.items():
+            if v.control not in self.models or v.sensitivity not in self.models:
+                raise ValueError(f"Scorecard key={k} references non-existent model {v.control=} or {v.sensitivity=}.")
         return self
+
+    # @model_validator(mode="after")
+    # def _validate_model_after_(self) -> "AQMConfig":
+    #     if self.enable_scorecards:
+    #         if self.no_forecast:
+    #             for model in self.models.values():
+    #                 if model.is_host and model.role != ModelRole.UNDEFINED:
+    #                     raise ValueError(
+    #                         "Host model must have an undefined role if enable_scorecards is True and no_forecast is True. "
+    #                         "The host with no_forecast True will have no data to evaluate!"
+    #                     )
+    #         role_check = set([ii.role for ii in self.models.values() if ii.role != ModelRole.UNDEFINED])
+    #         if len(role_check) != 2 and set(role_check) != {ModelRole.CONTROL, ModelRole.SENSITIVITY}:
+    #             info = {v.key: v.role for v in self.models.values()}
+    #             msg = (
+    #                 f"Scorecards can only be enabled if one model has role 'control' and one other model has role "
+    #                 f"'sensitivity'. {info}"
+    #             )
+    #             raise ValueError(msg)
+    #     return self
 
     @field_validator("models", mode="after")
     @classmethod

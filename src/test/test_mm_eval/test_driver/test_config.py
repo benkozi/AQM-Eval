@@ -15,6 +15,8 @@ def test(config: Config, tmp_path: Path) -> None:
     print(yaml_str)
     out_path.write_text(yaml_str)
     assert len(config.aqm.models) == 4
+    for v in config.aqm.models.values():
+        assert v.is_eval_target
 
     with open(out_path, "r") as f:
         data = yaml.safe_load(f)

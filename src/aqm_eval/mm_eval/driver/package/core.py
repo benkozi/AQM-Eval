@@ -82,14 +82,15 @@ class AbstractEvalPackage(ABC, BaseModel):
     @computed_field(description="Tasks that the package will run.")
     @cached_property
     def tasks(self) -> tuple[TaskKey, ...]:
-        if self.ctx.mm_config.aqm.enable_scorecards:
+        if len(self.ctx.mm_config.aqm.scorecards) > 0:
+            tdk
             return self.tasks_default
         else:
             return tuple([ii for ii in self.tasks_default if not ii.name.startswith("SCORECARD")])
 
-    @cached_property
-    def enable_scorecards(self) -> bool:
-        return self.ctx.mm_config.aqm.enable_scorecards
+    # @cached_property
+    # def enable_scorecards(self) -> bool:
+    #     return self.ctx.mm_config.aqm.enable_scorecards
 
     @cached_property
     def mm_model_scorecard_labels(self) -> list[str]:
@@ -99,18 +100,18 @@ class AbstractEvalPackage(ABC, BaseModel):
     def mm_model_scorecard_titles_j2(self) -> str:
         return ", ".join([f'"{ii.cfg.title}"' for ii in self.mm_scorecard_models])
 
-    @cached_property
-    def mm_scorecard_models(self) -> tuple[Model, Model]:
-        if not self.enable_scorecards:
-            raise ValueError("scorecards are not enabled")
-        models: list[Model] = []
-        for role in [ModelRole.SENSITIVITY, ModelRole.CONTROL]:
-            for model in self.mm_models:
-                if model.cfg.role == role:
-                    models.append(model)
-        if len(models) != 2:
-            raise ValueError
-        return models[0], models[1]
+    # @cached_property
+    # def mm_scorecard_models(self) -> tuple[Model, Model]:
+    #     if not self.enable_scorecards:
+    #         raise ValueError("scorecards are not enabled")
+    #     models: list[Model] = []
+    #     for role in [ModelRole.SENSITIVITY, ModelRole.CONTROL]:
+    #         for model in self.mm_models:
+    #             if model.cfg.role == role:
+    #                 models.append(model)
+    #     if len(models) != 2:
+    #         raise ValueError
+    #     return models[0], models[1]
 
     @cached_property
     def task_control_filenames(self) -> set[str]:

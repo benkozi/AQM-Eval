@@ -7,11 +7,10 @@ melodies_monet_parm:
   aqm:
     active: true
     no_forecast: true
-    enable_scorecards: false
     run_mode: strict
     models:
       eval:
-        role: undefined
+        is_eval_target: true #tdk: need to exclude models that are not eval targets from everything except scorecards
         expt_dir: null
         title: "Evaluation Target"
         plot_kwargs:
@@ -24,6 +23,7 @@ melodies_monet_parm:
         radius_of_influence: 20000.0
         variables: null
         projection: null
+    scorecards: {}
     packages:
       chem:
         observation_template: null
