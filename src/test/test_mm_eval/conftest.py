@@ -77,7 +77,7 @@ class AQMConfigFactory(ModelFactory[AQMConfig]):
     @classmethod
     def scorecards(cls) -> dict[str, ScorecardConfig]:
         return {
-            "scorecard1": ScorecardConfig(key="scorecard1", control=_TEST_GLOBALS["host_key"], sensitivity="base1"),
+            "scorecard1": ScorecardConfig(key="scorecard1", control="base2", sensitivity="base1"),
             "scorecard2": ScorecardConfig(key="scorecard2",control="base4", sensitivity="base2"),
         }
 

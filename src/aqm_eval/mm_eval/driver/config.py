@@ -14,6 +14,21 @@ from aqm_eval.shared import DateRange, get_str_nested, set_str_nested, update_le
 
 
 @unique
+class ScorecardMethod(StrEnum):
+    RMSE = "rmse"
+    IOA = "ioa"
+    NMB = "nmb"
+    NME = "nme"
+
+    def get_mm_prefix(self) -> str:
+        mapping = {ScorecardMethod.IOA: "pg72",
+                   ScorecardMethod.NMB: "pg73",
+                   ScorecardMethod.NME: "pg74",
+                   ScorecardMethod.RMSE: "pg71"}
+        return mapping[self]
+
+
+@unique
 class TaskKey(StrEnum):
     """Unique MM task keys."""
 
@@ -24,10 +39,11 @@ class TaskKey(StrEnum):
     SPATIAL_OVERLAY = "spatial_overlay"
     BOXPLOT = "boxplot"
     MULTI_BOXPLOT = "multi_boxplot"
-    SCORECARD_RMSE = "scorecard_rmse"
-    SCORECARD_IOA = "scorecard_ioa"
-    SCORECARD_NMB = "scorecard_nmb"
-    SCORECARD_NME = "scorecard_nme"
+    SCORECARD = "scorecard"
+    # SCORECARD_RMSE = "scorecard_rmse"
+    # SCORECARD_IOA = "scorecard_ioa"
+    # SCORECARD_NMB = "scorecard_nmb"
+    # SCORECARD_NME = "scorecard_nme"
     CSI = "csi"
     STATS = "stats"
 
@@ -201,6 +217,8 @@ class AQMConfig(BaseModel):
         for k, v in self.scorecards.items():
             if v.control not in self.models or v.sensitivity not in self.models:
                 raise ValueError(f"Scorecard key={k} references non-existent model {v.control=} or {v.sensitivity=}.")
+            if self.no_forecast and list(self.host_model.keys())[0] in [v.control, v.sensitivity]:
+                raise ValueError(f"Host model cannot be used for scorecard {k} since no_forecast is True.")
         return self
 
     # @model_validator(mode="after")
