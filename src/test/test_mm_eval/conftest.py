@@ -12,11 +12,11 @@ from aqm_eval.mm_eval.driver.config import (
     AQMConfig,
     AQMModelConfig,
     Config,
-    ModelRole,
     PackageConfig,
     PackageKey,
     PlatformKey,
     PlotKwargs,
+    ScorecardConfig,
 )
 from aqm_eval.mm_eval.driver.context.srw import SRWContext, SrwPlatform, SrwUser, SrwWorkflow
 
@@ -47,10 +47,6 @@ class AQMConfigFactory(ModelFactory[AQMConfig]):
         return True
 
     @classmethod
-    def enable_scorecards(cls) -> bool:
-        return True
-
-    @classmethod
     def output_dir(cls) -> Path:
         return Path(tempfile.mkdtemp()) / "foo" / "bar"
 
@@ -58,10 +54,10 @@ class AQMConfigFactory(ModelFactory[AQMConfig]):
     def models(cls) -> dict[str, AQMModelConfig]:
         global _TEST_GLOBALS
         data = {
-            _TEST_GLOBALS["host_key"]: {"is_host": True, "plot_kwargs": {"color": "g"}, "role": ModelRole.UNDEFINED},
-            "base1": {"is_host": False, "plot_kwargs": {"color": "r"}, "role": ModelRole.CONTROL},
-            "base2": {"is_host": False, "plot_kwargs": {"color": "b"}, "role": ModelRole.SENSITIVITY},
-            "base4": {"is_host": False, "plot_kwargs": {"color": "w"}, "role": ModelRole.UNDEFINED},
+            _TEST_GLOBALS["host_key"]: {"is_host": True, "plot_kwargs": {"color": "g"}},
+            "base1": {"is_host": False, "plot_kwargs": {"color": "r"}},
+            "base2": {"is_host": False, "plot_kwargs": {"color": "b"}},
+            "base4": {"is_host": False, "plot_kwargs": {"color": "w"}},
         }
         ret = {}
         for k, v in data.items():
@@ -73,6 +69,13 @@ class AQMConfigFactory(ModelFactory[AQMConfig]):
     @classmethod
     def packages(cls) -> dict[PackageKey, PackageConfig]:
         return {ii: PackageConfigFactory.build() for ii in PackageKey}
+
+    @classmethod
+    def scorecards(cls) -> dict[str, ScorecardConfig]:
+        return {
+            "scorecard1": ScorecardConfig(key="scorecard1", control="base2", sensitivity="base1"),
+            "scorecard2": ScorecardConfig(key="scorecard2", control="base4", sensitivity="base2"),
+        }
 
 
 class ConfigFactory(ModelFactory[Config]):
@@ -174,7 +177,7 @@ def config(tmp_path: Path, bin_dir: Path) -> Config:
     _TEST_GLOBALS["tmp_path"] = tmp_path
     _TEST_GLOBALS["bin_dir"] = bin_dir
     ret = ConfigFactory.build()
-    assert ret.aqm.enable_scorecards is True
+    assert len(ret.aqm.scorecards) == 2
     return ret
 
 

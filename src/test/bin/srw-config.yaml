@@ -1,7 +1,6 @@
 melodies_monet_parm:
   aqm:
     no_forecast: false
-    enable_scorecards: false
     active: true
     models:
       eval:
@@ -10,6 +9,7 @@ melodies_monet_parm:
         plot_kwargs:
           color: g
         is_host: true
+    scorecards: {}
     packages:
       aqs_pm:
         observation_template: /gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/data/aqm-use-case-download/Observations/AQS/pm25_spec_daily/AQS_20230601_20230701.nc

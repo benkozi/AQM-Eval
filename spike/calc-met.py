@@ -3,6 +3,7 @@
 Calculate WS/WD and RH to compare to AirNow
 using the extracted phy variables.
 """
+
 import argparse
 from pathlib import Path
 
@@ -25,7 +26,6 @@ parser.add_argument(
     help="phy file path(s), possibly pre-processed to select variables etc.",
     nargs="+",
     type=Path,
-
 )
 
 args = parser.parse_args()
@@ -64,10 +64,7 @@ for p in ps:
     rh.attrs.update(long_name="2-m relative humidity", units="%")
 
     # Assign variables
-    ds_new = (
-        ds.drop_vars(["ugrd10m", "vgrd10m", "spfh2m"])
-        .assign(ws10m=ws, wd10m=wd, rh2m=rh)
-    )
+    ds_new = ds.drop_vars(["ugrd10m", "vgrd10m", "spfh2m"]).assign(ws10m=ws, wd10m=wd, rh2m=rh)
 
     # Save
     p_new = p.with_stem(f"{p.stem}_met")

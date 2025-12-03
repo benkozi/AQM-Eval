@@ -14,6 +14,23 @@ from aqm_eval.shared import DateRange, get_str_nested, set_str_nested, update_le
 
 
 @unique
+class ScorecardMethod(StrEnum):
+    RMSE = "rmse"
+    IOA = "ioa"
+    NMB = "nmb"
+    NME = "nme"
+
+    def get_mm_prefix(self) -> str:
+        mapping = {
+            ScorecardMethod.IOA: "pg72",
+            ScorecardMethod.NMB: "pg73",
+            ScorecardMethod.NME: "pg74",
+            ScorecardMethod.RMSE: "pg71",
+        }
+        return mapping[self]
+
+
+@unique
 class TaskKey(StrEnum):
     """Unique MM task keys."""
 
@@ -24,10 +41,7 @@ class TaskKey(StrEnum):
     SPATIAL_OVERLAY = "spatial_overlay"
     BOXPLOT = "boxplot"
     MULTI_BOXPLOT = "multi_boxplot"
-    SCORECARD_RMSE = "scorecard_rmse"
-    SCORECARD_IOA = "scorecard_ioa"
-    SCORECARD_NMB = "scorecard_nmb"
-    SCORECARD_NME = "scorecard_nme"
+    SCORECARD = "scorecard"
     CSI = "csi"
     STATS = "stats"
 
@@ -40,6 +54,7 @@ class PackageKey(StrEnum):
     ISH = "ish"
     AQS_PM = "aqs_pm"
     AQS_VOC = "aqs_voc"
+
 
 @unique
 class RunMode(StrEnum):
@@ -56,17 +71,18 @@ class PlatformKey(StrEnum):
     HERCULES = "hercules"
 
 
-@unique
-class ModelRole(StrEnum):
-    UNDEFINED = "undefined"
-    CONTROL = "control"
-    SENSITIVITY = "sensitivity"
-
-
 def _is_unique_(v: tuple[Any, ...]) -> tuple[Any, ...]:
     if len(set(v)) != len(v):
         raise ValueError("Values must be unique.")
     return v
+
+
+class ScorecardConfig(BaseModel):
+    model_config = {"frozen": True}
+
+    key: str = Field(exclude=True)
+    control: str
+    sensitivity: str
 
 
 class PlatformConfig(BaseModel):
@@ -135,7 +151,8 @@ class AQMModelConfig(BaseModel):
     expt_dir: Path
     title: str
     plot_kwargs: PlotKwargs
-    role: ModelRole = ModelRole.UNDEFINED
+    # role: ModelRole = ModelRole.UNDEFINED
+    is_eval_target: bool = True
     is_host: bool = False
     type: str = "rrfs"
     kwargs: dict[str, Any] = {"surf_only": True, "mech": "cb6r3_ae6_aq"}
@@ -159,8 +176,12 @@ class AQMConfig(BaseModel):
     models: dict[str, AQMModelConfig]
     packages: dict[PackageKey, PackageConfig] = Field(min_length=1)
     task_defaults: TaskDefaults
-    enable_scorecards: bool
+    scorecards: dict[str, ScorecardConfig]
     run_mode: RunMode
+
+    @cached_property
+    def enable_scorecards(self) -> bool:
+        return len(self.scorecards) > 0
 
     @cached_property
     def host_model(self) -> dict[str, AQMModelConfig]:
@@ -179,7 +200,7 @@ class AQMConfig(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def _validate_model_before_(cls, values: dict) -> dict:
-        for target in ["models", "packages"]:
+        for target in ["models", "packages", "scorecards"]:
             for k, v in values[target].items():
                 if isinstance(values[target][k], Mapping):
                     values[target][k]["key"] = k
@@ -189,22 +210,11 @@ class AQMConfig(BaseModel):
 
     @model_validator(mode="after")
     def _validate_model_after_(self) -> "AQMConfig":
-        if self.enable_scorecards:
-            if self.no_forecast:
-                for model in self.models.values():
-                    if model.is_host and model.role != ModelRole.UNDEFINED:
-                        raise ValueError(
-                            "Host model must have an undefined role if enable_scorecards is True and no_forecast is True. "
-                            "The host with no_forecast True will have no data to evaluate!"
-                        )
-            role_check = set([ii.role for ii in self.models.values() if ii.role != ModelRole.UNDEFINED])
-            if len(role_check) != 2 and set(role_check) != {ModelRole.CONTROL, ModelRole.SENSITIVITY}:
-                info = {v.key: v.role for v in self.models.values()}
-                msg = (
-                    f"Scorecards can only be enabled if one model has role 'control' and one other model has role "
-                    f"'sensitivity'. {info}"
-                )
-                raise ValueError(msg)
+        for k, v in self.scorecards.items():
+            if v.control not in self.models or v.sensitivity not in self.models:
+                raise ValueError(f"Scorecard key={k} references non-existent model {v.control=} or {v.sensitivity=}.")
+            if self.no_forecast and list(self.host_model.keys())[0] in [v.control, v.sensitivity]:
+                raise ValueError(f"Host model cannot be used for scorecard {k} since no_forecast is True.")
         return self
 
     @field_validator("models", mode="after")
@@ -215,7 +225,7 @@ class AQMConfig(BaseModel):
             raise ValueError(f"Only one model can be host. Found {is_host}.")
         if len(set([ii.title for ii in values.values()])) != len(values):
             raise ValueError("Model titles must be unique.")
-        #tdk:fix: needs to handle the situation where the color of the host model for an offline case doesn't matter
+        # tdk:fix: needs to handle the situation where the color of the host model for an offline case doesn't matter
         if len(set(ii.plot_kwargs.color for ii in values.values())) != len(values):
             plot_colors = {k: v.plot_kwargs.color for k, v in values.items()}
             raise ValueError(f"models[].plot_kwargs.color must be unique for each model. {plot_colors=}")
@@ -248,8 +258,7 @@ class Config(BaseModel):
 
     @classmethod
     def from_yaml(cls, data: dict) -> "Config":
-        key = cls._key.default  # type: ignore[attr-defined]
-        return cls.model_validate(data[key])
+        return cls.model_validate(data[cls.get_key()])
 
     @classmethod
     def from_default_yaml(cls, platform_key: PlatformKey, overrides: dict) -> "Config":
@@ -270,7 +279,9 @@ class Config(BaseModel):
                 set_str_nested(data, kp, get_str_nested(data, data_kp))
             for task_key, task_value in get_str_nested(data, f"aqm.packages.{package_key.value}.execution.tasks").items():
                 if "tasks_per_node" not in task_value["batchargs"]:
-                    task_value["batchargs"]["tasks_per_node"] = get_str_nested(data, f"platform_defaults.{platform_key.value}.ncores_per_node")
+                    task_value["batchargs"]["tasks_per_node"] = get_str_nested(
+                        data, f"platform_defaults.{platform_key.value}.ncores_per_node"
+                    )
 
         if root_aqm["task_defaults"]["execution"]["batchargs"]["tasks_per_node"] == "auto":
             root_aqm["task_defaults"]["execution"]["batchargs"]["tasks_per_node"] = get_str_nested(

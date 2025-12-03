@@ -224,12 +224,10 @@ multi_boxplot_urban_rural_name: ["msa_name"]
 multi_boxplot_urban_rural_value: '""'
 multi_boxplot_eval_method: '"NME"'  # support 'RMSE', 'IOA' ,' NMB', 'NME'
 multi_boxplot_dataset: {{ package.mm_model_labels }}
-multi_boxplot_dataset_label: ["AQS", {{ package.mm_model_titles_j2 }}]
+multi_boxplot_dataset_label: {{ package.mm_model_titles_with_obs }}
 multi_boxplot_data_proc:
   rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
   set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
-
-{% include "mm_scorecards.j2" %}
 
 # ==== pg8 - csi ====
 csi_fig_kwargs:
@@ -249,7 +247,7 @@ csi_domain_name: [
 csi_threshold: [1, 5, 10, 20, 40, 60, 80, 100]
 csi_score: '"Hit Rate"'  # support options: 'Critical Success Index' 'False Alarm Rate' 'Hit Rate'
 csi_dataset: {{ package.mm_model_labels }}
-csi_dataset_label: [{{ package.mm_model_titles_j2 }}]
+csi_dataset_label: {{ package.mm_model_titles }}
 csi_data_proc:
   rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
   set_axis: False  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.

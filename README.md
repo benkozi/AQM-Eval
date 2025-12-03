@@ -20,7 +20,6 @@ conda run -n aqm-eval-dev pytest src/test
 A command line utility to synchronize AQM datasets. Currently, tuned to specialized use cases related to Short-Range Weather App use cases. Only S3 download is supported.
 
 ### Usage
-#tdk:re-generate documentation
 ```shell
 Usage: aqm-data-sync time-varying [OPTIONS]
 

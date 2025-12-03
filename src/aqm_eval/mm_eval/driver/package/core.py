@@ -5,22 +5,23 @@ import re
 from abc import ABC, abstractmethod
 from functools import cached_property
 from pathlib import Path
-from typing import Iterator, Literal
+from typing import Any, Iterator, Literal
 
 import cartopy  # type: ignore[import-untyped]
 import dask
 import matplotlib
 import xarray as xr
 import yaml
-from jinja2 import Environment, FileSystemLoader, StrictUndefined
+from jinja2 import Environment, FileSystemLoader, StrictUndefined, Template
 from melodies_monet import driver  # type: ignore[import-untyped]
 from melodies_monet.driver import analysis  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
-from aqm_eval.mm_eval.driver.config import ModelRole, PackageConfig, PackageKey, TaskKey, RunMode
+from aqm_eval.mm_eval.driver.config import PackageConfig, PackageKey, RunMode, ScorecardMethod, TaskKey
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.model import Model
+from aqm_eval.mm_eval.driver.task.scorecard import ScorecardTask
 from aqm_eval.settings import SETTINGS
 from aqm_eval.shared import PathExisting, assert_directory_exists, calc_2d_chunks, get_or_create_path
 
@@ -64,57 +65,61 @@ class AbstractEvalPackage(ABC, BaseModel):
     namelist_template: str = Field(description="Package template file.")
     tasks_default: tuple[TaskKey, ...] = Field(description="Default tasks for the package.")
 
-    @computed_field(description="Run directory for the MM evaluation package.")
     @cached_property
     def run_dir(self) -> Path:
         return self.ctx.mm_config.run_dir / self.key.value
 
-    @computed_field(description="Directory containing links or derived files for package.")
     @cached_property
     def link_alldays_path(self) -> Path:
         return self.run_dir / "data"
 
-    @computed_field(description="Output directory for the MM evaluation package.")
     @cached_property
     def output_dir(self) -> Path:
         return self.ctx.mm_config.output_dir / self.key.value
 
-    @computed_field(description="Tasks that the package will run.")
     @cached_property
     def tasks(self) -> tuple[TaskKey, ...]:
-        if self.ctx.mm_config.aqm.enable_scorecards:
+        if self.enable_scorecards:
             return self.tasks_default
         else:
-            return tuple([ii for ii in self.tasks_default if not ii.name.startswith("SCORECARD")])
+            return tuple([ii for ii in self.tasks_default if ii != TaskKey.SCORECARD])
 
     @cached_property
     def enable_scorecards(self) -> bool:
-        return self.ctx.mm_config.aqm.enable_scorecards
+        return len(self.ctx.mm_config.aqm.scorecards) > 0
+
+    # @cached_property
+    # def mm_model_scorecard_labels(self) -> list[str]:
+    #     return [ii.label for ii in self.mm_scorecard_models]
+
+    # @cached_property
+    # def mm_model_scorecard_titles_j2(self) -> str:
+    #     return ", ".join([f'"{ii.cfg.title}"' for ii in self.mm_scorecard_models])
+
+    # @cached_property
+    # def mm_scorecard_models(self) -> tuple[Model, Model]:
+    #     if not self.enable_scorecards:
+    #         raise ValueError("scorecards are not enabled")
+    #     models: list[Model] = []
+    #     for role in [ModelRole.SENSITIVITY, ModelRole.CONTROL]:
+    #         for model in self.mm_models:
+    #             if model.cfg.role == role:
+    #                 models.append(model)
+    #     if len(models) != 2:
+    #         raise ValueError
+    #     return models[0], models[1]
 
     @cached_property
-    def mm_model_scorecard_labels(self) -> list[str]:
-        return [ii.label for ii in self.mm_scorecard_models]
-
-    @cached_property
-    def mm_model_scorecard_titles_j2(self) -> str:
-        return ", ".join([f'"{ii.cfg.title}"' for ii in self.mm_scorecard_models])
-
-    @cached_property
-    def mm_scorecard_models(self) -> tuple[Model, Model]:
-        if not self.enable_scorecards:
-            raise ValueError("scorecards are not enabled")
-        models: list[Model] = []
-        for role in [ModelRole.SENSITIVITY, ModelRole.CONTROL]:
-            for model in self.mm_models:
-                if model.cfg.role == role:
-                    models.append(model)
-        if len(models) != 2:
-            raise ValueError
-        return models[0], models[1]
-
-    @cached_property
-    def task_control_filenames(self) -> set[str]:
-        return set([f"control_{ii.value}.yaml" for ii in self.tasks])
+    def task_control_filenames(self) -> tuple[str, ...]:
+        names = []
+        for ii in self.tasks:
+            if ii == TaskKey.SCORECARD:
+                for scorecard_cfg in self.ctx.mm_config.aqm.scorecards.values():
+                    for scorecard_method in ScorecardMethod:
+                        names.append(f"{ii.value}_{scorecard_method.value}_{scorecard_cfg.key}")
+            else:
+                names.append(ii.value)
+        return tuple([f"control_{ii}.yaml" for ii in names])
 
     @cached_property
     def observation_template(self) -> str:
@@ -152,14 +157,19 @@ class AbstractEvalPackage(ABC, BaseModel):
         return [mm_model.label for mm_model in self.mm_models]
 
     @cached_property
-    def mm_model_titles_j2(self) -> str:
+    def mm_model_titles(self) -> list[str]:
         """
         Returns
         -------
         list[str]
             Model titles used for MM plotting, converted into a format suitable for ``jinja2``.
         """
-        return ", ".join([f'"{ii.cfg.title}"' for ii in self.mm_models])
+        return [ii.cfg.title for ii in self.mm_models]
+        # return ", ".join([f'"{ii.cfg.title}"' for ii in self.mm_models])
+
+    @cached_property
+    def mm_model_titles_with_obs(self) -> list[str]:
+        return [self.observations_title] + self.mm_model_titles
 
     @cached_property
     def j2_env(self) -> Environment:
@@ -226,25 +236,11 @@ class AbstractEvalPackage(ABC, BaseModel):
     @log_it
     def run(
         self,
-        task_key: TaskKey,
+        task_label: str,
         finalize: bool = False,
     ) -> None:
-        """Run the MM evaluation.
-
-        task_key: TaskKey
-            The task to run. The task may be skipped if the package does not support it. If skipped, a warning is issued.
-        finalize: bool = False, optional
-            If True, finalize the runner after the run completes, successfully or not.
-
-        Returns
-        -------
-        None
-        """
-        LOGGER(f"{task_key=}")
+        LOGGER(f"{task_label=}")
         LOGGER(f"{finalize=}")
-
-        if task_key not in self.tasks:
-            LOGGER(exc_info=ValueError(f"{task_key=} not in {self.tasks=}. returning."))
 
         assert self.run_dir.exists()
 
@@ -253,20 +249,24 @@ class AbstractEvalPackage(ABC, BaseModel):
             cartopy.config["data_dir"] = self.ctx.mm_config.cartopy_data_dir
             dask.config.set({"array.slicing.split_large_chunks": True})
             an = driver.analysis()
-            control_yaml = self.run_dir / f"control_{task_key.value}.yaml"
+            control_yaml = self.run_dir / f"control_{task_label}.yaml"
             LOGGER(f"{control_yaml=}")
             an.control = control_yaml
             an.read_control()
 
-            self._run_task_(an, task_key)
+            self._run_task_(an, task_label)
         finally:
             if finalize:
                 self.finalize()
 
     @staticmethod
     @log_it
-    def _run_task_(an: analysis, task: TaskKey) -> None:
-        match task:
+    def _run_task_(an: analysis, task_label: str) -> None:
+        if task_label.startswith("scorecard"):
+            task_key = TaskKey.SCORECARD
+        else:
+            task_key = TaskKey(task_label)
+        match task_key:
             case TaskKey.SAVE_PAIRED:
                 an.open_models()
                 an.open_obs()
@@ -304,6 +304,7 @@ class AbstractEvalPackage(ABC, BaseModel):
         out_mm_cfg.write_text(yaml.safe_dump(self.ctx.mm_config.to_yaml(), sort_keys=False))
 
         cfg = {"ctx": self.ctx, "mm_tasks": tuple([ii.value for ii in self.tasks]), "package": self}
+        LOGGER("rendering namelist config")
         namelist_config_str = self.j2_env.get_template(self.namelist_template).render(cfg)
         namelist_config = yaml.safe_load(namelist_config_str)
         with open(package_run_dir / "namelist.yaml", "w") as f:
@@ -312,24 +313,53 @@ class AbstractEvalPackage(ABC, BaseModel):
 
         assert isinstance(cfg["mm_tasks"], tuple)
         for task in cfg["mm_tasks"]:
-            match task:
-                case TaskKey.SCORECARD_RMSE:
-                    namelist_config["scorecard_eval_method"] = '"RMSE"'
-                case TaskKey.SCORECARD_IOA:
-                    namelist_config["scorecard_eval_method"] = '"IOA"'
-                case TaskKey.SCORECARD_NMB:
-                    namelist_config["scorecard_eval_method"] = '"NMB"'
-                case TaskKey.SCORECARD_NME:
-                    namelist_config["scorecard_eval_method"] = '"NME"'
+            assert isinstance(task, str)
+            # match task:
+            #     case TaskKey.SCORECARD_RMSE:
+            #         namelist_config["scorecard_eval_method"] = '"RMSE"'
+            #     case TaskKey.SCORECARD_IOA:
+            #         namelist_config["scorecard_eval_method"] = '"IOA"'
+            #     case TaskKey.SCORECARD_NMB:
+            #         namelist_config["scorecard_eval_method"] = '"NMB"'
+            #     case TaskKey.SCORECARD_NME:
+            #         namelist_config["scorecard_eval_method"] = '"NME"'
 
             LOGGER(f"{task=}")
             template = self.j2_env.get_template(f"template_{task}.j2")
             LOGGER(f"{template=}")
-            config_yaml = template.render({**namelist_config})
-            curr_control_path = package_run_dir / f"control_{task}.yaml"
-            LOGGER(f"{curr_control_path=}")
-            with open(curr_control_path, "w") as f:
-                f.write(config_yaml)
+            if TaskKey(task) == TaskKey.SCORECARD:
+                self._create_control_configs_for_scorecards_(namelist_config, template)
+            else:
+                config_yaml = template.render({**namelist_config})
+                curr_control_path = package_run_dir / f"control_{task}.yaml"
+                LOGGER(f"{curr_control_path=}")
+                curr_control_path.write_text(config_yaml)
+
+    def _create_control_configs_for_scorecards_(self, namelist_config: Any, template: Template) -> None:
+        LOGGER("creating scorecard control files")
+        for scorecard_key, scorecard_cfg in self.ctx.mm_config.aqm.scorecards.items():
+            for scorecard_method in ScorecardMethod:
+                scorecard_data = [scorecard_cfg.sensitivity, scorecard_cfg.control]
+                scorecard_models = []
+                for ii in scorecard_data:
+                    for jj in self.mm_models:
+                        if jj.label == ii:
+                            scorecard_models.append(jj)
+                            break
+                if len(scorecard_models) != len(scorecard_data):
+                    raise ValueError(f"could not find all models for scorecard {scorecard_key=}")
+                scorecard_task = ScorecardTask(
+                    key=scorecard_key,
+                    better_or_worse_method=scorecard_method,
+                    data=scorecard_data,
+                    model_name_list=[self.observations_title] + [ii.label for ii in scorecard_models],
+                )
+                plot_yaml = scorecard_task.to_yaml()
+                plot_yaml_str = yaml.safe_dump(plot_yaml)
+                config_yaml = template.render({**namelist_config, **{"plot_yaml_str": plot_yaml_str}})
+                curr_control_path = self.run_dir / f"control_scorecard_{scorecard_method.value}_{scorecard_key}.yaml"
+                LOGGER(f"{curr_control_path=}")
+                curr_control_path.write_text(config_yaml)
 
 
 class AbstractDaskOperation(ABC, BaseModel):

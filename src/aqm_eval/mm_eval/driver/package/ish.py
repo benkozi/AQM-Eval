@@ -1,7 +1,7 @@
 import dask
 import dask.array
-import xarray as xr
 import numpy as np
+import xarray as xr
 
 from aqm_eval.mm_eval.driver.config import PackageKey, TaskKey
 from aqm_eval.mm_eval.driver.package.core import (
@@ -58,7 +58,7 @@ class ISH_PreprocessDaskOperation(AbstractDaskOperation):
         e_s = 6.1094 * 100 * dask.array.exp(17.625 * ds["tmp2m"] / (ds["tmp2m"] + 243.04))  # saturation VP; Pa
         w_s = 0.622 * e_s / pres
         rh = 100 * ds["spfh2m"] / w_s
-        if not(rh.min() > 0 and rh.quantile(0.9) < 100):
+        if not (rh.min() > 0 and rh.quantile(0.9) < 100):
             raise ValueError(f"rh quantile check failed: {rh.quantile(0.9)=}")
         rh = rh.astype(np.float32)
         ds["rh2m"] = rh

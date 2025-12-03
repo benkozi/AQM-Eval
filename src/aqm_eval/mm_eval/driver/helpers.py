@@ -25,6 +25,7 @@ def create_symlinks(
         date_range: Range of dates to use when traversing directories
         src_fn_template: Filename patterns to match
     """
+    LOGGER(f"creating symlinks from {src_dir=} to {dst_dir=}")
     if not dst_dir.exists():
         LOGGER(f"creating destination directory {dst_dir=}")
         dst_dir.mkdir(exist_ok=False, parents=True)
@@ -35,8 +36,6 @@ def create_symlinks(
         # Find files in matching directories that match src_fn_template
         for fn_pattern in src_fn_template:
             for src_file in subdir.glob(fn_pattern):
-                if not src_file.is_file():
-                    continue
                 # Create symlink if it doesn't already exist
                 dst_file = dst_dir / f"{dst_prefix}_{subdir.name}_{src_file.name}"
                 if not dst_file.exists():
