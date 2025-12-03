@@ -27,7 +27,7 @@ repos:
       - id: mypy
         name: mypy
         entry: conda run -n aqm-eval-dev mypy src
-        args: [--disallow-untyped-defs, --disallow-incomplete-defs, --check-untyped-defs, --install-types, --non-interactive]
+        args: [--disallow-untyped-defs, --disallow-incomplete-defs, --check-untyped-defs]
         language: system
         pass_filenames: false
         types: [python]

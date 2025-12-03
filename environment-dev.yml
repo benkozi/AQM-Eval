@@ -16,9 +16,11 @@ dependencies:
   # dev only from here
   - mypy=1.17.*
   - nco=5.3.*
+  - pandas-stubs # mypy types
   - polyfactory=2.22.*
   - pre-commit=4.3.*
   - pytest=8.4.*
   - pytest-mock=3.14.*
-  - ruff=0.12.*
   - python-box=7.3.*
+  - ruff=0.12.*
+  - types-PyYAML # mypy types
