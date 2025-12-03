@@ -33,26 +33,3 @@ class ScorecardTask(BaseModel):
         prefix = f"{self.better_or_worse_method.get_mm_prefix()}_{self.key}"
         return {"plots": {prefix: data}}
 
-    # @classmethod
-    # def write_mm_configs(cls, scorecards: ScorecardConfig, mm_models: tuple[Model, ...]) -> None:
-    #     for scorecard_cfg in scorecards.values():
-    #         for scorecard_method in ScorecardMethod:
-    #             scorecard_data = [scorecard_cfg.sensitivity, scorecard_cfg.control]
-    #             scorecard_models = []
-    #             for ii in scorecard_data:
-    #                 for jj in mm_models:
-    #                     if jj.label == ii:
-    #                         scorecard_models.append(jj)
-    #                         break
-    #             if len(scorecard_models) != len(scorecard_data):
-    #                 raise ValueError(f"could not find all models for scorecard {scorecard_cfg.key=}")
-    #             scorecard_task = ScorecardTask(key=scorecard_cfg.key,
-    #                                            better_or_worse_method=scorecard_method,
-    #                                            data=scorecard_data,
-    #                                            model_name_list=[self.observations_title] + [ii.label for ii in scorecard_models])
-    #             plot_yaml = scorecard_task.to_yaml()
-    #             plot_yaml_str = yaml.safe_dump(plot_yaml)
-    #             config_yaml = template.render({**namelist_config, **{"plot_yaml_str": plot_yaml_str}})
-    #             curr_control_path = package_run_dir / f"control_scorecard_{scorecard_method.value}_{scorecard_key}.yaml"
-    #             LOGGER(f"{curr_control_path=}")
-    #             curr_control_path.write_text(config_yaml)

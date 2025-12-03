@@ -12,7 +12,6 @@ from aqm_eval.mm_eval.driver.config import (
     AQMConfig,
     AQMModelConfig,
     Config,
-    # ModelRole,
     PackageConfig,
     PackageKey,
     PlatformKey,
@@ -45,10 +44,6 @@ class AQMConfigFactory(ModelFactory[AQMConfig]):
     @classmethod
     def active(cls) -> bool:
         return True
-
-    # @classmethod
-    # def enable_scorecards(cls) -> bool:
-    #     return True
 
     @classmethod
     def output_dir(cls) -> Path:

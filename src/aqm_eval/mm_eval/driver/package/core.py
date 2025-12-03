@@ -5,14 +5,14 @@ import re
 from abc import ABC, abstractmethod
 from functools import cached_property
 from pathlib import Path
-from typing import Iterator, Literal
+from typing import Iterator, Literal, Any
 
 import cartopy  # type: ignore[import-untyped]
 import dask
 import matplotlib
 import xarray as xr
 import yaml
-from jinja2 import Environment, FileSystemLoader, StrictUndefined
+from jinja2 import Environment, FileSystemLoader, StrictUndefined, Template
 from melodies_monet import driver  # type: ignore[import-untyped]
 from melodies_monet.driver import analysis  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, computed_field
@@ -330,31 +330,34 @@ class AbstractEvalPackage(ABC, BaseModel):
             template = self.j2_env.get_template(f"template_{task}.j2")
             LOGGER(f"{template=}")
             if TaskKey(task) == TaskKey.SCORECARD:
-                LOGGER("creating scorecard control files")
-                for scorecard_key, scorecard_cfg in self.ctx.mm_config.aqm.scorecards.items():
-                    for scorecard_method in ScorecardMethod:
-                        scorecard_data = [scorecard_cfg.sensitivity, scorecard_cfg.control]
-                        scorecard_models = []
-                        for ii in scorecard_data:
-                            for jj in self.mm_models:
-                                if jj.label == ii:
-                                    scorecard_models.append(jj)
-                                    break
-                        if len(scorecard_models) != len(scorecard_data):
-                            raise ValueError(f"could not find all models for scorecard {scorecard_key=}")
-                        scorecard_task = ScorecardTask(key=scorecard_key,
-                                                       better_or_worse_method=scorecard_method,
-                                                       data=scorecard_data,
-                                                       model_name_list=[self.observations_title] + [ii.label for ii in scorecard_models])
-                        plot_yaml = scorecard_task.to_yaml()
-                        plot_yaml_str = yaml.safe_dump(plot_yaml)
-                        config_yaml = template.render({**namelist_config, **{"plot_yaml_str": plot_yaml_str}})
-                        curr_control_path = package_run_dir / f"control_scorecard_{scorecard_method.value}_{scorecard_key}.yaml"
-                        LOGGER(f"{curr_control_path=}")
-                        curr_control_path.write_text(config_yaml)
+                self._create_control_configs_for_scorecards_(namelist_config, template)
             else:
                 config_yaml = template.render({**namelist_config})
                 curr_control_path = package_run_dir / f"control_{task}.yaml"
+                LOGGER(f"{curr_control_path=}")
+                curr_control_path.write_text(config_yaml)
+
+    def _create_control_configs_for_scorecards_(self, namelist_config: Any, template: Template) -> None:
+        LOGGER("creating scorecard control files")
+        for scorecard_key, scorecard_cfg in self.ctx.mm_config.aqm.scorecards.items():
+            for scorecard_method in ScorecardMethod:
+                scorecard_data = [scorecard_cfg.sensitivity, scorecard_cfg.control]
+                scorecard_models = []
+                for ii in scorecard_data:
+                    for jj in self.mm_models:
+                        if jj.label == ii:
+                            scorecard_models.append(jj)
+                            break
+                if len(scorecard_models) != len(scorecard_data):
+                    raise ValueError(f"could not find all models for scorecard {scorecard_key=}")
+                scorecard_task = ScorecardTask(key=scorecard_key,
+                                               better_or_worse_method=scorecard_method,
+                                               data=scorecard_data,
+                                               model_name_list=[self.observations_title] + [ii.label for ii in scorecard_models])
+                plot_yaml = scorecard_task.to_yaml()
+                plot_yaml_str = yaml.safe_dump(plot_yaml)
+                config_yaml = template.render({**namelist_config, **{"plot_yaml_str": plot_yaml_str}})
+                curr_control_path = self.run_dir / f"control_scorecard_{scorecard_method.value}_{scorecard_key}.yaml"
                 LOGGER(f"{curr_control_path=}")
                 curr_control_path.write_text(config_yaml)
 

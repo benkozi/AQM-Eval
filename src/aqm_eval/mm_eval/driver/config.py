@@ -40,10 +40,6 @@ class TaskKey(StrEnum):
     BOXPLOT = "boxplot"
     MULTI_BOXPLOT = "multi_boxplot"
     SCORECARD = "scorecard"
-    # SCORECARD_RMSE = "scorecard_rmse"
-    # SCORECARD_IOA = "scorecard_ioa"
-    # SCORECARD_NMB = "scorecard_nmb"
-    # SCORECARD_NME = "scorecard_nme"
     CSI = "csi"
     STATS = "stats"
 
@@ -70,13 +66,6 @@ class PlatformKey(StrEnum):
     DERECHO = "derecho"
     ORION = "orion"
     HERCULES = "hercules"
-
-
-# @unique
-# class ModelRole(StrEnum):
-#     UNDEFINED = "undefined"
-#     CONTROL = "control"
-#     SENSITIVITY = "sensitivity"
 
 
 def _is_unique_(v: tuple[Any, ...]) -> tuple[Any, ...]:
@@ -223,26 +212,6 @@ class AQMConfig(BaseModel):
             if self.no_forecast and list(self.host_model.keys())[0] in [v.control, v.sensitivity]:
                 raise ValueError(f"Host model cannot be used for scorecard {k} since no_forecast is True.")
         return self
-
-    # @model_validator(mode="after")
-    # def _validate_model_after_(self) -> "AQMConfig":
-    #     if self.enable_scorecards:
-    #         if self.no_forecast:
-    #             for model in self.models.values():
-    #                 if model.is_host and model.role != ModelRole.UNDEFINED:
-    #                     raise ValueError(
-    #                         "Host model must have an undefined role if enable_scorecards is True and no_forecast is True. "
-    #                         "The host with no_forecast True will have no data to evaluate!"
-    #                     )
-    #         role_check = set([ii.role for ii in self.models.values() if ii.role != ModelRole.UNDEFINED])
-    #         if len(role_check) != 2 and set(role_check) != {ModelRole.CONTROL, ModelRole.SENSITIVITY}:
-    #             info = {v.key: v.role for v in self.models.values()}
-    #             msg = (
-    #                 f"Scorecards can only be enabled if one model has role 'control' and one other model has role "
-    #                 f"'sensitivity'. {info}"
-    #             )
-    #             raise ValueError(msg)
-    #     return self
 
     @field_validator("models", mode="after")
     @classmethod

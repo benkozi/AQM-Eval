@@ -36,8 +36,6 @@ def create_symlinks(
         # Find files in matching directories that match src_fn_template
         for fn_pattern in src_fn_template:
             for src_file in subdir.glob(fn_pattern):
-                # if not src_file.is_file():
-                #     continue
                 # Create symlink if it doesn't already exist
                 dst_file = dst_dir / f"{dst_prefix}_{subdir.name}_{src_file.name}"
                 if not dst_file.exists():
