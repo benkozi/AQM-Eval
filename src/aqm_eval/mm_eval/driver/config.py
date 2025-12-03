@@ -176,7 +176,7 @@ class AQMConfig(BaseModel):
     models: dict[str, AQMModelConfig]
     packages: dict[PackageKey, PackageConfig] = Field(min_length=1)
     task_defaults: TaskDefaults
-    scorecards: dict[str, ScorecardConfig]  # tdk: need separate task per key?
+    scorecards: dict[str, ScorecardConfig]
     run_mode: RunMode
 
     @cached_property
