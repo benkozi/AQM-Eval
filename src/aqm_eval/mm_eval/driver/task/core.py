@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from aqm_eval.logging_aqm_eval import log_it
 from aqm_eval.mm_eval.driver.config import TaskKey
 
-#tdk:maybe remove
+#tdk:rm
 
 class EvalTask(ABC, BaseModel):
     model_config = {"frozen": True}

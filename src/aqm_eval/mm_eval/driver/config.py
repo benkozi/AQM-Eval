@@ -285,8 +285,7 @@ class Config(BaseModel):
 
     @classmethod
     def from_yaml(cls, data: dict) -> "Config":
-        key = cls._key.default  # type: ignore[attr-defined]
-        return cls.model_validate(data[key])
+        return cls.model_validate(data[cls.get_key()])
 
     @classmethod
     def from_default_yaml(cls, platform_key: PlatformKey, overrides: dict) -> "Config":
