@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 import yaml
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.settings import SETTINGS
@@ -215,21 +215,35 @@ class AQMConfig(BaseModel):
                 raise ValueError(f"Scorecard key={k} references non-existent model {v.control=} or {v.sensitivity=}.")
             if self.no_forecast and list(self.host_model.keys())[0] in [v.control, v.sensitivity]:
                 raise ValueError(f"Host model cannot be used for scorecard {k} since no_forecast is True.")
+
+        self._validate_models_after_()
+
         return self
 
-    @field_validator("models", mode="after")
-    @classmethod
-    def _validate_models_after_(cls, values: dict[str, AQMModelConfig]) -> dict[str, AQMModelConfig]:
+    def _validate_models_after_(self) -> None:
+        values = self.models
+
+        for k, v in values.items():
+            if v.key != k:
+                raise ValueError(f"Model key={k} does not match value.key={v.key}.")
+
         is_host = set([k for k, v in values.items() if v.is_host])
         if len(is_host) != 1:
             raise ValueError(f"Only one model can be host. Found {is_host}.")
+
         if len(set([ii.title for ii in values.values()])) != len(values):
             raise ValueError("Model titles must be unique.")
-        # tdk:fix: needs to handle the situation where the color of the host model for an offline case doesn't matter
-        if len(set(ii.plot_kwargs.color for ii in values.values())) != len(values):
+
+        if self.no_forecast:
+            LOGGER("no forecast is True, so host model's color will not be considered", level=logging.WARNING)
+            plot_colors_to_check = [v.plot_kwargs.color for v in values.values() if not v.is_host]
+            n_to_check = len(values) - 1
+        else:
+            plot_colors_to_check = [v.plot_kwargs.color for v in values.values()]
+            n_to_check = len(values)
+        if len(set(plot_colors_to_check)) != n_to_check:
             plot_colors = {k: v.plot_kwargs.color for k, v in values.items()}
             raise ValueError(f"models[].plot_kwargs.color must be unique for each model. {plot_colors=}")
-        return values
 
 
 class Config(BaseModel):

@@ -54,16 +54,16 @@ class AQMConfigFactory(ModelFactory[AQMConfig]):
     def models(cls) -> dict[str, AQMModelConfig]:
         global _TEST_GLOBALS
         data = {
-            _TEST_GLOBALS["host_key"]: {"is_host": True, "plot_kwargs": {"color": "g"}},
-            "base1": {"is_host": False, "plot_kwargs": {"color": "r"}},
-            "base2": {"is_host": False, "plot_kwargs": {"color": "b"}},
-            "base4": {"is_host": False, "plot_kwargs": {"color": "w"}},
+            _TEST_GLOBALS["host_key"]: {"is_host": True, "plot_kwargs": {"color": "g"}, "key": _TEST_GLOBALS["host_key"]},
+            "base1": {"is_host": False, "plot_kwargs": {"color": "r"}, "key": "base1"},
+            "base2": {"is_host": False, "plot_kwargs": {"color": "b"}, "key": "base2"},
+            "base4": {"is_host": False, "plot_kwargs": {"color": "w"}, "key": "base4"},
         }
         ret = {}
         for k, v in data.items():
             expt_dir = _TEST_GLOBALS["tmp_path"] / k
             expt_dir.mkdir(exist_ok=True, parents=True)
-            ret[k] = AQMModelConfigFactory.build(**{**data[k], "expt_dir": expt_dir})  # type: ignore[arg-type]
+            ret[k] = AQMModelConfigFactory.build(factory_use_construct=True, **{**data[k], "expt_dir": expt_dir})  # type: ignore[arg-type]
         return ret
 
     @classmethod

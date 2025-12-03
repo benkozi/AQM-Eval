@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 import yaml
 from box import Box
+from pydantic_core import ValidationError
 
 from aqm_eval.mm_eval.driver.config import Config, PackageConfig, PackageKey, PlatformKey, TaskKey
 from test.test_mm_eval.conftest import PackageConfigFactory
@@ -14,8 +15,9 @@ def test(config: Config, tmp_path: Path) -> None:
     print(yaml_str)
     out_path.write_text(yaml_str)
     assert len(config.aqm.models) == 4
-    for v in config.aqm.models.values():
+    for k, v in config.aqm.models.items():
         assert v.is_eval_target
+        assert k == v.key
 
     with open(out_path, "r") as f:
         data = yaml.safe_load(f)
@@ -66,3 +68,15 @@ def test_config_from_default_yaml(platform_key: PlatformKey, config: Config) -> 
         assert batchargs.nodes == 2
         assert batchargs.tasks_per_node == actual.platform_defaults[platform_key].ncores_per_node
     print(yaml.safe_dump(actual.to_yaml(), sort_keys=False))
+
+
+def test_aqm_config_validate_model_after(config: Config) -> None:
+    data = Box(config.model_dump())
+    # Assert that there is an error with the same plot color when no forecast is false
+    data.aqm.no_forecast = False
+    data.aqm.models["eval1"].plot_kwargs.color = "r"
+    with pytest.raises(ValidationError):
+        _ = Config.model_validate(data)
+    # Assert that the host model's plot color is ignored when no forecast is true
+    data.aqm.no_forecast = True
+    _ = Config.model_validate(data)
