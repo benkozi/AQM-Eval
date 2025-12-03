@@ -21,10 +21,12 @@ class ScorecardMethod(StrEnum):
     NME = "nme"
 
     def get_mm_prefix(self) -> str:
-        mapping = {ScorecardMethod.IOA: "pg72",
-                   ScorecardMethod.NMB: "pg73",
-                   ScorecardMethod.NME: "pg74",
-                   ScorecardMethod.RMSE: "pg71"}
+        mapping = {
+            ScorecardMethod.IOA: "pg72",
+            ScorecardMethod.NMB: "pg73",
+            ScorecardMethod.NME: "pg74",
+            ScorecardMethod.RMSE: "pg71",
+        }
         return mapping[self]
 
 
@@ -52,6 +54,7 @@ class PackageKey(StrEnum):
     ISH = "ish"
     AQS_PM = "aqs_pm"
     AQS_VOC = "aqs_voc"
+
 
 @unique
 class RunMode(StrEnum):
@@ -173,11 +176,12 @@ class AQMConfig(BaseModel):
     models: dict[str, AQMModelConfig]
     packages: dict[PackageKey, PackageConfig] = Field(min_length=1)
     task_defaults: TaskDefaults
-    scorecards: dict[str, ScorecardConfig] #tdk: need separate task per key?
+    scorecards: dict[str, ScorecardConfig]  # tdk: need separate task per key?
     run_mode: RunMode
 
+    @cached_property
     def enable_scorecards(self) -> bool:
-        return len(self.aqm.scorecards) > 0
+        return len(self.scorecards) > 0
 
     @cached_property
     def host_model(self) -> dict[str, AQMModelConfig]:
@@ -221,7 +225,7 @@ class AQMConfig(BaseModel):
             raise ValueError(f"Only one model can be host. Found {is_host}.")
         if len(set([ii.title for ii in values.values()])) != len(values):
             raise ValueError("Model titles must be unique.")
-        #tdk:fix: needs to handle the situation where the color of the host model for an offline case doesn't matter
+        # tdk:fix: needs to handle the situation where the color of the host model for an offline case doesn't matter
         if len(set(ii.plot_kwargs.color for ii in values.values())) != len(values):
             plot_colors = {k: v.plot_kwargs.color for k, v in values.items()}
             raise ValueError(f"models[].plot_kwargs.color must be unique for each model. {plot_colors=}")
@@ -275,7 +279,9 @@ class Config(BaseModel):
                 set_str_nested(data, kp, get_str_nested(data, data_kp))
             for task_key, task_value in get_str_nested(data, f"aqm.packages.{package_key.value}.execution.tasks").items():
                 if "tasks_per_node" not in task_value["batchargs"]:
-                    task_value["batchargs"]["tasks_per_node"] = get_str_nested(data, f"platform_defaults.{platform_key.value}.ncores_per_node")
+                    task_value["batchargs"]["tasks_per_node"] = get_str_nested(
+                        data, f"platform_defaults.{platform_key.value}.ncores_per_node"
+                    )
 
         if root_aqm["task_defaults"]["execution"]["batchargs"]["tasks_per_node"] == "auto":
             root_aqm["task_defaults"]["execution"]["batchargs"]["tasks_per_node"] = get_str_nested(

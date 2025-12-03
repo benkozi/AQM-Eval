@@ -1,13 +1,10 @@
-from functools import cached_property
-
 from pydantic import BaseModel
 
-from aqm_eval.mm_eval.driver.config import ScorecardMethod, ScorecardConfig
-from aqm_eval.mm_eval.driver.model import Model
+from aqm_eval.mm_eval.driver.config import ScorecardMethod
 
 
 class ScorecardTask(BaseModel):
-    model_config = {"frozen": True} #tdk: replace BaseModel with AQM_Eval_BaseModel
+    model_config = {"frozen": True}  # tdk: replace BaseModel with AQM_Eval_BaseModel
 
     key: str
     better_or_worse_method: ScorecardMethod
@@ -32,4 +29,3 @@ class ScorecardTask(BaseModel):
         data = self.model_dump(mode="json", exclude={"key"})
         prefix = f"{self.better_or_worse_method.get_mm_prefix()}_{self.key}"
         return {"plots": {prefix: data}}
-

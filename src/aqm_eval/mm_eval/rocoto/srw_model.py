@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field, computed_field, model_validator
 
-from aqm_eval.mm_eval.driver.config import Config, PackageKey, TaskKey, ScorecardMethod
+from aqm_eval.mm_eval.driver.config import Config, PackageKey, ScorecardMethod, TaskKey
 from aqm_eval.mm_eval.driver.package.core import package_key_to_class
 
 
@@ -72,9 +72,7 @@ class AqmPrep(AbstractAqmTask):
 
     @computed_field
     def envars(self) -> dict:
-        return self._envars_default | {
-            "MM_EVAL_PACKAGE": self.package_key.value
-        }
+        return self._envars_default | {"MM_EVAL_PACKAGE": self.package_key.value}
 
     @computed_field
     def task_name(self) -> str:

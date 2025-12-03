@@ -15,7 +15,8 @@ from aqm_eval.mm_eval.driver.config import (
     PackageConfig,
     PackageKey,
     PlatformKey,
-    PlotKwargs, ScorecardConfig,
+    PlotKwargs,
+    ScorecardConfig,
 )
 from aqm_eval.mm_eval.driver.context.srw import SRWContext, SrwPlatform, SrwUser, SrwWorkflow
 
@@ -73,7 +74,7 @@ class AQMConfigFactory(ModelFactory[AQMConfig]):
     def scorecards(cls) -> dict[str, ScorecardConfig]:
         return {
             "scorecard1": ScorecardConfig(key="scorecard1", control="base2", sensitivity="base1"),
-            "scorecard2": ScorecardConfig(key="scorecard2",control="base4", sensitivity="base2"),
+            "scorecard2": ScorecardConfig(key="scorecard2", control="base4", sensitivity="base2"),
         }
 
 

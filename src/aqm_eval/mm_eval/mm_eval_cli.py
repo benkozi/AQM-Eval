@@ -5,7 +5,7 @@ from pathlib import Path
 
 import typer
 
-from aqm_eval.mm_eval.driver.config import PackageKey, TaskKey
+from aqm_eval.mm_eval.driver.config import PackageKey
 from aqm_eval.mm_eval.driver.package.core import package_key_to_class
 from aqm_eval.mm_eval.rocoto.srw_task_group import srw_data_to_json
 from aqm_eval.mm_eval.stats_concat import StatsFileCollection

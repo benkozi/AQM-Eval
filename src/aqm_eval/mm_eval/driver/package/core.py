@@ -5,7 +5,7 @@ import re
 from abc import ABC, abstractmethod
 from functools import cached_property
 from pathlib import Path
-from typing import Iterator, Literal, Any
+from typing import Any, Iterator, Literal
 
 import cartopy  # type: ignore[import-untyped]
 import dask
@@ -18,7 +18,7 @@ from melodies_monet.driver import analysis  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, computed_field
 
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
-from aqm_eval.mm_eval.driver.config import PackageConfig, PackageKey, TaskKey, RunMode, ScorecardMethod
+from aqm_eval.mm_eval.driver.config import PackageConfig, PackageKey, RunMode, ScorecardMethod, TaskKey
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.model import Model
 from aqm_eval.mm_eval.driver.task.scorecard import ScorecardTask
@@ -109,7 +109,6 @@ class AbstractEvalPackage(ABC, BaseModel):
     #         raise ValueError
     #     return models[0], models[1]
 
-
     @cached_property
     def task_control_filenames(self) -> tuple[str, ...]:
         names = []
@@ -171,7 +170,6 @@ class AbstractEvalPackage(ABC, BaseModel):
     @cached_property
     def mm_model_titles_with_obs(self) -> list[str]:
         return [self.observations_title] + self.mm_model_titles
-
 
     @cached_property
     def j2_env(self) -> Environment:
@@ -350,10 +348,12 @@ class AbstractEvalPackage(ABC, BaseModel):
                             break
                 if len(scorecard_models) != len(scorecard_data):
                     raise ValueError(f"could not find all models for scorecard {scorecard_key=}")
-                scorecard_task = ScorecardTask(key=scorecard_key,
-                                               better_or_worse_method=scorecard_method,
-                                               data=scorecard_data,
-                                               model_name_list=[self.observations_title] + [ii.label for ii in scorecard_models])
+                scorecard_task = ScorecardTask(
+                    key=scorecard_key,
+                    better_or_worse_method=scorecard_method,
+                    data=scorecard_data,
+                    model_name_list=[self.observations_title] + [ii.label for ii in scorecard_models],
+                )
                 plot_yaml = scorecard_task.to_yaml()
                 plot_yaml_str = yaml.safe_dump(plot_yaml)
                 config_yaml = template.render({**namelist_config, **{"plot_yaml_str": plot_yaml_str}})

@@ -27,8 +27,8 @@ class AQM_EvalSettings(BaseSettings):
 
     aqm_eval_log_level: LogLevel = LogLevel.INFO
 
-    slurm_ntasks_per_node: int | None = None
-    slurm_nnodes: int | None = 1
+    slurm_ntasks_per_node: int = 1
+    slurm_nnodes: int = 1
 
     @computed_field
     @cached_property

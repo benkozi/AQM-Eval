@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Any
 
 import pytest
 import yaml
@@ -43,14 +42,17 @@ def test_package_config_allows_none_observation_template() -> None:
 
 @pytest.mark.parametrize("platform_key", PlatformKey)
 def test_config_from_default_yaml(platform_key: PlatformKey, config: Config) -> None:
-    overrides = Box({
-        "start_datetime": config.start_datetime,
-        "end_datetime": config.end_datetime,
-        "cartopy_data_dir": config.cartopy_data_dir,
-        "output_dir": config.output_dir,
-        "run_dir": config.run_dir,
-        "aqm": {"models": {"eval": {"expt_dir": config.aqm.models["eval1"].expt_dir}}},
-    }, default_box=True)
+    overrides = Box(
+        {
+            "start_datetime": config.start_datetime,
+            "end_datetime": config.end_datetime,
+            "cartopy_data_dir": config.cartopy_data_dir,
+            "output_dir": config.output_dir,
+            "run_dir": config.run_dir,
+            "aqm": {"models": {"eval": {"expt_dir": config.aqm.models["eval1"].expt_dir}}},
+        },
+        default_box=True,
+    )
 
     for package_key in PackageKey:
         overrides["aqm"]["packages"][package_key.value]["observation_template"] = config.aqm.packages[
