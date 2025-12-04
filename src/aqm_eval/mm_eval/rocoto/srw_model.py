@@ -1,15 +1,14 @@
 from abc import ABC
 from pathlib import Path
 
-from pydantic import BaseModel, Field, computed_field, model_validator
+from pydantic import Field, computed_field, model_validator
 
+from aqm_eval.base import AeBaseModel
 from aqm_eval.mm_eval.driver.config import Config, PackageKey, ScorecardMethod, TaskKey
 from aqm_eval.mm_eval.driver.package.core import package_key_to_class
 
 
-class AbstractAqmTask(ABC, BaseModel):
-    model_config = {"frozen": True}
-
+class AbstractAqmTask(ABC, AeBaseModel):
     node_count: str = Field(exclude=True)
     walltime: str
     command: str
@@ -131,7 +130,7 @@ class AqmConcatStatsTask(AbstractAqmTask):
         return {"and": ret}
 
 
-class AqmTaskGroup(BaseModel):
+class AqmTaskGroup(AeBaseModel):
     packages: tuple[AqmPrep, ...]
     tasks: tuple[AqmEvalTask, ...]
     concat_task: AqmConcatStatsTask

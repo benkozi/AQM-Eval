@@ -3,15 +3,14 @@ import re
 from pathlib import Path
 
 import pandas as pd
-from pydantic import BaseModel, field_validator
+from pydantic import field_validator
 
+from aqm_eval.base import AeBaseModel
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.mm_eval.driver.config import PackageKey
 
 
-class StatsFile(BaseModel):
-    model_config = {"frozen": True}
-
+class StatsFile(AeBaseModel):
     variable: str
     region_type: str
     region_id: str
@@ -50,9 +49,7 @@ class StatsFile(BaseModel):
         return value.absolute().resolve(strict=True)
 
 
-class StatsFileCollection(BaseModel):
-    model_config = {"frozen": True}
-
+class StatsFileCollection(AeBaseModel):
     stats_files: tuple[StatsFile, ...]
     index_name: str = "id"
     created_at: datetime.datetime = datetime.datetime.now(datetime.timezone.utc)

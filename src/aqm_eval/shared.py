@@ -6,8 +6,9 @@ from pathlib import Path
 from typing import Annotated, Any, Iterator, Mapping
 
 import numpy as np
-from pydantic import BaseModel, BeforeValidator, PlainSerializer
+from pydantic import BeforeValidator, PlainSerializer
 
+from aqm_eval.base import AeBaseModel
 from aqm_eval.logging_aqm_eval import LOGGER
 
 
@@ -61,7 +62,7 @@ def calc_2d_chunks(dims: dict[str, int], n_chunks: int) -> dict[str, int]:
     return chunks
 
 
-class DateRange(BaseModel):
+class DateRange(AeBaseModel):
     start: datetime.datetime
     end: datetime.datetime
 

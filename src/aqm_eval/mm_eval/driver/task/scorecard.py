@@ -1,10 +1,9 @@
-from pydantic import BaseModel
-
+from aqm_eval.base import AeBaseModel
 from aqm_eval.mm_eval.driver.config import ScorecardMethod
 
 
-class ScorecardTask(BaseModel):
-    model_config = {"frozen": True}  # tdk: replace BaseModel with AQM_Eval_BaseModel
+class ScorecardTask(AeBaseModel):
+    # tdk: replace AeBaseModel with AQM_Eval_BaseModel
 
     key: str
     better_or_worse_method: ScorecardMethod

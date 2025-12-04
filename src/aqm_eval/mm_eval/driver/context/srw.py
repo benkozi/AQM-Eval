@@ -5,9 +5,10 @@ from functools import cached_property
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel, computed_field
+from pydantic import computed_field
 from uwtools.api.config import get_yaml_config
 
+from aqm_eval.base import AeBaseModel
 from aqm_eval.mm_eval.driver.config import Config, PlatformKey
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.settings import SETTINGS
@@ -19,24 +20,18 @@ def _convert_date_string_to_mm_(date_str: str) -> str:
     return dt.strftime("%Y-%m-%d-%H:00:00")
 
 
-class SrwWorkflow(BaseModel):
-    model_config = {"frozen": True}
-
+class SrwWorkflow(AeBaseModel):
     EXPT_BASEDIR: Path
     EXPT_SUBDIR: str
     DATE_FIRST_CYCL: str
     DATE_LAST_CYCL_MM: str
 
 
-class SrwPlatform(BaseModel):
-    model_config = {"frozen": True}
-
+class SrwPlatform(AeBaseModel):
     FIXshp: Path
 
 
-class SrwUser(BaseModel):
-    model_config = {"frozen": True}
-
+class SrwUser(AeBaseModel):
     MACHINE: str
 
 

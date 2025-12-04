@@ -11,8 +11,9 @@ from enum import StrEnum, unique
 from pathlib import Path
 from typing import Any, Generic, TypeVar
 
-from pydantic import BaseModel, computed_field, model_validator
+from pydantic import computed_field, model_validator
 
+from aqm_eval.base import AeBaseModel
 from aqm_eval.logging_aqm_eval import LOGGER
 
 
@@ -32,7 +33,7 @@ class UseCaseKey(StrEnum):
     AEROMMA = "AEROMMA"
 
 
-class AbstractContext(ABC, BaseModel):
+class AbstractContext(ABC, AeBaseModel):
     """Abstract base class for synchronization contexts.
 
     Attributes
@@ -47,7 +48,6 @@ class AbstractContext(ABC, BaseModel):
         Whether to perform a dry run. If `True`, no data is moved.
     """
 
-    model_config = {"frozen": True}
     dst_dir: Path
     s3_root: str = "s3://noaa-ufs-srw-pds"
     max_concurrent_requests: int | None = 3

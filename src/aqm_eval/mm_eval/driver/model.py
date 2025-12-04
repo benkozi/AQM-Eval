@@ -3,18 +3,17 @@
 from functools import cached_property
 from pathlib import Path
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import Field, computed_field
 
+from aqm_eval.base import AeBaseModel
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.config import AQMModelConfig
 from aqm_eval.mm_eval.driver.helpers import create_symlinks
 from aqm_eval.shared import DateRange
 
 
-class Model(BaseModel):
+class Model(AeBaseModel):
     """Defines a model used for generating MM configuration files."""
-
-    model_config = {"frozen": True}
 
     cfg: AQMModelConfig
     file_template: tuple[str, ...] = Field(description="Templates for selecting model output files.")

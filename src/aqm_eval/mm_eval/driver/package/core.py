@@ -15,8 +15,9 @@ import yaml
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, Template
 from melodies_monet import driver  # type: ignore[import-untyped]
 from melodies_monet.driver import analysis  # type: ignore[import-untyped]
-from pydantic import BaseModel, Field, computed_field
+from pydantic import Field, computed_field
 
+from aqm_eval.base import AeBaseModel
 from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.config import PackageConfig, PackageKey, RunMode, ScorecardMethod, TaskKey
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
@@ -26,7 +27,7 @@ from aqm_eval.settings import SETTINGS
 from aqm_eval.shared import PathExisting, assert_directory_exists, calc_2d_chunks, get_or_create_path
 
 
-class ForecastFileSpec(BaseModel):
+class ForecastFileSpec(AeBaseModel):
     src_dir: PathExisting
     out_dir: PathExisting
     out_prefix: str
@@ -54,10 +55,9 @@ class ForecastFileSpec(BaseModel):
         return self.out_dir / f"{self.out_prefix}.nc"
 
 
-class AbstractEvalPackage(ABC, BaseModel):
+class AbstractEvalPackage(ABC, AeBaseModel):
     """Defines an abstract evaluation package."""
 
-    model_config = {"frozen": True}
     ctx: AbstractDriverContext
 
     observations_title: str
@@ -362,9 +362,7 @@ class AbstractEvalPackage(ABC, BaseModel):
                 curr_control_path.write_text(config_yaml)
 
 
-class AbstractDaskOperation(ABC, BaseModel):
-    model_config = {"frozen": True}
-
+class AbstractDaskOperation(ABC, AeBaseModel):
     out_path: Path
     dyn_path: tuple[Path, ...]
     phy_path: tuple[Path, ...]

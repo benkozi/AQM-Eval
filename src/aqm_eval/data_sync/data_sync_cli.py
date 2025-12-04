@@ -7,8 +7,8 @@ import os
 from pathlib import Path
 
 import typer
-from pydantic import BaseModel
 
+from aqm_eval.base import AeBaseModel
 from aqm_eval.data_sync.core import (
     ObservationsContext,
     ObservationsSyncRunner,
@@ -24,17 +24,17 @@ os.environ["NO_COLOR"] = "1"
 app = typer.Typer(pretty_exceptions_enable=False)
 
 
-class _HelpMessage(BaseModel):
+class _HelpMessage(AeBaseModel):
     dst_dir: str = "Destination directory for sync."
     max_concurrent_requests: str = "Maximum number of concurrent requests."
     dry_run: str = "Dry run. Nothing will be materially synchronized."
 
 
-class _DefaultValue(BaseModel):
+class _DefaultValue(AeBaseModel):
     max_concurrent_requests: int = 5
 
 
-class _FlagName(BaseModel):
+class _FlagName(AeBaseModel):
     dst_dir: str = "--dst-dir"
     dry_run: str = "--dry-run"
     max_concurrent_requests: str = "--max-concurrent-requests"
