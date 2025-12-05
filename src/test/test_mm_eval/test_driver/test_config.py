@@ -70,7 +70,7 @@ def test_config_from_default_yaml(platform_key: PlatformKey, config: Config) -> 
     print(yaml.safe_dump(actual.to_yaml(), sort_keys=False))
 
 
-def test_aqm_config_validate_model_after(config: Config) -> None:
+def test_aqm_config_validate_model_after_plot_color(config: Config) -> None:
     data = Box(config.model_dump())
     # Assert that there is an error with the same plot color when no forecast is false
     data.aqm.no_forecast = False
