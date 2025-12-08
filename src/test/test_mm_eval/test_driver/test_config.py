@@ -16,7 +16,6 @@ def test(config: Config, tmp_path: Path) -> None:
     out_path.write_text(yaml_str)
     assert len(config.aqm.models) == 4
     for k, v in config.aqm.models.items():
-        assert v.is_eval_target
         assert k == v.key
 
     with open(out_path, "r") as f:
@@ -80,6 +79,7 @@ def test_aqm_config_validate_model_after_plot_color(config: Config) -> None:
     # Assert that the host model's plot color is ignored when no forecast is true
     data.aqm.no_forecast = True
     _ = Config.model_validate(data)
+
 
 def test_aqm_config_validate_model_after_no_shared_model_stems(config: Config) -> None:
     data = Box(config.model_dump())

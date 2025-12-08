@@ -134,8 +134,6 @@ class AQMModelConfig(AeBaseModel):
     expt_dir: Path
     title: str
     plot_kwargs: PlotKwargs
-    # role: ModelRole = ModelRole.UNDEFINED
-    is_eval_target: bool = True
     is_host: bool = False
     type: str = "rrfs"
     kwargs: dict[str, Any] = {"surf_only": True, "mech": "cb6r3_ae6_aq"}
@@ -208,7 +206,7 @@ class AQMConfig(AeBaseModel):
             for k in values.keys():
                 if target == k:
                     continue
-                if k[0:len(target)] == target:
+                if k[0 : len(target)] == target:
                     raise ValueError(f"Model stems must be unique for wildcard selections. '{target}' and '{k}' are an issue.")
 
         for k, v in values.items():

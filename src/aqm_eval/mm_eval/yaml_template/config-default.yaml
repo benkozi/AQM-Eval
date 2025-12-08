@@ -10,7 +10,6 @@ melodies_monet_parm:
     run_mode: strict
     models:
       eval:
-        is_eval_target: true #tdk: need to exclude models that are not eval targets from everything except scorecards
         expt_dir: null
         title: "Evaluation Target"
         plot_kwargs:
