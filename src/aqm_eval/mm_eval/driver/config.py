@@ -208,8 +208,8 @@ class AQMConfig(AeBaseModel):
             for k in values.keys():
                 if target == k:
                     continue
-                if k[0:len(target)] == target:Model stems must be unique for wildcard selections
-                    raise ValueError(f". '{target}' and '{k}' are an issue.")
+                if k[0:len(target)] == target:
+                    raise ValueError(f"Model stems must be unique for wildcard selections. '{target}' and '{k}' are an issue.")
 
         for k, v in values.items():
             if v.key != k:
