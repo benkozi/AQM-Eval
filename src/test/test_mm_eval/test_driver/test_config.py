@@ -80,3 +80,12 @@ def test_aqm_config_validate_model_after_plot_color(config: Config) -> None:
     # Assert that the host model's plot color is ignored when no forecast is true
     data.aqm.no_forecast = True
     _ = Config.model_validate(data)
+
+def test_aqm_config_validate_model_after_no_shared_model_stems(config: Config) -> None:
+    data = Box(config.model_dump())
+    data.aqm.models["base"] = data.aqm.models["base1"]
+    data.aqm.models["base"].title = "I am unique!"
+    data.aqm.models["base"].plot_kwargs.color = "k"
+    with pytest.raises(ValidationError) as exc_info:
+        _ = Config.model_validate(data)
+    assert "Model stems must be unique for wildcard selections" in str(exc_info.value)

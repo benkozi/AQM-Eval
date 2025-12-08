@@ -204,6 +204,13 @@ class AQMConfig(AeBaseModel):
     def _validate_models_after_(self) -> None:
         values = self.models
 
+        for target in values.keys():
+            for k in values.keys():
+                if target == k:
+                    continue
+                if k[0:len(target)] == target:Model stems must be unique for wildcard selections
+                    raise ValueError(f". '{target}' and '{k}' are an issue.")
+
         for k, v in values.items():
             if v.key != k:
                 raise ValueError(f"Model key={k} does not match value.key={v.key}.")
