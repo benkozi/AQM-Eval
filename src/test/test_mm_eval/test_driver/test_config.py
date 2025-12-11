@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -5,6 +6,7 @@ import yaml
 from box import Box
 from pydantic_core import ValidationError
 
+import aqm_eval
 from aqm_eval.mm_eval.driver.config import Config, PackageConfig, PackageKey, PlatformKey, TaskKey
 from test.test_mm_eval.conftest import PackageConfigFactory
 
@@ -24,6 +26,13 @@ def test(config: Config, tmp_path: Path) -> None:
     assert "key" not in data["melodies_monet_parm"]["aqm"]["models"]["eval1"]
 
     _ = Config.from_yaml(data)
+
+
+def test_json_schema() -> None:
+    schema = Config.model_json_schema()
+    pretty_json = json.dumps(schema, indent=2)
+    schema_path = Path(aqm_eval.__file__).parent.parent.parent / "docs" / "config.schema.json"
+    schema_path.write_text(pretty_json)
 
 
 def test_package_config_allows_none_observation_template() -> None:

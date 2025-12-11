@@ -1,0 +1,409 @@
+{
+  "$defs": {
+    "AQMConfig": {
+      "properties": {
+        "active": {
+          "title": "Active",
+          "type": "boolean"
+        },
+        "no_forecast": {
+          "default": false,
+          "title": "No Forecast",
+          "type": "boolean"
+        },
+        "models": {
+          "additionalProperties": {
+            "$ref": "#/$defs/AQMModelConfig"
+          },
+          "title": "Models",
+          "type": "object"
+        },
+        "packages": {
+          "additionalProperties": {
+            "$ref": "#/$defs/PackageConfig"
+          },
+          "minProperties": 1,
+          "propertyNames": {
+            "$ref": "#/$defs/PackageKey"
+          },
+          "title": "Packages",
+          "type": "object"
+        },
+        "task_defaults": {
+          "$ref": "#/$defs/TaskDefaults"
+        },
+        "scorecards": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ScorecardConfig"
+          },
+          "title": "Scorecards",
+          "type": "object"
+        },
+        "run_mode": {
+          "$ref": "#/$defs/RunMode"
+        }
+      },
+      "required": [
+        "active",
+        "models",
+        "packages",
+        "task_defaults",
+        "scorecards",
+        "run_mode"
+      ],
+      "title": "AQMConfig",
+      "type": "object"
+    },
+    "AQMModelConfig": {
+      "properties": {
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "expt_dir": {
+          "format": "path",
+          "title": "Expt Dir",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "plot_kwargs": {
+          "$ref": "#/$defs/PlotKwargs"
+        },
+        "is_host": {
+          "default": false,
+          "title": "Is Host",
+          "type": "boolean"
+        },
+        "type": {
+          "default": "rrfs",
+          "title": "Type",
+          "type": "string"
+        },
+        "kwargs": {
+          "additionalProperties": true,
+          "default": {
+            "surf_only": true,
+            "mech": "cb6r3_ae6_aq"
+          },
+          "title": "Kwargs",
+          "type": "object"
+        },
+        "radius_of_influence": {
+          "default": 20000,
+          "title": "Radius Of Influence",
+          "type": "number"
+        },
+        "variables": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Variables"
+        },
+        "projection": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Projection"
+        }
+      },
+      "required": [
+        "key",
+        "expt_dir",
+        "title",
+        "plot_kwargs"
+      ],
+      "title": "AQMModelConfig",
+      "type": "object"
+    },
+    "BatchArgs": {
+      "properties": {
+        "nodes": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Nodes",
+          "type": "integer"
+        },
+        "tasks_per_node": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Tasks Per Node",
+          "type": "integer"
+        },
+        "walltime": {
+          "default": "01:00:00",
+          "title": "Walltime",
+          "type": "string"
+        }
+      },
+      "title": "BatchArgs",
+      "type": "object"
+    },
+    "Execution": {
+      "properties": {
+        "batchargs": {
+          "$ref": "#/$defs/BatchArgs"
+        }
+      },
+      "title": "Execution",
+      "type": "object"
+    },
+    "PackageConfig": {
+      "properties": {
+        "key": {
+          "$ref": "#/$defs/PackageKey"
+        },
+        "observation_template": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "May be null if active is false.",
+          "title": "Observation Template"
+        },
+        "mapping": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Mapping",
+          "type": "object"
+        },
+        "active": {
+          "default": true,
+          "title": "Active",
+          "type": "boolean"
+        },
+        "tasks_to_exclude": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/TaskKey"
+          },
+          "title": "Tasks To Exclude",
+          "type": "array"
+        },
+        "execution": {
+          "$ref": "#/$defs/PackageExecution"
+        }
+      },
+      "required": [
+        "key",
+        "mapping"
+      ],
+      "title": "PackageConfig",
+      "type": "object"
+    },
+    "PackageExecution": {
+      "properties": {
+        "prep": {
+          "$ref": "#/$defs/Execution"
+        },
+        "tasks": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Execution"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/TaskKey"
+          },
+          "title": "Tasks",
+          "type": "object"
+        }
+      },
+      "required": [
+        "prep",
+        "tasks"
+      ],
+      "title": "PackageExecution",
+      "type": "object"
+    },
+    "PackageKey": {
+      "description": "Unique MM package keys.",
+      "enum": [
+        "chem",
+        "ish",
+        "aqs_pm",
+        "aqs_voc"
+      ],
+      "title": "PackageKey",
+      "type": "string"
+    },
+    "PlatformConfig": {
+      "properties": {
+        "ncores_per_node": {
+          "minimum": 1,
+          "title": "Ncores Per Node",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "ncores_per_node"
+      ],
+      "title": "PlatformConfig",
+      "type": "object"
+    },
+    "PlatformKey": {
+      "enum": [
+        "ursa",
+        "gaeac6",
+        "derecho",
+        "orion",
+        "hercules"
+      ],
+      "title": "PlatformKey",
+      "type": "string"
+    },
+    "PlotKwargs": {
+      "properties": {
+        "color": {
+          "default": "g",
+          "title": "Color",
+          "type": "string"
+        },
+        "marker": {
+          "default": "^",
+          "title": "Marker",
+          "type": "string"
+        },
+        "linestyle": {
+          "default": "-",
+          "title": "Linestyle",
+          "type": "string"
+        },
+        "markersize": {
+          "default": 4,
+          "title": "Markersize",
+          "type": "integer"
+        }
+      },
+      "title": "PlotKwargs",
+      "type": "object"
+    },
+    "RunMode": {
+      "enum": [
+        "strict",
+        "resume"
+      ],
+      "title": "RunMode",
+      "type": "string"
+    },
+    "ScorecardConfig": {
+      "properties": {
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "control": {
+          "title": "Control",
+          "type": "string"
+        },
+        "sensitivity": {
+          "title": "Sensitivity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "control",
+        "sensitivity"
+      ],
+      "title": "ScorecardConfig",
+      "type": "object"
+    },
+    "TaskDefaults": {
+      "properties": {
+        "execution": {
+          "$ref": "#/$defs/Execution"
+        }
+      },
+      "required": [
+        "execution"
+      ],
+      "title": "TaskDefaults",
+      "type": "object"
+    },
+    "TaskKey": {
+      "description": "Unique MM task keys.",
+      "enum": [
+        "save_paired",
+        "timeseries",
+        "taylor",
+        "spatial_bias",
+        "spatial_overlay",
+        "boxplot",
+        "multi_boxplot",
+        "scorecard",
+        "csi",
+        "stats"
+      ],
+      "title": "TaskKey",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "start_datetime": {
+      "description": "Evaluation start time in yyyy-mm-dd-HH:MM:SS UTC format.",
+      "title": "Start Datetime",
+      "type": "string"
+    },
+    "end_datetime": {
+      "description": "Evaluation end time in yyyy-mm-dd-HH:MM:SS UTC format.",
+      "title": "End Datetime",
+      "type": "string"
+    },
+    "cartopy_data_dir": {
+      "description": "Path to the Cartopy data directory.",
+      "format": "path",
+      "title": "Cartopy Data Dir",
+      "type": "string"
+    },
+    "output_dir": {
+      "format": "path",
+      "title": "Output Dir",
+      "type": "string"
+    },
+    "run_dir": {
+      "format": "path",
+      "title": "Run Dir",
+      "type": "string"
+    },
+    "aqm": {
+      "$ref": "#/$defs/AQMConfig"
+    },
+    "platform_defaults": {
+      "additionalProperties": {
+        "$ref": "#/$defs/PlatformConfig"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/PlatformKey"
+      },
+      "title": "Platform Defaults",
+      "type": "object"
+    }
+  },
+  "required": [
+    "start_datetime",
+    "end_datetime",
+    "cartopy_data_dir",
+    "output_dir",
+    "run_dir",
+    "aqm",
+    "platform_defaults"
+  ],
+  "title": "Config",
+  "type": "object"
+}
