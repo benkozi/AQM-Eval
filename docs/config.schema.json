@@ -3,11 +3,12 @@
     "AQMConfig": {
       "properties": {
         "active": {
+          "description": "Enable or disable the AQM evaluation. Clients can respond to this value to determine if the UFS-AQM evaluation should run.",
           "title": "Active",
           "type": "boolean"
         },
         "no_forecast": {
-          "default": false,
+          "description": "If true, the evaluation runs 'offline' with no forecast expected. The host experiment is excluded from the evaluation. If false, the host experiment is included in the evaluation. Following the forecast task, the evaluation will run.",
           "title": "No Forecast",
           "type": "boolean"
         },
@@ -15,6 +16,7 @@
           "additionalProperties": {
             "$ref": "#/$defs/AQMModelConfig"
           },
+          "description": "Dictionary of model configurations to evaluate. Keys are unique model identifiers. Model 'stems' must be unique.",
           "title": "Models",
           "type": "object"
         },
@@ -22,6 +24,7 @@
           "additionalProperties": {
             "$ref": "#/$defs/PackageConfig"
           },
+          "description": "Dictionary of evalution package configurations. Keys are PackageKey enum values.",
           "minProperties": 1,
           "propertyNames": {
             "$ref": "#/$defs/PackageKey"
@@ -30,21 +33,25 @@
           "type": "object"
         },
         "task_defaults": {
-          "$ref": "#/$defs/TaskDefaults"
+          "$ref": "#/$defs/TaskDefaults",
+          "description": "Default settings for evaluation tasks."
         },
         "scorecards": {
           "additionalProperties": {
             "$ref": "#/$defs/ScorecardConfig"
           },
+          "description": "Dictionary of scorecard configurations for model sensitivity analysis. Keys are unique scorecard identifiers.",
           "title": "Scorecards",
           "type": "object"
         },
         "run_mode": {
-          "$ref": "#/$defs/RunMode"
+          "$ref": "#/$defs/RunMode",
+          "description": "Execution mode: 'strict' (fail if run or output directories exist) or 'resume' (continue from previous run when possible; useful to avoid re-generating pre-processed data files)."
         }
       },
       "required": [
         "active",
+        "no_forecast",
         "models",
         "packages",
         "task_defaults",
@@ -57,42 +64,41 @@
     "AQMModelConfig": {
       "properties": {
         "key": {
+          "description": "Unique model identifier.",
           "title": "Key",
           "type": "string"
         },
         "expt_dir": {
+          "description": "Path to the experiment directory containing diag and phy netCDF files.",
           "format": "path",
           "title": "Expt Dir",
           "type": "string"
         },
         "title": {
+          "description": "A unique model title to use when creating MM evaluation plots.",
           "title": "Title",
           "type": "string"
         },
         "plot_kwargs": {
-          "$ref": "#/$defs/PlotKwargs"
+          "$ref": "#/$defs/PlotKwargs",
+          "description": "Plotting keyword arguments to use when creating MM evaluation plots."
         },
         "is_host": {
           "default": false,
+          "description": "If true, this is the 'host' model. A 'host' model contains the workflow configuration for the evaluation. An evaluation needs at least one host model.",
           "title": "Is Host",
           "type": "boolean"
         },
         "type": {
-          "default": "rrfs",
           "title": "Type",
           "type": "string"
         },
         "kwargs": {
           "additionalProperties": true,
-          "default": {
-            "surf_only": true,
-            "mech": "cb6r3_ae6_aq"
-          },
           "title": "Kwargs",
           "type": "object"
         },
         "radius_of_influence": {
-          "default": 20000,
           "title": "Radius Of Influence",
           "type": "number"
         },
@@ -121,7 +127,10 @@
         "key",
         "expt_dir",
         "title",
-        "plot_kwargs"
+        "plot_kwargs",
+        "type",
+        "kwargs",
+        "radius_of_influence"
       ],
       "title": "AQMModelConfig",
       "type": "object"
@@ -130,18 +139,21 @@
       "properties": {
         "nodes": {
           "default": 1,
+          "description": "Number of nodes to use for the batch job.",
           "minimum": 1,
           "title": "Nodes",
           "type": "integer"
         },
         "tasks_per_node": {
           "default": 1,
+          "description": "Number of tasks to run on each node.",
           "minimum": 1,
           "title": "Tasks Per Node",
           "type": "integer"
         },
         "walltime": {
           "default": "01:00:00",
+          "description": "Walltime for the batch job.",
           "title": "Walltime",
           "type": "string"
         }
@@ -152,7 +164,8 @@
     "Execution": {
       "properties": {
         "batchargs": {
-          "$ref": "#/$defs/BatchArgs"
+          "$ref": "#/$defs/BatchArgs",
+          "description": "Batch execution arguments."
         }
       },
       "title": "Execution",
@@ -161,7 +174,8 @@
     "PackageConfig": {
       "properties": {
         "key": {
-          "$ref": "#/$defs/PackageKey"
+          "$ref": "#/$defs/PackageKey",
+          "description": "Unique package identifier."
         },
         "observation_template": {
           "anyOf": [
@@ -173,23 +187,26 @@
             }
           ],
           "default": null,
-          "description": "May be null if active is false.",
+          "description": "Path to the observation file with appropriate spatiotemporal forecast coverage. May be null if active is false.",
           "title": "Observation Template"
         },
         "mapping": {
           "additionalProperties": {
             "type": "string"
           },
+          "default": "Maps model variable names to observation variable names.",
           "title": "Mapping",
           "type": "object"
         },
         "active": {
           "default": true,
+          "description": "If False, package will not be executed.",
           "title": "Active",
           "type": "boolean"
         },
         "tasks_to_exclude": {
           "default": [],
+          "description": "Optional task keys to exclude from package execution.",
           "items": {
             "$ref": "#/$defs/TaskKey"
           },
@@ -197,12 +214,12 @@
           "type": "array"
         },
         "execution": {
-          "$ref": "#/$defs/PackageExecution"
+          "$ref": "#/$defs/PackageExecution",
+          "description": "Optional package execution settings."
         }
       },
       "required": [
-        "key",
-        "mapping"
+        "key"
       ],
       "title": "PackageConfig",
       "type": "object"
@@ -210,12 +227,14 @@
     "PackageExecution": {
       "properties": {
         "prep": {
-          "$ref": "#/$defs/Execution"
+          "$ref": "#/$defs/Execution",
+          "description": "Optional execution settings for the prep/initialization task associated with a package."
         },
         "tasks": {
           "additionalProperties": {
             "$ref": "#/$defs/Execution"
           },
+          "description": "Optional task-level execution overrides.",
           "propertyNames": {
             "$ref": "#/$defs/TaskKey"
           },
@@ -244,6 +263,7 @@
     "PlatformConfig": {
       "properties": {
         "ncores_per_node": {
+          "description": "Number of cores per node.",
           "minimum": 1,
           "title": "Ncores Per Node",
           "type": "integer"
@@ -261,7 +281,8 @@
         "gaeac6",
         "derecho",
         "orion",
-        "hercules"
+        "hercules",
+        "local"
       ],
       "title": "PlatformKey",
       "type": "string"
@@ -270,21 +291,25 @@
       "properties": {
         "color": {
           "default": "g",
+          "description": "Plotting color specific to a model. Must be unique for each model.",
           "title": "Color",
           "type": "string"
         },
         "marker": {
           "default": "^",
+          "description": "Plotting marker style.",
           "title": "Marker",
           "type": "string"
         },
         "linestyle": {
           "default": "-",
+          "description": "Plotting line style.",
           "title": "Linestyle",
           "type": "string"
         },
         "markersize": {
           "default": 4,
+          "description": "Plotting marker size.",
           "title": "Markersize",
           "type": "integer"
         }
@@ -303,14 +328,17 @@
     "ScorecardConfig": {
       "properties": {
         "key": {
+          "description": "Unique scorecard identifier.",
           "title": "Key",
           "type": "string"
         },
         "control": {
+          "description": "Model to use as the control for the scorecard.",
           "title": "Control",
           "type": "string"
         },
         "sensitivity": {
+          "description": "Model to use as the sensitivity for the scorecard.",
           "title": "Sensitivity",
           "type": "string"
         }
@@ -326,7 +354,8 @@
     "TaskDefaults": {
       "properties": {
         "execution": {
-          "$ref": "#/$defs/Execution"
+          "$ref": "#/$defs/Execution",
+          "description": "Default execution settings for all tasks."
         }
       },
       "required": [
@@ -366,28 +395,32 @@
       "type": "string"
     },
     "cartopy_data_dir": {
-      "description": "Path to the Cartopy data directory.",
+      "description": "Path to the Cartopy data directory. Often ~/.local/share/cartopy. Can be found programmatically via import cartopy.config; print(cartopy.config['data_dir']).",
       "format": "path",
       "title": "Cartopy Data Dir",
       "type": "string"
     },
     "output_dir": {
+      "description": "Path to the output directory. This directory will contain paired files, generated plots and statistics files.",
       "format": "path",
       "title": "Output Dir",
       "type": "string"
     },
     "run_dir": {
+      "description": "Path to the run directory. This directory will contain configuration files and any linked or pre-processed data files.",
       "format": "path",
       "title": "Run Dir",
       "type": "string"
     },
     "aqm": {
-      "$ref": "#/$defs/AQMConfig"
+      "$ref": "#/$defs/AQMConfig",
+      "description": "Configuration specific to UFS-AQM."
     },
     "platform_defaults": {
       "additionalProperties": {
         "$ref": "#/$defs/PlatformConfig"
       },
+      "description": "Platform configuration defaults.",
       "propertyNames": {
         "$ref": "#/$defs/PlatformKey"
       },

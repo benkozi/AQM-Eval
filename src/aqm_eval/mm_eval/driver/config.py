@@ -70,6 +70,7 @@ class PlatformKey(StrEnum):
     DERECHO = "derecho"
     ORION = "orion"
     HERCULES = "hercules"
+    LOCAL = "local"
 
 
 def _is_unique_(v: tuple[Any, ...]) -> tuple[Any, ...]:
@@ -79,37 +80,37 @@ def _is_unique_(v: tuple[Any, ...]) -> tuple[Any, ...]:
 
 
 class ScorecardConfig(AeBaseModel):
-    key: str = Field(exclude=True)
-    control: str
-    sensitivity: str
+    key: str = Field(exclude=True, description="Unique scorecard identifier.")
+    control: str = Field(description="Model to use as the control for the scorecard.")
+    sensitivity: str = Field(description="Model to use as the sensitivity for the scorecard.")
 
 
 class PlatformConfig(AeBaseModel):
-    ncores_per_node: int = Field(ge=1)
+    ncores_per_node: int = Field(ge=1, description="Number of cores per node.")
 
 
 class BatchArgs(AeBaseModel):
-    nodes: int = Field(ge=1, default=1)
-    tasks_per_node: int = Field(ge=1, default=1)
-    walltime: str = Field(default="01:00:00")
+    nodes: int = Field(ge=1, default=1, description="Number of nodes to use for the batch job.")
+    tasks_per_node: int = Field(ge=1, default=1, description="Number of tasks to run on each node.")
+    walltime: str = Field(default="01:00:00", description="Walltime for the batch job.")
 
 
 class Execution(AeBaseModel):
-    batchargs: BatchArgs = Field(default_factory=BatchArgs)
+    batchargs: BatchArgs = Field(default_factory=BatchArgs, description="Batch execution arguments.")
 
 
 class PackageExecution(AeBaseModel):
-    prep: Execution
-    tasks: dict[TaskKey, Execution]
+    prep: Execution = Field(description="Optional execution settings for the prep/initialization task associated with a package.")
+    tasks: dict[TaskKey, Execution] = Field(description="Optional task-level execution overrides.")
 
 
 class PackageConfig(AeBaseModel):
-    key: PackageKey = Field(exclude=True)
-    observation_template: str | None = Field(default=None, description="May be null if active is false.")
-    mapping: dict[str, str]
-    active: bool = True
-    tasks_to_exclude: tuple[TaskKey, ...] = tuple()
-    execution: PackageExecution = Field(default_factory=lambda x: PackageExecution.model_validate({}))
+    key: PackageKey = Field(exclude=True, description="Unique package identifier.")
+    observation_template: str | None = Field(default=None, description="Path to the observation file with appropriate spatiotemporal forecast coverage. May be null if active is false.")
+    mapping: dict[str, str] = Field(default="Maps model variable names to observation variable names.")
+    active: bool = Field(default=True, description="If False, package will not be executed.")
+    tasks_to_exclude: tuple[TaskKey, ...] = Field(default=tuple(), description="Optional task keys to exclude from package execution.")
+    execution: PackageExecution = Field(default_factory=lambda x: PackageExecution.model_validate({}), description="Optional package execution settings.")
 
     @model_validator(mode="after")
     def _validate_model_after_(self) -> "PackageConfig":
@@ -119,25 +120,25 @@ class PackageConfig(AeBaseModel):
 
 
 class PlotKwargs(AeBaseModel):
-    color: str = "g"
-    marker: str = "^"
-    linestyle: str = "-"
-    markersize: int = 4
+    color: str = Field(default="g", description="Plotting color specific to a model. Must be unique for each model.")
+    marker: str = Field(default="^", description="Plotting marker style.")
+    linestyle: str = Field(default="-", description="Plotting line style.")
+    markersize: int = Field(default=4, description="Plotting marker size.")
 
 
 class TaskDefaults(AeBaseModel):
-    execution: Execution
+    execution: Execution = Field(description="Default execution settings for all tasks.")
 
 
 class AQMModelConfig(AeBaseModel):
-    key: str = Field(exclude=True)
-    expt_dir: Path
-    title: str
-    plot_kwargs: PlotKwargs
-    is_host: bool = False
-    type: str = "rrfs"
-    kwargs: dict[str, Any] = {"surf_only": True, "mech": "cb6r3_ae6_aq"}
-    radius_of_influence: float = 20000
+    key: str = Field(exclude=True, description="Unique model identifier.")
+    expt_dir: Path = Field(description="Path to the experiment directory containing diag and phy netCDF files.")
+    title: str = Field(description="A unique model title to use when creating MM evaluation plots.")
+    plot_kwargs: PlotKwargs = Field(description="Plotting keyword arguments to use when creating MM evaluation plots.")
+    is_host: bool = Field(default=False, description="If true, this is the 'host' model. A 'host' model contains the workflow configuration for the evaluation. An evaluation needs at least one host model.")
+    type: str
+    kwargs: dict[str, Any]
+    radius_of_influence: float
     variables: Any | None = None
     projection: Any | None = None
 
@@ -150,13 +151,13 @@ class AQMModelConfig(AeBaseModel):
 
 
 class AQMConfig(AeBaseModel):
-    active: bool
-    no_forecast: bool = False
-    models: dict[str, AQMModelConfig]
-    packages: dict[PackageKey, PackageConfig] = Field(min_length=1)
-    task_defaults: TaskDefaults
-    scorecards: dict[str, ScorecardConfig]
-    run_mode: RunMode
+    active: bool = Field(description="Enable or disable the AQM evaluation. Clients can respond to this value to determine if the UFS-AQM evaluation should run.")
+    no_forecast: bool = Field(description="If true, the evaluation runs 'offline' with no forecast expected. The host experiment is excluded from the evaluation. If false, the host experiment is included in the evaluation. Following the forecast task, the evaluation will run.")
+    models: dict[str, AQMModelConfig] = Field(description="Dictionary of model configurations to evaluate. Keys are unique model identifiers. Model 'stems' must be unique.")
+    packages: dict[PackageKey, PackageConfig] = Field(min_length=1, description="Dictionary of evalution package configurations. Keys are PackageKey enum values.")
+    task_defaults: TaskDefaults = Field(description="Default settings for evaluation tasks.")
+    scorecards: dict[str, ScorecardConfig] = Field(description="Dictionary of scorecard configurations for model sensitivity analysis. Keys are unique scorecard identifiers.")
+    run_mode: RunMode = Field(description="Execution mode: 'strict' (fail if run or output directories exist) or 'resume' (continue from previous run when possible; useful to avoid re-generating pre-processed data files).")
 
     @cached_property
     def enable_scorecards(self) -> bool:
@@ -235,13 +236,14 @@ class AQMConfig(AeBaseModel):
 class Config(AeBaseModel):
     model_config = {"extra": "forbid"}
 
+    #tdk:doc: describe how to create the configuration from the default file
     start_datetime: str = Field(description="Evaluation start time in yyyy-mm-dd-HH:MM:SS UTC format.")
     end_datetime: str = Field(description="Evaluation end time in yyyy-mm-dd-HH:MM:SS UTC format.")
-    cartopy_data_dir: Path = Field(description="Path to the Cartopy data directory.")
-    output_dir: Path
-    run_dir: Path
-    aqm: AQMConfig
-    platform_defaults: dict[PlatformKey, PlatformConfig]
+    cartopy_data_dir: Path = Field(description="Path to the Cartopy data directory. Often ~/.local/share/cartopy. Can be found programmatically via import cartopy.config; print(cartopy.config['data_dir']).")
+    output_dir: Path = Field(description="Path to the output directory. This directory will contain paired files, generated plots and statistics files.")
+    run_dir: Path = Field(description="Path to the run directory. This directory will contain configuration files and any linked or pre-processed data files.")
+    aqm: AQMConfig = Field(description="Configuration specific to UFS-AQM.")
+    platform_defaults: dict[PlatformKey, PlatformConfig] = Field(description="Platform configuration defaults.")
 
     _key: str = "melodies_monet_parm"
 

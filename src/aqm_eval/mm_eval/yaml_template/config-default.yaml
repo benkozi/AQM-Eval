@@ -106,3 +106,5 @@ melodies_monet_parm:
       ncores_per_node: 40
     hercules:
       ncores_per_node: 80
+    local:
+      ncores_per_node: 1
