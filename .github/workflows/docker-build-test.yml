@@ -3,7 +3,7 @@ name: Docker Build and Test
 on:
   pull_request:
     branches: [ develop, main ]
-  push:
+#  push:
 
 jobs:
   docker-build-test:
