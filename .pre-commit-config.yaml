@@ -34,10 +34,11 @@ repos:
 
       - id: pytest
         name: pytest
-        entry: conda run -n aqm-eval-dev pytest src/test
+        entry: conda run -n aqm-eval-dev pytest -v src/test
         language: system
         stages: [manual]
         pass_filenames: false
         always_run: true
+        verbose: true
 
 exclude: ^\.venv/
