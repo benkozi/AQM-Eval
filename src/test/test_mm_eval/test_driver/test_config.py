@@ -6,7 +6,6 @@ import yaml
 from box import Box
 from pydantic_core import ValidationError
 
-import aqm_eval
 from aqm_eval.mm_eval.driver.config import Config, PackageConfig, PackageKey, PlatformKey, TaskKey
 from test.test_mm_eval.conftest import PackageConfigFactory
 
