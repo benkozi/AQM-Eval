@@ -236,7 +236,6 @@ class AQMConfig(AeBaseModel):
 class Config(AeBaseModel):
     model_config = {"extra": "forbid"}
 
-    #tdk:doc: describe how to create the configuration from the default file
     start_datetime: str = Field(description="Evaluation start time in yyyy-mm-dd-HH:MM:SS UTC format.")
     end_datetime: str = Field(description="Evaluation end time in yyyy-mm-dd-HH:MM:SS UTC format.")
     cartopy_data_dir: Path = Field(description="Path to the Cartopy data directory. Often ~/.local/share/cartopy. Can be found programmatically via import cartopy.config; print(cartopy.config['data_dir']).")

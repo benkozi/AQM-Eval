@@ -2,8 +2,8 @@ metadata:
   description: config for SRW-AQM evaluation
 user:
   RUN_ENVIR: community
-  MACHINE: GAEAC6 #tdk: set to a_machine
-  ACCOUNT: bil-fire3 #tdk: set to an_account
+  MACHINE: GAEAC6
+  ACCOUNT: bil-fire3
 workflow:
 #  USE_CRON_TO_RELAUNCH: true
 #  CRON_RELAUNCH_INTVL_MNTS: 3
@@ -16,7 +16,7 @@ workflow:
   DATE_LAST_CYCL_MM:  '2023090112'
 #  DATE_LAST_CYCL:  '2023083112'  # Last cycle date for AEROMMA with all data staged
   INCR_CYCL_FREQ: 24
-  FCST_LEN_HRS: 24 #tdk: should use this for the date range object
+  FCST_LEN_HRS: 24
   PREEXISTING_DIR_METHOD: rename
   VERBOSE: true
   DEBUG: false
@@ -40,7 +40,6 @@ workflow:
 #        plot_kwargs:
 #          color: forestgreen
 #        role: control
-#      #tdk: need to make sure prefixes don't lead to multiple model selections
 #      aqmv8_candev_off_base: # Base B
 #        expt_dir: /gpfs/f6/bil-fire3/scratch/Irena.Ivanova/expt_dirs/aqmv8_candev_off
 #        plot_kwargs:
@@ -93,7 +92,6 @@ melodies_monet_parm:
         expt_dir: /gpfs/f6/bil-fire3/scratch/Irena.Ivanova/expt_dirs/aqmv8_candev_off_xkz.1
         plot_kwargs:
           color: forestgreen
-      #tdk: need to make sure prefixes don't lead to multiple model selections
       aqmv8_candev_off_base: # Base B
         expt_dir: /gpfs/f6/bil-fire3/scratch/Irena.Ivanova/expt_dirs/aqmv8_candev_off
         plot_kwargs:
