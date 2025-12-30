@@ -194,7 +194,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "default": "Maps model variable names to observation variable names.",
+          "description": "Maps model variable names to observation variable names.",
           "title": "Mapping",
           "type": "object"
         },
@@ -219,7 +219,8 @@
         }
       },
       "required": [
-        "key"
+        "key",
+        "mapping"
       ],
       "title": "PackageConfig",
       "type": "object"

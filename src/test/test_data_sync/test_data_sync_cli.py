@@ -23,7 +23,6 @@ def test_help() -> None:
             fixed_up = fixed_up.strip()
             return self.header + "\n" + "```\n" + fixed_up + "\n```\n"
 
-
         @property
         def header(self) -> str:
             match self.cmd:

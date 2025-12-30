@@ -3,7 +3,6 @@ from aqm_eval.mm_eval.driver.config import ScorecardMethod
 
 
 class ScorecardTask(AeBaseModel):
-
     key: str
     better_or_worse_method: ScorecardMethod
     data: list[str]
