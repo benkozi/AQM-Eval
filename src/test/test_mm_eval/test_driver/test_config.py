@@ -31,8 +31,9 @@ def test(config: Config, tmp_path: Path) -> None:
 def test_json_schema() -> None:
     schema = Config.model_json_schema()
     pretty_json = json.dumps(schema, indent=2)
-    schema_path = Path(aqm_eval.__file__).parent.parent.parent / "docs" / "config.schema.json"
-    schema_path.write_text(pretty_json)
+    print(pretty_json)
+    # schema_path = Path(aqm_eval.__file__).parent.parent.parent / "docs" / "config.schema.json"
+    # schema_path.write_text(pretty_json)
 
 
 def test_package_config_allows_none_observation_template() -> None:
