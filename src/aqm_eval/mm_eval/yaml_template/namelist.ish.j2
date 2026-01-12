@@ -1,0 +1,146 @@
+# Please use this namelist script for MM settings. 13 plot/analysis options are included: save_paired, timeseries, taylor, spatial_bias, spatial_overlay, boxplot, multi_boxplot, scorecard_rmse, scorecard_ioa, scorecard_nmb, scorecard_nme, csi, and stats.
+# For AQMv8 evaluation, two models (base, eval) and airnow observation are used by default.
+# Any key that is specific for a plot type will begin with ts for timeseries, ty for taylor
+# Opt: Specifying the variable or variable group is optional
+# For now all plots except time series average over the analysis window.
+# Seting axis values - If set_axis = True in data_proc section of each plot_grp the yaxis for the plot will be set based on the values specified in the obs section for each variable. If set_axis is set to False, then defaults will be used. 'vmin_plot' and 'vmax_plot' are needed for 'timeseries', 'spatial_overlay', and 'boxplot'. 'vdiff_plot' is needed for 'spatial_bias' plots and'ty_scale' is needed for 'taylor' plots. 'nlevels' or the number of levels used in the contour plot can also optionally be provided for spatial_overlay plot. If set_axis = True and the proper limits are not provided in the obs section, a warning will print, and the plot will be created using the default limits.
+# ==== General settings ====
+# For MM yamls
+package_key: met
+# Time format: yyyy-mm-dd-HH:MM:SS UTC
+start_time: {{ ctx.mm_config.start_datetime }}
+end_time: {{ ctx.mm_config.end_datetime }}
+output_dir: {{ package.output_dir }}
+debug_option: True
+mm_tasks: {{ mm_tasks }}
+
+# ==== Paired file ====
+paired_format: '"netcdf"'
+paired_predix: "~"
+paired_save_data: '"all"'
+paired_dataset:
+{%- for mm_model in package.mm_models %}
+  {{ mm_model.label }}: "ish_{{ mm_model.label }}.nc4"
+{%- endfor %}
+
+# ==== Obs (ISH by default) ====
+obs_label: ish
+obs_file: {{ package.observation_template }}
+obs_variables:
+  ws:
+    unit_scale: 1    # use 0.514 when convert obs knots-->m/s
+    unit_scale_method: "*"  # Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+    nan_value: -1.0
+    obs_min: 0.2 # m/s
+    ylabel_plot: "WS10 (m/s)"
+    ty_scale: 0.5
+    vmin_plot: 1.0
+    vmax_plot: 6.0
+  press:
+    unit_scale: 1
+    unit_scale_method: "*"  # Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+    nan_value: -1.0
+    ylabel_plot: "PRESSFC (mbar)"
+    ty_scale: 0.5
+    vmin_plot: 800
+    vmax_plot: 1100
+  temp:
+    unit_scale: 1.0
+    unit_scale_method: "*"
+    nan_value: -1.0
+    ylabel_plot: "T2 (degree C)"
+    ty_scale: 3.0
+    vmin_plot: 0.0
+    vmax_plot: 40.0
+  dew_pt_temp:
+    unit_scale: 1.0
+    unit_scale_method: "*"
+    nan_value: -1.0
+    ylabel_plot: "TD2 (degree C)"
+    ty_scale: 8.0
+    vmin_plot: 0.0
+    vmax_plot: 40.0
+
+# ==== pg1 - timeseries ====
+timeseries_fig_kwargs:
+  figsize: [12, 6]
+timeseries_plot_kwargs:
+  linewidth: 2.0
+  markersize: 10
+timeseries_text_kwargs:
+  fontsize: 24
+timeseries_domain_type: ["country"]
+timeseries_domain_name: ["US"]
+timeseries_dataset: {{ package.mm_model_labels }}
+timeseries_data_proc:
+  rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
+  set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
+  ts_select_time: "time_local"  # Options: 'time' for UTC or 'time_local' for LT
+  ts_avg_window: "H"  # None for no averaging, pandas resample rule (e.g., 'H', 'D')
+
+# ==== pg2 - taylor ====
+taylor_fig_kwargs:
+  figsize: [8, 8]
+taylor_plot_kwargs:
+  markersize: 10
+taylor_text_kwargs:
+  fontsize: 24
+taylor_domain_type: ["country"]
+taylor_domain_name: ["US"]
+taylor_dataset: {{ package.mm_model_labels }}
+taylor_data_proc:
+  rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
+  set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
+
+# ==== pg3 - spatial_bias ====
+spatial_bias_fig_kwargs:
+  states: True
+  figsize: [10, 5]
+spatial_bias_text_kwargs:
+  fontsize: 24
+spatial_bias_domain_type: ["country"]
+spatial_bias_domain_name: ["US"]
+spatial_bias_dataset: {{ package.mm_model_labels }}
+spatial_bias_data_proc:
+  filter_dict: {'longitude':{'value':0,'oper':'<'}} # Constrain map to US only.
+  rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
+  set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
+
+# ==== pg4 - spatial_overlay ====
+spatial_overlay_fig_kwargs:
+  states: True
+  figsize: [10, 5]
+spatial_overlay_text_kwargs:
+  fontsize: 24
+spatial_overlay_domain_type: ["country"]
+spatial_overlay_domain_name: ["US"]
+spatial_overlay_dataset: {{ package.mm_model_labels }}
+spatial_overlay_data_proc:
+  filter_dict: {'longitude':{'value':0,'oper':'<'}} # Constrain map to US only.
+  rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
+  set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
+
+# ==== pg5 - boxplot ====
+boxplot_fig_kwargs:
+  figsize: [8, 6]
+boxplot_text_kwargs:
+  fontsize: 24
+boxplot_domain_type: ["country"]
+boxplot_domain_name: ["US"]
+boxplot_dataset: {{ package.mm_model_labels }}
+boxplot_data_proc:
+  rem_obs_nan: True  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
+  set_axis: True  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
+
+# ==== Stats ====
+stats_score_list: ["MB", "MdnB", "NMB", "NMdnB", "ME", "MdnE", "NME", "NMdnE", "IOA", "R2", "RMSE", "AC"]
+stats_table_option: False
+stats_table_kwargs:
+  figsize: [7, 3]
+  fontsize: 12.
+  xscale: 1.4
+  yscale: 1.4
+  edges: "horizontal"
+stats_domain_type: ["country"]
+stats_domain_name: ["US"]
+stats_dataset: {{ package.mm_model_labels }}

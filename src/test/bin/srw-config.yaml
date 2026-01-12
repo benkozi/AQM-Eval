@@ -1,0 +1,21 @@
+melodies_monet_parm:
+  aqm:
+    no_forecast: false
+    active: true
+    models:
+      eval:
+        expt_dir: null
+        title: "Evaluation Target"
+        plot_kwargs:
+          color: g
+        is_host: true
+    scorecards: {}
+    packages:
+      aqs_pm:
+        observation_template: /gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/data/aqm-use-case-download/Observations/AQS/pm25_spec_daily/AQS_20230601_20230701.nc
+      aqs_voc:
+        observation_template: /gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/data/aqm-use-case-download/Observations/AQS/vocs/AQS_20230601_20230701.nc
+      chem:
+        observation_template: /gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/data/aqm-use-case-download/Observations/AirNow/AirNow_20230601_20230701.nc
+      ish:
+        observation_template: /gpfs/f6/bil-fire8/scratch/Benjamin.Koziol/data/aqm-use-case-download/Observations/ISH/ISH-Lite_20230601_20230701.nc

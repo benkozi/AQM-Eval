@@ -4,45 +4,45 @@ from pytest_mock import MockerFixture
 from typer.testing import CliRunner
 
 from aqm_eval.mm_eval.driver.context.srw import SRWContext
-from aqm_eval.mm_eval.driver.package import PackageKey, TaskKey
-from aqm_eval.mm_eval.driver.runner import MMEvalRunner
+from aqm_eval.mm_eval.driver.package.core import AbstractEvalPackage
 from aqm_eval.mm_eval.mm_eval_cli import app
+from aqm_eval.mm_eval.rocoto.srw_task_group import cli_arg_to_json, json_to_cli_arg
 
 
 def test_help() -> None:
     """Test that the help message can be displayed."""
     runner = CliRunner()
-    for subcommand in ("yaml-init", "yaml-run", "srw-init", "srw-run"):
+    for subcommand in ("srw-init", "srw-run", "srw-task-group", "concat-stats"):
         result = runner.invoke(app, [subcommand, "--help"], catch_exceptions=False)
         print(result.output)
         assert result.exit_code == 0
 
 
 def test_srw_run_package_and_task_selector(tmp_path: Path, srw_context: SRWContext, mocker: MockerFixture) -> None:
-    mock = mocker.patch.object(MMEvalRunner, "run")
+    mock_run = mocker.patch.object(AbstractEvalPackage, "run")
     runner = CliRunner()
     result = runner.invoke(
         app,
         [
             "srw-run",
             "--expt-dir",
-            str(tmp_path),
-            "--task-selector",
+            str(srw_context.expt_dir),
+            "--task",
             "save_paired",
-            "--task-selector",
-            "timeseries",
-            "--package-selector",
+            "--package",
             "chem",
         ],
         catch_exceptions=False,
     )
     print(result.output)
     assert result.exit_code == 0
-    mock.assert_called_once_with(task_selector=(TaskKey.SAVE_PAIRED, TaskKey.TIMESERIES), package_selector=(PackageKey.CHEM,))
+    mock_run.assert_called_once()
 
 
-def test_yaml_init(namelist_chem_yaml_config: Path) -> None:
+def test_srw_task_group(srw_context: SRWContext) -> None:
+    srw_data = json_to_cli_arg(srw_context.model_dump(mode="json"))
     runner = CliRunner()
-    result = runner.invoke(app, ["yaml-init", "--yaml-config", str(namelist_chem_yaml_config)])
-    print(result.output)
+    result = runner.invoke(app, ["srw-task-group", "--srw-data", srw_data])
+    tg = cli_arg_to_json(result.output)
+    assert isinstance(tg, dict)
     assert result.exit_code == 0

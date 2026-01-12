@@ -7,8 +7,8 @@ import os
 from pathlib import Path
 
 import typer
-from pydantic import BaseModel
 
+from aqm_eval.base import AeBaseModel
 from aqm_eval.data_sync.core import (
     ObservationsContext,
     ObservationsSyncRunner,
@@ -24,17 +24,17 @@ os.environ["NO_COLOR"] = "1"
 app = typer.Typer(pretty_exceptions_enable=False)
 
 
-class _HelpMessage(BaseModel):
+class _HelpMessage(AeBaseModel):
     dst_dir: str = "Destination directory for sync."
     max_concurrent_requests: str = "Maximum number of concurrent requests."
     dry_run: str = "Dry run. Nothing will be materially synchronized."
 
 
-class _DefaultValue(BaseModel):
+class _DefaultValue(AeBaseModel):
     max_concurrent_requests: int = 5
 
 
-class _FlagName(BaseModel):
+class _FlagName(AeBaseModel):
     dst_dir: str = "--dst-dir"
     dry_run: str = "--dry-run"
     max_concurrent_requests: str = "--max-concurrent-requests"
@@ -51,13 +51,13 @@ def time_varying(
     first_cycle_date: str = typer.Option(
         None,
         "--first-cycle-date",
-        help="First cycle date in yyyymmdd format. Required if --use-case is not provided.",
+        help="First cycle date in yyyymmddhh format. Required if --use-case is not provided.",
     ),
     fcst_hr: int = typer.Option(0, "--fcst-hr", help="Forecast hour."),
     last_cycle_date: str = typer.Option(
         None,
         "--last-cycle-date",
-        help="Last cycle date in yyyymmdd format. If not provided, defaults to 24 hours after --first-cycle-date.",
+        help="Last cycle date in yyyymmddhh format. If not provided, defaults to 24 hours after --first-cycle-date.",
     ),
     use_case: UseCaseKey = typer.Option(UseCaseKey.UNDEFINED, "--use-case", help="Use case."),
     max_concurrent_requests: int = typer.Option(

@@ -11,8 +11,9 @@ from enum import StrEnum, unique
 from pathlib import Path
 from typing import Any, Generic, TypeVar
 
-from pydantic import BaseModel, computed_field, model_validator
+from pydantic import computed_field, model_validator
 
+from aqm_eval.base import AeBaseModel
 from aqm_eval.logging_aqm_eval import LOGGER
 
 
@@ -32,7 +33,7 @@ class UseCaseKey(StrEnum):
     AEROMMA = "AEROMMA"
 
 
-class AbstractContext(ABC, BaseModel):
+class AbstractContext(ABC, AeBaseModel):
     """Abstract base class for synchronization contexts.
 
     Attributes
@@ -47,7 +48,6 @@ class AbstractContext(ABC, BaseModel):
         Whether to perform a dry run. If `True`, no data is moved.
     """
 
-    model_config = {"frozen": True}
     dst_dir: Path
     s3_root: str = "s3://noaa-ufs-srw-pds"
     max_concurrent_requests: int | None = 3
@@ -234,7 +234,7 @@ class AbstractS3SyncRunner(ABC, Generic[T]):
 
     def _run_impl_(self) -> None:
         cmd = self._create_sync_cmd_()
-        LOGGER(f"{cmd=}")
+        LOGGER(f"{cmd=}", level=logging.DEBUG)
 
         if self._ctx.max_concurrent_requests is not None:
             LOGGER("setting max concurrent requests")
@@ -311,7 +311,7 @@ class TimeVaryingSyncRunner(AbstractS3SyncRunner[TimeVaryingContext]):
                 include_templates.append(f"RESTART/*{restart_cycle_date.strftime('%Y%m%d')}*")
             for it in include_templates:
                 cmd += ["--include", it]
-            if curr_cycle_date == self._ctx.last_cycle_date or self._ctx.snippet is True:
+            if curr_cycle_date == self._ctx.last_cycle_date or (self._ctx.snippet is True and ctr == 1):
                 LOGGER("finished adding include filters")
                 break
             curr_cycle_date += datetime.timedelta(days=1)

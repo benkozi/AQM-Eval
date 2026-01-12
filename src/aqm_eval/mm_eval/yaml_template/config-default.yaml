@@ -1,0 +1,110 @@
+melodies_monet_parm:
+  start_datetime: null
+  end_datetime: null
+  cartopy_data_dir: null
+  output_dir: null
+  run_dir: null
+  aqm:
+    active: true
+    no_forecast: true
+    run_mode: strict
+    models:
+      eval:
+        expt_dir: null
+        title: "Evaluation Target"
+        plot_kwargs:
+          color: g
+        is_host: true
+        type: rrfs
+        kwargs:
+          surf_only: true
+          mech: cb6r3_ae6_aq
+        radius_of_influence: 20000.0
+        variables: null
+        projection: null
+    scorecards: {}
+    packages:
+      chem:
+        observation_template: null
+        mapping:
+          o3_ave: OZONE
+          pm25_ave: PM2.5
+          no2_ave: NO2
+          co: CO
+        active: true
+        tasks_to_exclude: [ ]
+        execution:
+          prep:
+            batchargs:
+              nodes: 1
+              tasks_per_node: 1
+              walltime: 00:05:00
+          tasks: {}
+      ish:
+        observation_template: null
+        mapping:
+          tmp2m: temp
+          ws10m: ws
+          dew_temp: dew_pt_temp
+        active: true
+        tasks_to_exclude: [ ]
+        execution:
+          prep:
+            batchargs:
+              nodes: 1
+              tasks_per_node: auto
+              walltime: 00:15:00
+          tasks: {}
+      aqs_pm:
+        observation_template: null
+        mapping:
+          pm25_so4: SO4f
+          pm25_no3: NO3f
+          pm25_nh4: "NH4+f"
+          pm25_ec: ECf
+          pm25_oc: OCPM2.5LCTOT
+        active: true
+        tasks_to_exclude: [ ]
+        execution:
+          prep:
+            batchargs:
+              nodes: 1
+              tasks_per_node: auto
+              walltime: 00:30:00
+          tasks: {}
+      aqs_voc:
+        observation_template: null
+        mapping:
+          etha: ETHANE
+          prpa: PROPANE
+          benzene: BENZENE
+          tol: TOLUENE
+          isop: ISOPRENE
+        active: true
+        tasks_to_exclude: [ ]
+        execution:
+          prep:
+            batchargs:
+              nodes: 1
+              tasks_per_node: 1
+              walltime: 00:05:00
+          tasks: {}
+    task_defaults:
+      execution:
+        batchargs:
+          nodes: 1
+          tasks_per_node: auto
+          walltime: 01:00:00
+  platform_defaults:
+    ursa:
+      ncores_per_node: 192
+    gaeac6:
+      ncores_per_node: 192
+    derecho:
+      ncores_per_node: 128
+    orion:
+      ncores_per_node: 40
+    hercules:
+      ncores_per_node: 80
+    local:
+      ncores_per_node: 1

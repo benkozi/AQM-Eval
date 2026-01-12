@@ -1,0 +1,13 @@
+Stat_ID,Stat_FullName,base_candev_off,sens_candev_vdflev3_xkz
+MB,Mean_Bias,-0.245,-0.782
+MdnB,Median_Bias,-0.209,-0.723
+NMB,Normalized_Mean_Bias_(%),-2.516,-8.026
+NMdnB,Normalized_Median_Bias_(%),-2.405,-8.308
+ME,Mean_Gross_Error,3.654,3.79
+MdnE,Median_Gross_Error,2.606,2.725
+NME,Normalized_Mean_Error_(%),37.525,38.922
+NMdnE,Normalized_Median_Error_(%),29.952,31.327
+IOA,Index_of_Agreement,0.672,0.654
+R2,Coefficient_of_Determination_(R2),0.216,0.193
+RMSE,Root_Mean_Square_Error,5.213,5.34
+AC,Anomaly_Correlation,0.464,0.434

@@ -4,26 +4,11 @@ import functools
 import logging
 import logging.config
 import time
-from enum import StrEnum, unique
 from typing import Callable, ParamSpec, TypeVar
 
+from aqm_eval.settings import SETTINGS, LogLevel
+
 _PROJECT_NAME = "aqm-eval"
-
-
-@unique
-class LogLevel(StrEnum):
-    """Log level enum. Used to wrap standard `logging` levels.
-
-    Attributes
-    ----------
-    INFO : str
-        Equivalent to `logging.INFO`.
-    DEBUG : str
-        Equivalent to `logging.DEBUG`.
-    """
-
-    INFO = "info"
-    DEBUG = "debug"
 
 
 class LoggerWrapper:
@@ -44,7 +29,7 @@ class LoggerWrapper:
 
     def __call__(
         self,
-        msg: str,
+        msg: str | None = None,
         level: int = logging.INFO,
         exc_info: Exception | None = None,
         stacklevel: int = 2,
@@ -66,6 +51,10 @@ class LoggerWrapper:
         """
         if exc_info is not None:
             level = logging.ERROR
+            if msg is None:
+                msg = str(exc_info)
+        if msg is None:
+            raise ValueError("msg required if exc_info is not provided")
         self._get_logger_().log(level, msg, exc_info=exc_info, stacklevel=stacklevel)
         if exc_info is not None and self.exit_on_error:
             raise exc_info
@@ -101,8 +90,8 @@ class LoggerWrapper:
                 "plain": {
                     # pylint: disable=line-too-long
                     # Uncomment to report verbose output in logs; try to keep these two in sync
-                    # "format": f"[%(name)s][%(levelname)s][%(asctime)s][%(pathname)s:%(lineno)d][%(process)d][%(thread)d][rank={rank}]: %(message)s" # noqa: E501
-                    "format": f"[%(name)s][%(levelname)s][%(asctime)s][%(filename)s:%(lineno)d][rank={rank}]: %(message)s"
+                    "format": f"[%(name)s][%(levelname)s][%(asctime)s][%(pathname)s:%(lineno)d][%(process)d][%(thread)d][rank={rank}]: %(message)s"  # noqa: E501
+                    # "format": f"[%(name)s][%(levelname)s][%(asctime)s][%(filename)s:%(lineno)d][rank={rank}]: %(message)s"
                     # pylint: enable=line-too-long
                 },
             },
@@ -110,7 +99,7 @@ class LoggerWrapper:
                 "default": {
                     "formatter": "plain",
                     "class": "logging.StreamHandler",
-                    "stream": "ext://sys.stdout",
+                    "stream": "ext://sys.stderr",
                     "filters": [],
                 },
             },
@@ -123,7 +112,7 @@ class LoggerWrapper:
         }
         logging.config.dictConfig(logging_config)
         self.logger = logging.getLogger(_PROJECT_NAME)
-        self("logging initialized")
+        self("Logging initialized", level=logging.INFO)
 
     def _get_logger_(self) -> logging.Logger:
         if self.logger is None:
@@ -132,7 +121,8 @@ class LoggerWrapper:
 
 
 LOGGER = LoggerWrapper()
-LOGGER.initialize(log_level=LogLevel.DEBUG)
+LOGGER.initialize(log_level=SETTINGS.aqm_eval_log_level)
+LOGGER(f"{SETTINGS=}", level=logging.INFO)
 
 
 P = ParamSpec("P")
