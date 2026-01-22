@@ -2,6 +2,7 @@ import subprocess
 from pathlib import Path
 
 from aqm_eval.verify.context import VerifyPair, VerifyContext
+from aqm_eval.verify.runner import run_verify
 from test.shared import create_data_array
 import xarray as xr
 
@@ -13,17 +14,13 @@ def test(tmp_path: Path) -> None:
     pm.encoding["_FillValue"] = -99.0
     ds = xr.Dataset({"O3": o3, "PM25_TOT": pm})
 
-    actual = tmp_path / "actual.nc"
-    expected = tmp_path / "expected.nc"
+    actual = Path("actual.nc")
+    expected = Path("expected.nc")
 
-    ds.to_netcdf(actual)
-    ds.to_netcdf(expected)
+    ds.to_netcdf(tmp_path / actual)
+    ds.to_netcdf(tmp_path / expected)
 
     pair = VerifyPair(actual=actual, expected=expected)
-    ctx = VerifyContext(verify_pairs=(pair,))
+    ctx = VerifyContext(verify_pairs=(pair,), baseline_dir=tmp_path, expt_dir=tmp_path)
 
-    v = ",".join(ctx.variables)
-
-    cmd = ["nccmp", "-d", "-m", "-v", v, "-t", str(ctx.tolerance), str(ctx.verify_pairs[0].actual), str(ctx.verify_pairs[0].expected)]
-    print(cmd)
-    subprocess.check_call(cmd)
+    run_verify(ctx)
