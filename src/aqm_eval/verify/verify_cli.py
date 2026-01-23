@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 import typer
+import yaml
 
 from aqm_eval.verify.context import VerifyContext
 from aqm_eval.verify.runner import run_verify
@@ -15,9 +16,11 @@ app = typer.Typer(pretty_exceptions_enable=False)
     help="Verify UFS-AQM output using nccmp.",
 )
 def aqm_verify(
-    json_data: str = typer.Option(..., "--json-data")
+    yaml_path: Path = typer.Option(..., "--yaml-path", exists=True, dir_okay=False),
+    root_key: str = typer.Option("aqm-verify", "--root-key")
 ) -> None:
-    ctx = VerifyContext.model_validate(json.loads(json_data))
+    yaml_data = yaml.safe_load(yaml_path.read_text())
+    ctx = VerifyContext.model_validate(yaml_data[root_key])
     run_verify(ctx)
 
 

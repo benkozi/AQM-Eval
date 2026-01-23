@@ -12,6 +12,7 @@ WORKDIR /opt/build
 RUN conda run -n aqm-eval-dev bash -c "pip install --no-deps . && pip list"
 RUN conda run -n aqm-eval-dev bash -c "aqm-data-sync --help"
 RUN conda run -n aqm-eval-dev bash -c "aqm-mm-eval --help"
+RUN conda run -n aqm-eval-dev bash -c "aqm-verify --help"
 
 # Test that the yaml_template directory exists after pip installation
 RUN test -d /opt/conda/envs/aqm-eval-dev/lib/python3.11/site-packages/aqm_eval/mm_eval/yaml_template
