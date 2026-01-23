@@ -1,11 +1,11 @@
 from pathlib import Path
 
 import pytest
+import xarray as xr
 from box import Box
 
 from aqm_eval.verify.context import VerifyContext, VerifyPair
-from aqm_eval.verify.runner import run_verify, NccmpError
-import xarray as xr
+from aqm_eval.verify.runner import NccmpError, run_verify
 
 
 def test(verify_ctx: VerifyContext) -> None:
@@ -13,8 +13,7 @@ def test(verify_ctx: VerifyContext) -> None:
     run_verify(verify_ctx)
 
 
-
-@pytest.mark.parametrize("fail_fast",["__default__", True])
+@pytest.mark.parametrize("fail_fast", ["__default__", True])
 def test_netcdf_values_differ(verify_ctx: VerifyContext, tmp_path: Path, fail_fast: str | bool) -> None:
     with xr.open_dataset(verify_ctx.verify_pairs_full_path[0].actual) as ds:
         ds_new = ds.copy()

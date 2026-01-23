@@ -1,23 +1,21 @@
 import logging
 import subprocess
-from unittest.result import failfast
 
 from aqm_eval.logging_aqm_eval import LOGGER
 from aqm_eval.verify.context import VerifyContext
 
 
-class NccmpError(Exception):
-    ...
+class NccmpError(Exception): ...
 
 
 def run_verify(ctx: VerifyContext) -> None:
     error_ctr = 0
     for cmd in ctx.iter_nccmp_cmds():
-        LOGGER(cmd)
+        LOGGER(str(cmd))
         try:
             subprocess.check_call(cmd)
             LOGGER("verify successful")
-        except subprocess.CalledProcessError as exc:
+        except subprocess.CalledProcessError:
             error_ctr += 1
             if ctx.fail_fast:
                 LOGGER(exc_info=NccmpError("verify failed, see above for error info"))

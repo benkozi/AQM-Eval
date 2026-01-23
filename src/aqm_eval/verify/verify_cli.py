@@ -1,4 +1,3 @@
-import json
 import os
 from pathlib import Path
 
@@ -17,7 +16,7 @@ app = typer.Typer(pretty_exceptions_enable=False)
 )
 def aqm_verify(
     yaml_path: Path = typer.Option(..., "--yaml-path", exists=True, dir_okay=False),
-    root_key: str = typer.Option("aqm-verify", "--root-key")
+    root_key: str = typer.Option("aqm-verify", "--root-key"),
 ) -> None:
     yaml_data = yaml.safe_load(yaml_path.read_text())
     ctx = VerifyContext.model_validate(yaml_data[root_key])

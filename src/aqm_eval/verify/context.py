@@ -1,4 +1,3 @@
-import datetime
 from functools import cached_property
 from pathlib import Path
 from typing import Iterator
@@ -14,8 +13,14 @@ class VerifyPair(AeBaseModel):
 
 
 class VerifyContext(AeBaseModel):
-    verify_pairs: tuple[VerifyPair,...] = Field(min_length=1)
-    variables: tuple[str,...] = Field(default=("O3", "PM25_TOT",), min_length=1)
+    verify_pairs: tuple[VerifyPair, ...] = Field(min_length=1)
+    variables: tuple[str, ...] = Field(
+        default=(
+            "O3",
+            "PM25_TOT",
+        ),
+        min_length=1,
+    )
     baseline_dir: Path | None = None
     expt_dir: Path | None = None
     tolerance: float = 1e-12
@@ -32,7 +37,7 @@ class VerifyContext(AeBaseModel):
             for verify_pair in self.verify_pairs
         )
 
-    def iter_nccmp_cmds(self) -> Iterator[tuple[str,...]]:
+    def iter_nccmp_cmds(self) -> Iterator[tuple[str, ...]]:
         v = ",".join(self.variables)
         for verify_pair in self.verify_pairs_full_path:
             cmd = ["nccmp"]

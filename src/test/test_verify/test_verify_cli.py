@@ -1,13 +1,9 @@
-import json
-import os
-import shutil
 from pathlib import Path
-import xarray as xr
+
 import yaml
-from box import Box
 from typer.testing import CliRunner
 
-from aqm_eval.verify.context import VerifyContext, VerifyPair
+from aqm_eval.verify.context import VerifyContext
 from aqm_eval.verify.verify_cli import app
 
 
@@ -27,6 +23,3 @@ def test_happy_path(verify_ctx: VerifyContext, tmp_path: Path) -> None:
     result = runner.invoke(app, ["--yaml-path", str(yaml_path)], catch_exceptions=False)
     print(result.output)
     assert result.exit_code == 0
-
-
-
