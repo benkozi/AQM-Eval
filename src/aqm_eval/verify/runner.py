@@ -9,6 +9,7 @@ class NccmpError(Exception): ...
 
 
 def run_verify(ctx: VerifyContext) -> None:
+    LOGGER(ctx.model_dump_json())
     error_ctr = 0
     for cmd in ctx.iter_nccmp_cmds():
         LOGGER(str(cmd))

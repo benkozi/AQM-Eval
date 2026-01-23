@@ -15,8 +15,12 @@ app = typer.Typer(pretty_exceptions_enable=False)
     help="Verify UFS-AQM output using nccmp.",
 )
 def aqm_verify(
-    yaml_path: Path = typer.Option(..., "--yaml-path", exists=True, dir_okay=False),
-    root_key: str = typer.Option("aqm-verify", "--root-key"),
+    yaml_path: Path = typer.Option(
+        ..., "--yaml-path", help="Path to YAML file containing the configuration's root key", exists=True, dir_okay=False
+    ),
+    root_key: str = typer.Option(
+        "aqm-verify", "--root-key", help="If provided, use this key when extracting the root configuration"
+    ),
 ) -> None:
     yaml_data = yaml.safe_load(yaml_path.read_text())
     ctx = VerifyContext.model_validate(yaml_data[root_key])
