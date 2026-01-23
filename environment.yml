@@ -12,4 +12,4 @@ dependencies:
   - dask=2024.2.1
   - melodies-monet=1.*
   - numpy=1.26.*
-  - uwtools # Needed for SRW context
+  - uwtools=2.9.1 # Needed for SRW context

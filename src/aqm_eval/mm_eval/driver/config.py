@@ -148,9 +148,9 @@ class AQMModelConfig(AeBaseModel):
         description="If true, this is the 'host' model. A 'host' model contains the workflow configuration for the evaluation. "
         "An evaluation needs at least one host model.",
     )
-    type: str
-    kwargs: dict[str, Any]
-    radius_of_influence: float
+    type: str = "rrfs"
+    kwargs: dict[str, Any] = {"surf_only": True, "mech": "cb6r3_ae6_aq"}
+    radius_of_influence: float = 20000.0
     variables: Any | None = None
     projection: Any | None = None
 
