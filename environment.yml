@@ -11,5 +11,6 @@ dependencies:
   - typer=0.16.*
   - dask=2024.2.1
   - melodies-monet=1.*
+  - nccmp=1.10.*
   - numpy=1.26.*
   - uwtools=2.9.1 # Needed for SRW context
