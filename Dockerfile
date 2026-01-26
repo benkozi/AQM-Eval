@@ -2,8 +2,10 @@ FROM continuumio/miniconda3
 
 RUN apt-get update --yes && apt-get install --yes tmux vim less
 
+RUN conda install -c conda-forge mamba
+
 COPY environment*.yml /opt/build/
-RUN conda env create -f /opt/build/environment-dev.yml -q
+RUN mamba env create -f /opt/build/environment-dev.yml -q
 
 COPY pyproject.toml /opt/build/pyproject.toml
 COPY src /opt/build/src
