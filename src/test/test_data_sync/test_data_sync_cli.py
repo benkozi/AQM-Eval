@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from pydantic import BaseModel
 from typer.testing import CliRunner
 
@@ -44,14 +45,15 @@ def test_help() -> None:
         assert result.exit_code == 0
 
 
-def test_time_varying_use_case(tmp_path: Path) -> None:
+@pytest.mark.parametrize("use_case", [ii for ii in UseCaseKey if ii != UseCaseKey.UNDEFINED])
+def test_time_varying_use_case(tmp_path: Path, use_case: UseCaseKey) -> None:
     """Test the use case pathway for a snippet."""
     runner = CliRunner()
 
     args = [
         "time-varying",
         "--use-case",
-        UseCaseKey.AEROMMA.value,
+        use_case.value,
         "--dst-dir",
         str(tmp_path),
         "--dry-run",

@@ -11,6 +11,7 @@ from aqm_eval.mm_eval.driver.package.aqs_pm import AQS_PM_PreprocessDaskOperatio
 from aqm_eval.mm_eval.driver.package.core import AbstractDaskOperation, ForecastFileSpec
 from aqm_eval.mm_eval.driver.package.ish import ISH_PreprocessDaskOperation
 from aqm_eval.shared import PathExisting
+from test.shared import create_data_array
 
 
 class ContextForDaskTest(BaseModel):
@@ -69,7 +70,7 @@ class ContextForDaskTest(BaseModel):
 
     @cached_property
     def dataset_dyn(self) -> xr.Dataset:
-        fields = {ii: self.create_data_array(ii, self.dims) for ii in self.klass.model_fields["dyn_varnames"].default}
+        fields = {ii: create_data_array(ii, self.dims) for ii in self.klass.model_fields["dyn_varnames"].default}
         ret = xr.Dataset(fields)
         for k, v in self.global_attrs.items():
             ret.attrs[k] = v
@@ -78,17 +79,11 @@ class ContextForDaskTest(BaseModel):
 
     @cached_property
     def dataset_phy(self) -> xr.Dataset:
-        fields = {ii: self.create_data_array(ii, self.dims) for ii in self.klass.model_fields["phy_varnames"].default}
+        fields = {ii: create_data_array(ii, self.dims) for ii in self.klass.model_fields["phy_varnames"].default}
         ret = xr.Dataset(fields)
         for k, v in self.global_attrs.items():
             ret.attrs[k] = v
         return ret
-
-    @staticmethod
-    def create_data_array(name: str, dims: dict[str, int]) -> xr.DataArray:
-        shape = tuple(ii for ii in dims.values())
-        data = np.random.random(shape)
-        return xr.DataArray(data, name=name, dims=tuple(ii for ii in dims.keys()))
 
 
 @pytest.fixture(params=[ISH_PreprocessDaskOperation, AQS_PM_PreprocessDaskOperation])

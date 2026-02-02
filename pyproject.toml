@@ -11,6 +11,7 @@ authors = [
 [project.scripts]
 aqm-data-sync = "aqm_eval.data_sync.data_sync_cli:app"
 aqm-mm-eval = "aqm_eval.mm_eval.mm_eval_cli:app"
+aqm-verify = "aqm_eval.verify.verify_cli:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]

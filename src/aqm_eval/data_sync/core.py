@@ -27,10 +27,13 @@ class UseCaseKey(StrEnum):
         Undefined use case. No synchronization parameters are overridden.
     AEROMMA : str
         AEROMMA field campaign use case.
+    FALL_OZONE : str
+        Fall ozone field campaign use case.
     """
 
     UNDEFINED = "UNDEFINED"
     AEROMMA = "AEROMMA"
+    FALL_OZONE = "FALL_OZONE"
 
 
 class AbstractContext(ABC, AeBaseModel):
@@ -165,6 +168,8 @@ class UseCase(TimeVaryingContext):
                 instance = cls(key=key, **kwargs)
             case UseCaseKey.AEROMMA:
                 instance = UseCaseAeromma(**kwargs)
+            case UseCaseKey.FALL_OZONE:
+                instance = UseCaseFallOzone(**kwargs)
             case _:
                 raise NotImplementedError(key)
         return instance
@@ -195,6 +200,12 @@ class UseCaseAeromma(UseCase):
             if values.get(key, "") is None:
                 values.pop(key)
         return values
+
+
+class UseCaseFallOzone(UseCaseAeromma):
+    key: UseCaseKey = UseCaseKey.FALL_OZONE
+    first_cycle_date: datetime.datetime = datetime.datetime(2023, 9, 1, hour=12)
+    last_cycle_date: datetime.datetime = datetime.datetime(2023, 11, 30, hour=12)
 
 
 T = TypeVar("T", bound=AbstractContext)
