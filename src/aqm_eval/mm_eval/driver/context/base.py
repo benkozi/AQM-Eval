@@ -22,7 +22,7 @@ class AbstractDriverContext(ABC, AeBaseModel):
 
     @cached_property
     def template_dir(self) -> Path:
-        return (Path(__file__).parent.parent.parent / "yaml_template").absolute().resolve()
+        return (Path(__file__).parent.parent.parent / "mm_eval_config").absolute().resolve()
 
     @model_validator(mode="after")
     def _validate_(self) -> "AbstractDriverContext":

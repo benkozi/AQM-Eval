@@ -72,7 +72,7 @@ class ISH_EvalPackage(AbstractDaskEvalPackage):
 
     key: PackageKey = PackageKey.ISH
     observations_title: str = "ISH"
-    namelist_template: str = "namelist.ish.j2"
+    observations_label: str = "ish"
     tasks_default: tuple[TaskKey, ...] = (
         TaskKey.SAVE_PAIRED,
         TaskKey.TIMESERIES,

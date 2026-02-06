@@ -1,0 +1,537 @@
+melodies_monet_parm:
+  start_datetime: null
+  end_datetime: null
+  cartopy_data_dir: null
+  output_dir: null
+  run_dir: null
+  aqm:
+    active: true
+    no_forecast: true
+    run_mode: strict
+    models:
+      eval:
+        expt_dir: null
+        title: "Evaluation Target"
+        plot_kwargs:
+          color: g
+        is_host: true
+        type: rrfs
+        kwargs:
+          surf_only: true
+          mech: cb6r3_ae6_aq
+        radius_of_influence: 20000.0
+        variables: null
+        projection: null
+    scorecards: {}
+    packages:
+      chem:
+        observation_template: null
+        observation_variables:
+          PM2.5:
+            unit_scale: 1
+            unit_scale_method: "*" # Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+            #obs_min: 0 # set all values less than this value to NaN
+            #obs_max: 100 # set all values greater than this value to NaN
+            nan_value: -1.0 # Set this value to NaN
+            #The obs_min, obs_max, and nan_values are set to NaN first and then the unit conversion is applied.
+            ylabel_plot: "PM2.5 (ug/m3)" #Optional to set ylabel so can include units and/or instr etc.
+            ty_scale: 3.0 #Opt
+            vmin_plot: 0.0 #Opt Min for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vmax_plot: 40.0 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vdiff_plot: 15.0 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
+            nlevels_plot: 23 #Opt number of levels used in colorbar for contourf plot.
+          # regulatory: True #Opt compute regulatory func
+          OZONE:
+            unit_scale: 1 #Opt Scaling factor
+            unit_scale_method: "*" #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+            nan_value: -1.0 # Opt Set this value to NaN
+            ylabel_plot: "Ozone (ppbv)"
+            ty_scale: 3.0 #Opt
+            vmin_plot: 15.0 #Opt Min for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vmax_plot: 55.0 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vdiff_plot: 20.0 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
+            nlevels_plot: 21 #Opt number of levels used in colorbar for contourf plot.
+            #regulatory: True #Opt compute regulatory functions
+          CO:
+            unit_scale: 1000 #Use ppmv, skip conversion
+            unit_scale_method: "*" # Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+            nan_value: -1.0 # Set this value to NaN
+            #The obs_min, obs_max, and nan_values are set to NaN first and then the unit conversion is applied.
+            ylabel_plot: "CO (ppbv)" #Optional to set ylabel so can include units and/or instr etc.
+            vmin_plot: 50 #Opt Min for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vmax_plot: 750 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vdiff_plot: 400 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
+            nlevels_plot: 15 #Opt number of levels used in colorbar for contourf plot.
+          NO2:
+            unit_scale: 1 #Opt Scaling factor
+            unit_scale_method: "*" #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+            nan_value: -1.0 # Set this value to NaN
+            ylabel_plot: "NO2 (ppbv)" #Optional to set ylabel so can include units and/or instr etc.
+            vmin_plot: 0.0 #Opt Min for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vmax_plot: 20.0 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vdiff_plot: 15.0 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
+            nlevels_plot: 21 #Opt number of levels used in colorbar for contourf plot.
+        mapping:
+          o3_ave: OZONE
+          pm25_ave: PM2.5
+          no2_ave: NO2
+          co: CO
+        active: true
+        tasks_to_exclude: [ ]
+        execution:
+          prep:
+            batchargs:
+              nodes: 1
+              tasks_per_node: 1
+              walltime: 00:05:00
+          tasks: {}
+        task_overlay:
+          spatial_overlay:
+            plots:
+              pg4:
+                domain_type: [ 'all',
+                               'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region',
+                               'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region' ]
+                domain_name: [ 'CONUS',
+                               'R1', 'R2', 'R3', 'R4', 'R5',
+                               'R6', 'R7', 'R8', 'R9', 'R10' ]
+          csi:
+            plots:
+              pg8:
+                score_name: "Critical Success Index"
+      ish:
+        observation_template: null
+        observation_variables:
+          ws:
+            unit_scale: 1    # use 0.514 when convert obs knots-->m/s
+            unit_scale_method: "*"  # Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+            nan_value: -1.0
+            obs_min: 0.2 # m/s
+            ylabel_plot: "WS10 (m/s)"
+            ty_scale: 0.5
+            vmin_plot: 1.0
+            vmax_plot: 6.0
+          press:
+            unit_scale: 1
+            unit_scale_method: "*"  # Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+            nan_value: -1.0
+            ylabel_plot: "PRESSFC (mbar)"
+            ty_scale: 0.5
+            vmin_plot: 800
+            vmax_plot: 1100
+          temp:
+            unit_scale: 1.0
+            unit_scale_method: "*"
+            nan_value: -1.0
+            ylabel_plot: "T2 (degree C)"
+            ty_scale: 3.0
+            vmin_plot: 0.0
+            vmax_plot: 40.0
+          dew_pt_temp:
+            unit_scale: 1.0
+            unit_scale_method: "*"
+            nan_value: -1.0
+            ylabel_plot: "TD2 (degree C)"
+            ty_scale: 8.0
+            vmin_plot: 0.0
+            vmax_plot: 40.0
+        mapping:
+          tmp2m: temp
+          ws10m: ws
+          dew_temp: dew_pt_temp
+        active: true
+        tasks_to_exclude: [ ]
+        execution:
+          prep:
+            batchargs:
+              nodes: 1
+              tasks_per_node: auto
+              walltime: 00:15:00
+          tasks: {}
+        task_overlay:
+          timeseries:
+            plots:
+              pg1:
+                domain_type: [ "country" ]
+                domain_name: [ "US" ]
+          taylor:
+            plots:
+              pg2:
+                domain_type: [ "country" ]
+                domain_name: [ "US" ]
+          spatial_bias:
+            plots:
+              pg3:
+                domain_type: ["country"]
+                domain_name: ["US"]
+          spatial_overlay:
+            plots:
+              pg4:
+                domain_type: [ "country" ]
+                domain_name: [ "US" ]
+          boxplot:
+            plots:
+              pg5:
+                domain_type: [ "country" ]
+                domain_name: [ "US" ]
+          multi_boxplot:
+            plots:
+              pg6:
+                domain_type: [ "country" ]
+                domain_name: [ "US" ]
+          csi:
+            plots:
+              pg8:
+                domain_type: [ "country" ]
+                domain_name: [ "US" ]
+          stats:
+            domain_type: [ "country" ]
+            domain_name: [ "US" ]
+      aqs_pm:
+        observation_template: null
+        observation_variables:
+          SO4f:
+            unit_scale: 1
+            unit_scale_method: "*" # Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+            #obs_min: 0 # set all values less than this value to NaN
+            #obs_max: 100 # set all values greater than this value to NaN
+            nan_value: -1.0 # Set this value to NaN
+            #The obs_min, obs_max, and nan_values are set to NaN first and then the unit conversion is applied.
+            ylabel_plot: "PM2.5_SO4 (ug/m3)" #Optional to set ylabel so can include units and/or instr etc.
+            ty_scale: 3.0 #Opt
+            vmin_plot: 0.0 #Opt Min for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vmax_plot: 5.0 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vdiff_plot: 1.0 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
+            nlevels_plot: 20 #Opt number of levels used in colorbar for contourf plot.
+            # regulatory: True #Opt compute regulatory func
+          NO3f:
+            unit_scale: 1 #Opt Scaling factor
+            unit_scale_method: "*" #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+            nan_value: -1.0 # Opt Set this value to NaN
+            ylabel_plot: "PM2.5_NO3 (ug/m3)"
+            ty_scale: 3.0 #Opt
+            vmin_plot: 0.0 #Opt Min for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vmax_plot: 5.0 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vdiff_plot: 1.0 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
+            nlevels_plot: 20 #Opt number of levels used in colorbar for contourf plot.
+            #regulatory: True #Opt compute regulatory functions
+          NH4+f:
+            unit_scale: 1 #Opt Scaling factor
+            unit_scale_method: "*" # Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+            nan_value: -1.0 # Set this value to NaN
+            #The obs_min, obs_max, and nan_values are set to NaN first and then the unit conversion is applied.
+            ylabel_plot: "PM2.5_NH4 (ug/m3)" #Optional to set ylabel so can include units and/or instr etc.
+            vmin_plot: 0.0 #Opt Min for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vmax_plot: 5.0 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vdiff_plot: 1.0 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
+            nlevels_plot: 20 #Opt number of levels used in colorbar for contourf plot.
+          ECf:
+            unit_scale: 1 #Opt Scaling factor
+            unit_scale_method: "*" #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+            nan_value: -1.0 # Set this value to NaN
+            ylabel_plot: "PM25_EC (ug/m3)" #Optional to set ylabel so can include units and/or instr etc.
+            vmin_plot: 0.0 #Opt Min for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vmax_plot: 5.0 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vdiff_plot: 1.0 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
+            nlevels_plot: 20 #Opt number of levels used in colorbar for contourf plot.
+          OCPM2.5LCTOT:
+            unit_scale: 1 #Opt Scaling factor
+            unit_scale_method: "*" # Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+            nan_value: -1.0 # Set this value to NaN
+            #The obs_min, obs_max, and nan_values are set to NaN first and then the unit conversion is applied.
+            ylabel_plot: "PM25_OC (ug/m3)" #Optional to set ylabel so can include units and/or instr etc.
+            vmin_plot: 0.0 #Opt Min for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vmax_plot: 10.0 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vdiff_plot: 5.0 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
+            nlevels_plot: 20 #Opt number of levels used in colorbar for contourf plot.
+        mapping:
+          pm25_so4: SO4f
+          pm25_no3: NO3f
+          pm25_nh4: "NH4+f"
+          pm25_ec: ECf
+          pm25_oc: OCPM2.5LCTOT
+        active: true
+        tasks_to_exclude: [ ]
+        execution:
+          prep:
+            batchargs:
+              nodes: 1
+              tasks_per_node: auto
+              walltime: 00:30:00
+          tasks: {}
+        task_overlay:
+          spatial_bias:
+            plots:
+              pg3:
+                domain_type: ["all"]
+                domain_name: ["CONUS"]
+      aqs_voc:
+        observation_template: null
+        observation_variables:
+          ETHANE:
+            unit_scale: 1
+            unit_scale_method: "*" # Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+            #obs_min: 0 # set all values less than this value to NaN
+            #obs_max: 100 # set all values greater than this value to NaN
+            nan_value: -1.0 # Set this value to NaN
+            #The obs_min, obs_max, and nan_values are set to NaN first and then the unit conversion is applied.
+            ylabel_plot: "ETHANE (ppb)" #Optional to set ylabel so can include units and/or instr etc.
+            ty_scale: 3.0 #Opt
+            vmin_plot: 0.0 #Opt Min for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vmax_plot: 5.0 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vdiff_plot: 1.0 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
+            nlevels_plot: 20 #Opt number of levels used in colorbar for contourf plot.
+          # regulatory: True #Opt compute regulatory func
+          PROPANE:
+            unit_scale: 1 #Opt Scaling factor
+            unit_scale_method: "*" #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+            nan_value: -1.0 # Opt Set this value to NaN
+            ylabel_plot: "PROPANE (ppbv)"
+            ty_scale: 3.0 #Opt
+            vmin_plot: 0.0 #Opt Min for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vmax_plot: 5.0 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vdiff_plot: 1.0 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
+            nlevels_plot: 20 #Opt number of levels used in colorbar for contourf plot.
+            #regulatory: True #Opt compute regulatory functions
+          BENZENE:
+            unit_scale: 1 #Opt Scaling factor
+            unit_scale_method: "*" # Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+            nan_value: -1.0 # Set this value to NaN
+            #The obs_min, obs_max, and nan_values are set to NaN first and then the unit conversion is applied.
+            ylabel_plot: "BENZENE (ppbv)" #Optional to set ylabel so can include units and/or instr etc.
+            vmin_plot: 0.0 #Opt Min for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vmax_plot: 5.0 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vdiff_plot: 1.0 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
+            nlevels_plot: 20 #Opt number of levels used in colorbar for contourf plot.
+          TOLUENE:
+            unit_scale: 1 #Opt Scaling factor
+            unit_scale_method: "*" #Opt Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+            nan_value: -1.0 # Set this value to NaN
+            ylabel_plot: "TOLUENE (ppbv)" #Optional to set ylabel so can include units and/or instr etc.
+            vmin_plot: 0.0 #Opt Min for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vmax_plot: 5.0 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vdiff_plot: 1.0 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
+            nlevels_plot: 20 #Opt number of levels used in colorbar for contourf plot.
+          ISOPRENE:
+            unit_scale: 1 #Opt Scaling factor
+            unit_scale_method: "*" # Multiply = '*' , Add = '+', subtract = '-', divide = '/'
+            nan_value: -1.0 # Set this value to NaN
+            #The obs_min, obs_max, and nan_values are set to NaN first and then the unit conversion is applied.
+            ylabel_plot: "ISOPRENE (ppbv)" #Optional to set ylabel so can include units and/or instr etc.
+            vmin_plot: 0.0 #Opt Min for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vmax_plot: 10.0 #Opt Max for y-axis during plotting. To apply to a plot, change restrict_yaxis = True.
+            vdiff_plot: 2.0 #Opt +/- range to use in bias plots. To apply to a plot, change restrict_yaxis = True.
+            nlevels_plot: 20 #Opt number of levels used in colorbar for contourf plot.
+        mapping:
+          etha: ETHANE
+          prpa: PROPANE
+          benzene: BENZENE
+          tol: TOLUENE
+          isop: ISOPRENE
+        active: true
+        tasks_to_exclude: [ ]
+        execution:
+          prep:
+            batchargs:
+              nodes: 1
+              tasks_per_node: 1
+              walltime: 00:05:00
+          tasks: {}
+        task_overlay:
+          spatial_bias:
+            plots:
+              pg3:
+                domain_type: ["all"]
+                domain_name: ["CONUS"]
+
+    task_defaults:
+      execution:
+        batchargs:
+          nodes: 1
+          tasks_per_node: auto
+          walltime: 01:00:00
+      save_paired:
+        analysis:
+          debug: true
+          save:
+            paired:
+              method: netcdf
+              predix: null
+              data: all
+          read:
+            paired:
+              method: netcdf
+              filenames: null
+      timeseries:
+        plots:
+          pg1:
+            type: "timeseries"
+            model_name_list: null
+            fig_kwargs:
+              figsize: [12, 6]
+            default_plot_kwargs:
+              linewidth: 2.0
+              markersize: 10
+            text_kwargs:
+              fontsize: 24
+            domain_type: [
+      "all",
+      "epa_region", "epa_region", "epa_region", "epa_region", "epa_region",
+      "epa_region", "epa_region", "epa_region", "epa_region", "epa_region",
+    ]
+            domain_name: [
+      "CONUS",
+      "R1", "R2", "R3", "R4", "R5",
+      "R6", "R7", "R8", "R9", "R10",
+    ]
+            data: null
+            data_proc:
+              rem_obs_nan: true  # True: Remove all points where model or obs is NaN; False: Remove only points where model is NaN.
+              set_axis: true  # If true, add `vmin_plot` and `vmax_plot` for each variable in obs.
+              ts_select_time: "time"  # Options: 'time' for UTC or 'time_local' for LT.  AQS are daily averages, use 'time' here.
+              ts_avg_window: "H"  # None for no averaging, pandas resample rule (e.g., 'H', 'D')
+      taylor:
+        plots:
+          pg2:
+            type: "taylor"
+            model_name_list: null
+            fig_kwargs:
+              figsize: [8, 8]
+            default_plot_kwargs:
+              markersize: 10
+            text_kwargs:
+              fontsize: 24
+            domain_type: [ 'all',
+                           'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region',
+                           'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region' ]
+            domain_name: [ 'CONUS',
+                           'R1', 'R2', 'R3', 'R4', 'R5',
+                           'R6', 'R7', 'R8', 'R9', 'R10' ]
+            data: null
+            data_proc:
+              rem_obs_nan: true
+              set_axis: true
+      spatial_bias:
+        plots:
+          pg3:
+            type: "spatial_bias"
+            fig_kwargs:
+              states: true
+              figsize: [10, 5]
+            text_kwargs:
+              fontsize: 24
+            default_plot_kwargs: {}
+            model_name_list: null
+            domain_type: [ 'all',
+                           'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region',
+                           'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region' ]
+            domain_name: [ 'CONUS',
+                           'R1', 'R2', 'R3', 'R4', 'R5',
+                           'R6', 'R7', 'R8', 'R9', 'R10' ]
+            data: null
+            data_proc:
+              rem_obs_nan: true
+              set_axis: true
+      spatial_overlay:
+        plots:
+          pg4:
+            type: "spatial_overlay"
+            default_plot_kwargs: {}
+            fig_kwargs:
+              states: true
+              figsize: [10, 5 ]
+            text_kwargs:
+              fontsize: 24
+            domain_type: ['all']
+            domain_name: ['CONUS']
+            model_name_list: null
+            data: null
+            data_proc:
+              rem_obs_nan: true
+              set_axis: true
+      boxplot:
+        plots:
+          pg5:
+            type: "boxplot"
+            fig_kwargs:
+              figsize: [8, 6]
+            default_plot_kwargs: {}
+            text_kwargs:
+              fontsize: 24
+            domain_type: [ 'all',
+                           'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region',
+                           'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region' ]
+            domain_name: [ 'CONUS',
+                           'R1', 'R2', 'R3', 'R4', 'R5',
+                           'R6', 'R7', 'R8', 'R9', 'R10' ]
+            data: null
+            data_proc:
+              rem_obs_nan: true
+              set_axis: true
+            model_name_list: null
+      multi_boxplot:
+        plots:
+          pg6:
+            type: "multi_boxplot"
+            fig_kwargs:
+              figsize: [8, 6]
+            text_kwargs:
+              fontsize: 24
+            default_plot_kwargs: {}
+            domain_type: [ 'all' ]
+            domain_name: [ 'CONUS' ]
+            region_name: [ 'epa_region' ]
+            region_list: [ 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10' ]
+            urban_rural_name: [ 'msa_name' ]
+            urban_rural_differentiate_value: ""
+            better_or_worse_method: "NME"
+            data: null
+            model_name_list: null
+            data_proc:
+              rem_obs_nan: true
+              set_axis: true
+      csi:
+        plots:
+          pg8:
+            type: "csi"
+            fig_kwargs:
+              figsize: [8, 6]
+            text_kwargs:
+              fontsize': 24
+            default_plot_kwargs: {}
+            domain_type: [ 'all', 'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region' ]
+            domain_name: [ 'CONUS', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10' ]
+            threshold_list: [1, 5, 10, 20, 40, 60, 80, 100]
+            score_name: "Hit Rate"
+            data: null
+            model_name_list: null
+            data_proc:
+              rem_obs_nan: true
+              set_axis: false
+      stats:
+        stat_list: [ 'MB', 'MdnB', 'NMB', 'NMdnB', 'ME', 'MdnE', 'NME', 'NMdnE', 'IOA', 'R2', 'RMSE', 'AC' ]
+        round_output: 3
+        output_table: false
+        output_table_kwargs:
+          figsize: [7, 3]
+          fontsize: 12.0
+          xscale: 1.4
+          yscale: 1.4
+          edges: 'horizontal'
+        domain_type: [ 'all', 'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region', 'epa_region' ]
+        domain_name: [ 'CONUS', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10' ]
+        data: null
+
+  platform_defaults:
+    ursa:
+      ncores_per_node: 192
+    gaeac6:
+      ncores_per_node: 192
+    derecho:
+      ncores_per_node: 128
+    orion:
+      ncores_per_node: 40
+    hercules:
+      ncores_per_node: 80
+    local:
+      ncores_per_node: 1

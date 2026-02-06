@@ -43,7 +43,7 @@ class AQM_EvalSettings(BaseSettings):
     @computed_field
     @cached_property
     def eval_template_dir(self) -> Path:
-        return Path(__file__).parent / "mm_eval" / "yaml_template"
+        return Path(__file__).parent / "mm_eval" / "mm_eval_config"
 
     @field_validator("aqm_eval_log_level", mode="before")
     @classmethod

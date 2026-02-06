@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 from datetime import datetime
 from enum import StrEnum, unique
 from functools import cached_property
@@ -111,6 +112,7 @@ class PackageConfig(AeBaseModel):
         description="Path to the observation file with appropriate spatiotemporal forecast "
         "coverage. May be null if active is false.",
     )
+    observation_variables: dict[str, Any]
     mapping: dict[str, str] = Field(description="Maps model variable names to observation variable names.")
     active: bool = Field(default=True, description="If False, package will not be executed.")
     tasks_to_exclude: tuple[TaskKey, ...] = Field(
@@ -119,6 +121,8 @@ class PackageConfig(AeBaseModel):
     execution: PackageExecution = Field(
         default_factory=lambda x: PackageExecution.model_validate({}), description="Optional package execution settings."
     )
+    task_overlay: dict[TaskKey, dict]
+    task_mm_config: dict[TaskKey, dict]
 
     @model_validator(mode="after")
     def _validate_model_after_(self) -> "PackageConfig":
@@ -136,6 +140,8 @@ class PlotKwargs(AeBaseModel):
 
 class TaskDefaults(AeBaseModel):
     execution: Execution = Field(description="Default execution settings for all tasks.")
+    save_paired: dict = Field(default={}, description="Default save paired settings (SavePairedTask model).")
+    timeseries: dict = Field(default={}, description="Default save paired settings (Plot model).")
 
 
 class AQMModelConfig(AeBaseModel):
@@ -320,6 +326,14 @@ class Config(AeBaseModel):
                     task_value["batchargs"]["tasks_per_node"] = get_str_nested(
                         data, f"platform_defaults.{platform_key.value}.ncores_per_node"
                     )
+
+            for task_key in TaskKey:
+                task_plot_lhs = deepcopy(root_aqm["task_defaults"].setdefault(task_key.value, {}))
+                task_plot_rhs = (
+                    root_aqm["packages"][package_key.value].setdefault("task_overlay", {}).setdefault(task_key.value, {})
+                )
+                update_left(task_plot_lhs, task_plot_rhs)
+                root_aqm["packages"][package_key.value].setdefault("task_mm_config", {})[task_key.value] = task_plot_lhs
 
         if root_aqm["task_defaults"]["execution"]["batchargs"]["tasks_per_node"] == "auto":
             root_aqm["task_defaults"]["execution"]["batchargs"]["tasks_per_node"] = get_str_nested(

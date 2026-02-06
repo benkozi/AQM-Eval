@@ -8,7 +8,7 @@ class ChemEvalPackage(AbstractEvalPackage):
 
     key: PackageKey = PackageKey.CHEM
     observations_title: str = "AirNow"
-    namelist_template: str = "namelist.chem.j2"
+    observations_label: str = "airnow"
     tasks_default: tuple[TaskKey, ...] = tuple(TaskKey)
 
     @log_it

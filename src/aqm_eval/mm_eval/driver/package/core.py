@@ -3,16 +3,17 @@
 import logging
 import re
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Iterator, Literal
+from typing import Iterator, Literal
 
 import cartopy  # type: ignore[import-untyped]
 import dask
 import matplotlib
 import xarray as xr
 import yaml
-from jinja2 import Environment, FileSystemLoader, StrictUndefined, Template
+from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from melodies_monet import driver  # type: ignore[import-untyped]
 from melodies_monet.driver import analysis  # type: ignore[import-untyped]
 from pydantic import Field, computed_field
@@ -22,7 +23,9 @@ from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.config import PackageConfig, PackageKey, RunMode, ScorecardMethod, TaskKey
 from aqm_eval.mm_eval.driver.context.base import AbstractDriverContext
 from aqm_eval.mm_eval.driver.model import Model
+from aqm_eval.mm_eval.driver.task.save_paired import SavePairedTask
 from aqm_eval.mm_eval.driver.task.scorecard import ScorecardTask
+from aqm_eval.mm_eval.driver.task.template import PlotTasksTemplate, StatsTaskTemplate, TaskTemplate
 from aqm_eval.settings import SETTINGS
 from aqm_eval.shared import PathExisting, assert_directory_exists, calc_2d_chunks, get_or_create_path
 
@@ -61,8 +64,8 @@ class AbstractEvalPackage(ABC, AeBaseModel):
     ctx: AbstractDriverContext
 
     observations_title: str
+    observations_label: str
     key: PackageKey = Field(description="MM package key.")
-    namelist_template: str = Field(description="Package template file.")
     tasks_default: tuple[TaskKey, ...] = Field(description="Default tasks for the package.")
 
     @cached_property
@@ -87,27 +90,6 @@ class AbstractEvalPackage(ABC, AeBaseModel):
     @cached_property
     def enable_scorecards(self) -> bool:
         return len(self.ctx.mm_config.aqm.scorecards) > 0
-
-    # @cached_property
-    # def mm_model_scorecard_labels(self) -> list[str]:
-    #     return [ii.label for ii in self.mm_scorecard_models]
-
-    # @cached_property
-    # def mm_model_scorecard_titles_j2(self) -> str:
-    #     return ", ".join([f'"{ii.cfg.title}"' for ii in self.mm_scorecard_models])
-
-    # @cached_property
-    # def mm_scorecard_models(self) -> tuple[Model, Model]:
-    #     if not self.enable_scorecards:
-    #         raise ValueError("scorecards are not enabled")
-    #     models: list[Model] = []
-    #     for role in [ModelRole.SENSITIVITY, ModelRole.CONTROL]:
-    #         for model in self.mm_models:
-    #             if model.cfg.role == role:
-    #                 models.append(model)
-    #     if len(models) != 2:
-    #         raise ValueError
-    #     return models[0], models[1]
 
     @cached_property
     def task_control_filenames(self) -> tuple[str, ...]:
@@ -303,39 +285,105 @@ class AbstractEvalPackage(ABC, AeBaseModel):
         out_mm_cfg = package_run_dir / "melodies_monet_parm.yaml"
         out_mm_cfg.write_text(yaml.safe_dump(self.ctx.mm_config.to_yaml(), sort_keys=False))
 
-        cfg = {"ctx": self.ctx, "mm_tasks": tuple([ii.value for ii in self.tasks]), "package": self}
-        LOGGER("rendering namelist config")
-        namelist_config_str = self.j2_env.get_template(self.namelist_template).render(cfg)
-        namelist_config = yaml.safe_load(namelist_config_str)
-        with open(package_run_dir / "namelist.yaml", "w") as f:
-            f.write(namelist_config_str)
-        namelist_config["package"] = self
+        for task_key in self.tasks:
+            curr_control_path = package_run_dir / f"control_{task_key.value}.yaml"
+            LOGGER(f"{curr_control_path=}")
+            match task_key:
+                case TaskKey.SCORECARD:
+                    self._create_control_configs_for_scorecards_()
+                case TaskKey.SAVE_PAIRED:
+                    task_template = self._create_task_template_()
+                    curr_control_path.write_text(yaml.safe_dump(task_template.to_yaml(), sort_keys=False))
+                case (
+                    TaskKey.TIMESERIES
+                    | TaskKey.TAYLOR
+                    | TaskKey.SPATIAL_BIAS
+                    | TaskKey.SPATIAL_OVERLAY
+                    | TaskKey.BOXPLOT
+                    | TaskKey.MULTI_BOXPLOT
+                    | TaskKey.CSI
+                ):
+                    task_template = self._create_plot_task_template_(task_key)
+                    curr_control_path.write_text(yaml.safe_dump(task_template.to_yaml(), sort_keys=False))
+                case TaskKey.STATS:
+                    task_template = self._create_stats_task_template_()
+                    curr_control_path.write_text(yaml.safe_dump(task_template.to_yaml(), sort_keys=False))
+                case _:
+                    raise NotImplementedError(task_key)
 
-        assert isinstance(cfg["mm_tasks"], tuple)
-        for task in cfg["mm_tasks"]:
-            assert isinstance(task, str)
-            # match task:
-            #     case TaskKey.SCORECARD_RMSE:
-            #         namelist_config["scorecard_eval_method"] = '"RMSE"'
-            #     case TaskKey.SCORECARD_IOA:
-            #         namelist_config["scorecard_eval_method"] = '"IOA"'
-            #     case TaskKey.SCORECARD_NMB:
-            #         namelist_config["scorecard_eval_method"] = '"NMB"'
-            #     case TaskKey.SCORECARD_NME:
-            #         namelist_config["scorecard_eval_method"] = '"NME"'
+    def _create_task_template_(self) -> TaskTemplate:
+        cfg = self.ctx.mm_config
+        data = deepcopy(self.cfg.task_mm_config[TaskKey.SAVE_PAIRED])
+        data["analysis"].update(
+            {"start_time": cfg.start_datetime, "end_time": cfg.end_datetime, "output_dir": self.output_dir, "read": None}
+        )
+        save_paired = SavePairedTask.model_validate(data)
+        ret = save_paired.to_yaml()
+        self._update_models_(ret)
+        self._update_obs_(ret)
+        return TaskTemplate.model_validate(ret)
 
-            LOGGER(f"{task=}")
-            template = self.j2_env.get_template(f"template_{task}.j2")
-            LOGGER(f"{template=}")
-            if TaskKey(task) == TaskKey.SCORECARD:
-                self._create_control_configs_for_scorecards_(namelist_config, template)
-            else:
-                config_yaml = template.render({**namelist_config})
-                curr_control_path = package_run_dir / f"control_{task}.yaml"
-                LOGGER(f"{curr_control_path=}")
-                curr_control_path.write_text(config_yaml)
+    def _create_stats_task_template_(self) -> StatsTaskTemplate:
+        cfg = self.ctx.mm_config
+        data = deepcopy(self.cfg.task_mm_config[TaskKey.SAVE_PAIRED])
+        analysis = data["analysis"]
+        analysis["start_time"] = cfg.start_datetime
+        analysis["end_time"] = cfg.end_datetime
+        analysis["output_dir"] = self.output_dir
+        analysis["save"] = None
+        analysis["read"]["paired"]["filenames"] = {
+            mm_model.label: f"{self.observations_label}_{mm_model.label}.nc4" for mm_model in self.mm_models
+        }
+        task_data = deepcopy(self.cfg.task_mm_config[TaskKey.STATS])
+        task_data["data"] = self.mm_model_labels
+        data.update({TaskKey.STATS.value: task_data})
+        self._update_models_(data)
+        self._update_obs_(data)
+        return StatsTaskTemplate.model_validate(data)
 
-    def _create_control_configs_for_scorecards_(self, namelist_config: Any, template: Template) -> None:
+    def _create_plot_task_template_(self, task_key: TaskKey) -> PlotTasksTemplate:
+        cfg = self.ctx.mm_config
+        data = deepcopy(self.cfg.task_mm_config[TaskKey.SAVE_PAIRED])
+        analysis = data["analysis"]
+        analysis["start_time"] = cfg.start_datetime
+        analysis["end_time"] = cfg.end_datetime
+        analysis["output_dir"] = self.output_dir
+        analysis["save"] = None
+        analysis["read"]["paired"]["filenames"] = {
+            mm_model.label: f"{self.observations_label}_{mm_model.label}.nc4" for mm_model in self.mm_models
+        }
+        task_data = deepcopy(self.cfg.task_mm_config[task_key])
+        for plot_key, plot_data in task_data["plots"].items():
+            if plot_data["data"] is None:
+                plot_data["data"] = self.mm_model_labels
+            if plot_data["model_name_list"] is None:
+                plot_data["model_name_list"] = self.mm_model_titles_with_obs
+        data.update(task_data)
+        self._update_models_(data)
+        self._update_obs_(data)
+        return PlotTasksTemplate.model_validate(data)
+
+    def _update_models_(self, target: dict) -> None:
+        model = target.setdefault("model", {})
+        for mm_model in self.mm_models:
+            curr_model = model.setdefault(mm_model.label, {})
+            curr_model["files"] = mm_model.link_alldays_path_template
+            curr_model["mod_type"] = mm_model.cfg.type
+            curr_model["mod_kwargs"] = mm_model.cfg.kwargs
+            curr_model["radius_of_influence"] = mm_model.cfg.radius_of_influence
+            curr_model["mapping"] = {self.observations_label: self.cfg.mapping}
+            curr_model["variables"] = mm_model.cfg.variables
+            curr_model["projection"] = mm_model.cfg.projection
+            curr_model["plot_kwargs"] = mm_model.cfg.plot_kwargs.model_dump(mode="json")
+
+    def _update_obs_(self, target: dict) -> None:
+        obs = target.setdefault("obs", {})
+        curr_obs = obs.setdefault(self.observations_label, {})
+        curr_obs["use_airnow"] = True
+        curr_obs["filename"] = self.observation_template
+        curr_obs["variables"] = self.cfg.observation_variables
+
+    def _create_control_configs_for_scorecards_(self) -> None:
         LOGGER("creating scorecard control files")
         for scorecard_key, scorecard_cfg in self.ctx.mm_config.aqm.scorecards.items():
             for scorecard_method in ScorecardMethod:
@@ -355,11 +403,14 @@ class AbstractEvalPackage(ABC, AeBaseModel):
                     model_name_list=[self.observations_title] + [ii.label for ii in scorecard_models],
                 )
                 plot_yaml = scorecard_task.to_yaml()
-                plot_yaml_str = yaml.safe_dump(plot_yaml)
-                config_yaml = template.render({**namelist_config, **{"plot_yaml_str": plot_yaml_str}})
+                self._update_models_(plot_yaml)
+                self._update_obs_(plot_yaml)
+
+                # plot_yaml_str = yaml.safe_dump(plot_yaml)
+                # config_yaml = template.render({**namelist_config, **{"plot_yaml_str": plot_yaml_str}})
                 curr_control_path = self.run_dir / f"control_scorecard_{scorecard_method.value}_{scorecard_key}.yaml"
                 LOGGER(f"{curr_control_path=}")
-                curr_control_path.write_text(config_yaml)
+                curr_control_path.write_text(yaml.safe_dump(plot_yaml, sort_keys=False))
 
 
 class AbstractDaskOperation(ABC, AeBaseModel):

@@ -17,7 +17,7 @@ aqm-verify = "aqm_eval.verify.verify_cli:app"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"aqm_eval.mm_eval" = ["yaml_template/**/*"]
+"aqm_eval.mm_eval" = ["mm_eval_config/**/*"]
 
 [tool.ruff]
 line-length = 132

@@ -78,7 +78,7 @@ def test_all_packages(all_pkgs_test_data: AllPackagesTestData, mocker: MockerFix
 
     actual_files = package.run_dir.rglob("*.yaml")
     expected_filenames = set(package.task_control_filenames)
-    expected_filenames.update({"namelist.yaml", "melodies_monet_parm.yaml"})
+    expected_filenames.update({"melodies_monet_parm.yaml"})
     assert set([ii.name for ii in actual_files]) == expected_filenames
 
     assert package.link_alldays_path.name in [ii.name for ii in package.run_dir.iterdir()]
