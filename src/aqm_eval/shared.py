@@ -7,6 +7,7 @@ from typing import Annotated, Any, Iterator, Mapping
 
 import numpy as np
 from pydantic import BeforeValidator, PlainSerializer
+import xarray as xr
 
 from aqm_eval.base import AeBaseModel
 from aqm_eval.logging_aqm_eval import LOGGER
@@ -98,3 +99,46 @@ def set_str_nested(data: dict, key: str, value: Any) -> None:
     for key in keys[:-1]:
         data = data[key]
     data[keys[-1]] = value
+
+
+def us_state_to_ecoregion(da: xr.DataArray) -> xr.DataArray:
+    """
+
+    Parameters
+    ----------
+    da: A DataArray containing US state abbreviations.
+
+    Returns
+    -------
+    A DataArray containing EPA region codes with the same dimension as da.
+    """
+    mapping = {
+        "R1": ["CT", "ME", "MA", "NH", "RI", "VT"],
+        "R2": ["NJ", "NY", "PR", "VI"],
+        "R3": ["DE", "DC", "MD", "PA", "VA", "WV"],
+        "R4": ["AL", "FL", "GA", "KY", "MS", "NC", "SC", "TN"],
+        "R5": ["IL", "IN", "MI", "MN", "OH", "WI"],
+        "R6": ["AR", "LA", "NM", "OK", "TX"],
+        "R7": ["IA", "KS", "MO", "NE"],
+        "R8": ["CO", "MT", "ND", "SD", "UT", "WY"],
+        "R9": ["AZ", "CA", "HI", "NV", "PI"],
+        "R10": ["AK", "ID", "OR", "WA"]
+    }
+    
+    # Create reverse mapping: state -> region
+    state_to_region = {}
+    for region, states in mapping.items():
+        for state in states:
+            state_to_region[state] = region
+    
+    # Vectorized mapping function
+    def map_state(state):
+        return state_to_region.get(state, "")
+    
+    # Apply mapping to DataArray
+    result = xr.apply_ufunc(
+        np.vectorize(map_state),
+        da,
+    )
+    
+    return result
