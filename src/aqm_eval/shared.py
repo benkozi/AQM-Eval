@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Annotated, Any, Iterator, Mapping
 
 import numpy as np
-from pydantic import BeforeValidator, PlainSerializer
 import xarray as xr
+from pydantic import BeforeValidator, PlainSerializer
 
 from aqm_eval.base import AeBaseModel
 from aqm_eval.logging_aqm_eval import LOGGER
@@ -122,23 +122,23 @@ def us_state_to_ecoregion(da: xr.DataArray) -> xr.DataArray:
         "R7": ["IA", "KS", "MO", "NE"],
         "R8": ["CO", "MT", "ND", "SD", "UT", "WY"],
         "R9": ["AZ", "CA", "HI", "NV", "PI"],
-        "R10": ["AK", "ID", "OR", "WA"]
+        "R10": ["AK", "ID", "OR", "WA"],
     }
-    
+
     # Create reverse mapping: state -> region
     state_to_region = {}
     for region, states in mapping.items():
         for state in states:
             state_to_region[state] = region
-    
+
     # Vectorized mapping function
-    def map_state(state):
+    def map_state(state: str) -> str:
         return state_to_region.get(state, "")
-    
+
     # Apply mapping to DataArray
     result = xr.apply_ufunc(
         np.vectorize(map_state),
         da,
     )
-    
+
     return result

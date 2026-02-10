@@ -329,9 +329,7 @@ class AbstractEvalPackage(ABC, AeBaseModel):
 
     @cached_property
     def paired_filenames(self) -> dict[str, str]:
-        return {
-            mm_model.label: f"{self.observations_label}_{mm_model.label}.nc4" for mm_model in self.mm_models
-        }
+        return {mm_model.label: f"{self.observations_label}_{mm_model.label}.nc4" for mm_model in self.mm_models}
 
     def _create_stats_task_template_(self) -> StatsTaskTemplate:
         cfg = self.ctx.mm_config

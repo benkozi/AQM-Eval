@@ -2,9 +2,8 @@ import dask
 import dask.array
 import numpy as np
 import xarray as xr
-from statsmodels.sandbox.nonparametric.kdecovclass import test_kde_1d
 
-from aqm_eval.logging_aqm_eval import log_it, LOGGER
+from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.config import PackageKey, TaskKey
 from aqm_eval.mm_eval.driver.package.core import (
     AbstractDaskEvalPackage,
@@ -95,7 +94,6 @@ class ISH_EvalPackage(AbstractDaskEvalPackage):
             case _:
                 pass
 
-
     def _check_for_epa_ecoregions_and_add_if_not_exists_(self) -> None:
         for filename in self.paired_filenames.values():
             path = self.output_dir / filename
@@ -103,7 +101,7 @@ class ISH_EvalPackage(AbstractDaskEvalPackage):
                 if "epa_region" in ds.data_vars:
                     LOGGER(f"epa_region already exists in ISH observation dataset: {path}")
                     continue
-                
+
                 LOGGER(f"adding epa_region to ISH observation dataset: {path}")
                 da = ds["state"]
                 mapped = us_state_to_ecoregion(da)
