@@ -103,6 +103,7 @@ def set_str_nested(data: dict, key: str, value: Any) -> None:
 
 def us_state_to_ecoregion(da: xr.DataArray) -> xr.DataArray:
     """
+    Follows state mapping from https://www.epa.gov/frs/epa-regional-kml-download.
 
     Parameters
     ----------
