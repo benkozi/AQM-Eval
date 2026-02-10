@@ -65,16 +65,35 @@ def test_calc_2d_chunks() -> None:
 
 
 def test_us_state_to_ecoregion() -> None:
-    # Test with a variety of states from different regions
-    states = np.array(["CA", "NY", "TX", "MA", "WA", "FL"])
-    expected_regions = np.array(["R9", "R2", "R6", "R1", "R10", "R4"])
+    # Test with shape (y: 1, x: 2719) matching real data structure
+    n_stations = 2719
     
-    da = xr.DataArray(states, dims=["location"])
+    # Create sample state data with variety of states from different regions
+    states_sample = ["CA", "NY", "TX", "MA", "WA", "FL", "IL", "CO", "AZ", "OR"]
+    states = np.random.choice(states_sample, size=n_stations)
+    
+    # Create DataArray with proper shape
+    da = xr.DataArray(
+        states.reshape(1, n_stations),
+        dims=["y", "x"],
+        name="state"
+    )
+    
     result = us_state_to_ecoregion(da)
     
-    assert result.dims == da.dims
-    assert result.shape == da.shape
-    np.testing.assert_array_equal(result.values, expected_regions)
+    # Verify shape and dimensions are preserved
+    assert result.shape == (1, n_stations)
+    assert result.dims == ("y", "x")
+    
+    # Verify mapping for known states in first row
+    expected_mapping = {
+        "CA": "R9", "NY": "R2", "TX": "R6", "MA": "R1", "WA": "R10",
+        "FL": "R4", "IL": "R5", "CO": "R8", "AZ": "R9", "OR": "R10"
+    }
+    for i in range(n_stations):
+        state = states[i]
+        expected_region = expected_mapping[state]
+        assert result.values[0, i] == expected_region
 
 
 def test_us_state_to_ecoregion_with_unknown_state() -> None:
