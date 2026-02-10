@@ -102,11 +102,12 @@ class ISH_EvalPackage(AbstractDaskEvalPackage):
             with xr.open_dataset(path) as ds:
                 if "epa_region" in ds.data_vars:
                     LOGGER(f"epa_region already exists in ISH observation dataset: {path}")
-                else:
-                    LOGGER(f"adding epa_region to ISH observation dataset: {path}")
-                    da = ds["state"]
-                    mapped = us_state_to_ecoregion(da)
-                    mapped.attrs["long_name"] = "US EPA ecoregion added by AQM-Eval"
-                    ds["epa_region"] = mapped
-                    new_ds = xr.Dataset({"epa_region": mapped})
-                    new_ds.to_netcdf(path, mode="a")
+                    continue
+                
+                LOGGER(f"adding epa_region to ISH observation dataset: {path}")
+                da = ds["state"]
+                mapped = us_state_to_ecoregion(da)
+                mapped.attrs["long_name"] = "US EPA ecoregion added by AQM-Eval"
+                new_ds = xr.Dataset({"epa_region": mapped})
+
+            new_ds.to_netcdf(path, mode="a")
