@@ -14,6 +14,7 @@ from aqm_eval.mm_eval.driver.package.core import (
     AbstractEvalPackage,
     package_key_to_class,
 )
+from aqm_eval.mm_eval.driver.package.ish import ISH_EvalPackage
 
 
 class AllPackagesTestData(BaseModel):
@@ -22,6 +23,7 @@ class AllPackagesTestData(BaseModel):
     package_class: type[AbstractEvalPackage]
     expected_n_links: int
     expected_n_dask_run_calls: int
+    expected_add_eco_calls: int
 
 
 @pytest.fixture(params=tuple(PackageKey))
@@ -34,11 +36,14 @@ def all_pkgs_test_data(srw_context: SRWContext, package_key: PackageKey) -> AllP
     package_class = package_key_to_class(package_key)
     expected_n_links = 25 * 2  # 25 dynf hourly files * 2 cycle directories
     expected_n_dask_run_calls = 0
+    expected_add_eco_calls = 0
 
     match package_key:
         case PackageKey.ISH | PackageKey.AQS_PM:
             expected_n_links = 2  # 2 combined files (1 per cycle)
             expected_n_dask_run_calls = expected_n_links  # one call per file created
+            if package_key == PackageKey.ISH:
+                expected_add_eco_calls = 1
 
     # Adjust for model count
     n_models = len(srw_context.mm_config.aqm.models)
@@ -52,6 +57,7 @@ def all_pkgs_test_data(srw_context: SRWContext, package_key: PackageKey) -> AllP
         ctx=srw_context,
         package_class=package_class,
         expected_n_dask_run_calls=expected_n_dask_run_calls,
+        expected_add_eco_calls=expected_add_eco_calls,
     )
 
 
@@ -63,6 +69,10 @@ def fake_run(self: AbstractDaskOperation) -> xr.Dataset:
 
 def test_all_packages(all_pkgs_test_data: AllPackagesTestData, mocker: MockerFixture) -> None:
     package = all_pkgs_test_data.package_class.model_validate(dict(ctx=all_pkgs_test_data.ctx))
+
+    # Mocking for ISH ecoregions ---------------------------------------------------------------
+
+    m_add_eco = mocker.patch.object(ISH_EvalPackage, "_check_for_epa_ecoregions_and_add_if_not_exists_")
 
     # Mock for dask operations -----------------------------------------------------------------
 
@@ -106,5 +116,7 @@ def test_all_packages(all_pkgs_test_data: AllPackagesTestData, mocker: MockerFix
     m_analysis.open_obs.assert_called_once()
     m_analysis.pair_data.assert_called_once()
     m_analysis.save_analysis.assert_called_once()
+
+    assert m_add_eco.call_count == all_pkgs_test_data.expected_add_eco_calls
 
     assert spy_m_dask_op_run.call_count == all_pkgs_test_data.expected_n_dask_run_calls
