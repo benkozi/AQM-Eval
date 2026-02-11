@@ -90,15 +90,21 @@
           "type": "boolean"
         },
         "type": {
+          "default": "rrfs",
           "title": "Type",
           "type": "string"
         },
         "kwargs": {
           "additionalProperties": true,
+          "default": {
+            "surf_only": true,
+            "mech": "cb6r3_ae6_aq"
+          },
           "title": "Kwargs",
           "type": "object"
         },
         "radius_of_influence": {
+          "default": 20000.0,
           "title": "Radius Of Influence",
           "type": "number"
         },
@@ -127,10 +133,7 @@
         "key",
         "expt_dir",
         "title",
-        "plot_kwargs",
-        "type",
-        "kwargs",
-        "radius_of_influence"
+        "plot_kwargs"
       ],
       "title": "AQMModelConfig",
       "type": "object"
@@ -190,6 +193,11 @@
           "description": "Path to the observation file with appropriate spatiotemporal forecast coverage. May be null if active is false.",
           "title": "Observation Template"
         },
+        "observation_variables": {
+          "additionalProperties": true,
+          "title": "Observation Variables",
+          "type": "object"
+        },
         "mapping": {
           "additionalProperties": {
             "type": "string"
@@ -216,11 +224,38 @@
         "execution": {
           "$ref": "#/$defs/PackageExecution",
           "description": "Optional package execution settings."
+        },
+        "task_overlay": {
+          "additionalProperties": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "description": "Optional task overlay settins applied to the task defaults at runtime.",
+          "propertyNames": {
+            "$ref": "#/$defs/TaskKey"
+          },
+          "title": "Task Overlay",
+          "type": "object"
+        },
+        "task_mm_config": {
+          "additionalProperties": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "description": "Provided at runtime by the configuration operation combining task defaults and task overlays.",
+          "propertyNames": {
+            "$ref": "#/$defs/TaskKey"
+          },
+          "title": "Task Mm Config",
+          "type": "object"
         }
       },
       "required": [
         "key",
-        "mapping"
+        "observation_variables",
+        "mapping",
+        "task_overlay",
+        "task_mm_config"
       ],
       "title": "PackageConfig",
       "type": "object"
@@ -357,6 +392,20 @@
         "execution": {
           "$ref": "#/$defs/Execution",
           "description": "Default execution settings for all tasks."
+        },
+        "save_paired": {
+          "additionalProperties": true,
+          "default": {},
+          "description": "Default save paired settings (SavePairedTask model).",
+          "title": "Save Paired",
+          "type": "object"
+        },
+        "timeseries": {
+          "additionalProperties": true,
+          "default": {},
+          "description": "Default save paired settings (Plot model).",
+          "title": "Timeseries",
+          "type": "object"
         }
       },
       "required": [
