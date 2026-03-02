@@ -121,8 +121,10 @@ class PackageConfig(AeBaseModel):
     execution: PackageExecution = Field(
         default_factory=lambda x: PackageExecution.model_validate({}), description="Optional package execution settings."
     )
-    task_overlay: dict[TaskKey, dict]
-    task_mm_config: dict[TaskKey, dict]
+    task_overlay: dict[TaskKey, dict] = Field(description="Optional task overlay settins applied to the task defaults at runtime.")
+    task_mm_config: dict[TaskKey, dict] = Field(
+        description="Provided at runtime by the configuration operation combining task defaults and task overlays."
+    )
 
     @model_validator(mode="after")
     def _validate_model_after_(self) -> "PackageConfig":
