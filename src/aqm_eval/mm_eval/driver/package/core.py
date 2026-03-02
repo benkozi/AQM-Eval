@@ -241,9 +241,8 @@ class AbstractEvalPackage(ABC, AeBaseModel):
             if finalize:
                 self.finalize()
 
-    @staticmethod
     @log_it
-    def _run_task_(an: analysis, task_label: str) -> None:
+    def _run_task_(self, an: analysis, task_label: str) -> None:
         if task_label.startswith("scorecard"):
             task_key = TaskKey.SCORECARD
         else:
@@ -264,6 +263,11 @@ class AbstractEvalPackage(ABC, AeBaseModel):
             case _:
                 an.read_analysis()
                 an.plotting()
+        self._post_task_(task_key)
+
+    @log_it
+    def _post_task_(self, task_key: TaskKey) -> None:
+        pass
 
     @log_it
     def finalize(self) -> None:
@@ -323,6 +327,10 @@ class AbstractEvalPackage(ABC, AeBaseModel):
         self._update_obs_(ret)
         return TaskTemplate.model_validate(ret)
 
+    @cached_property
+    def paired_filenames(self) -> dict[str, str]:
+        return {mm_model.label: f"{self.observations_label}_{mm_model.label}.nc4" for mm_model in self.mm_models}
+
     def _create_stats_task_template_(self) -> StatsTaskTemplate:
         cfg = self.ctx.mm_config
         data = deepcopy(self.cfg.task_mm_config[TaskKey.SAVE_PAIRED])
@@ -331,9 +339,7 @@ class AbstractEvalPackage(ABC, AeBaseModel):
         analysis["end_time"] = cfg.end_datetime
         analysis["output_dir"] = self.output_dir
         analysis["save"] = None
-        analysis["read"]["paired"]["filenames"] = {
-            mm_model.label: f"{self.observations_label}_{mm_model.label}.nc4" for mm_model in self.mm_models
-        }
+        analysis["read"]["paired"]["filenames"] = self.paired_filenames
         task_data = deepcopy(self.cfg.task_mm_config[TaskKey.STATS])
         task_data["data"] = self.mm_model_labels
         data.update({TaskKey.STATS.value: task_data})
@@ -349,9 +355,7 @@ class AbstractEvalPackage(ABC, AeBaseModel):
         analysis["end_time"] = cfg.end_datetime
         analysis["output_dir"] = self.output_dir
         analysis["save"] = None
-        analysis["read"]["paired"]["filenames"] = {
-            mm_model.label: f"{self.observations_label}_{mm_model.label}.nc4" for mm_model in self.mm_models
-        }
+        analysis["read"]["paired"]["filenames"] = self.paired_filenames
         task_data = deepcopy(self.cfg.task_mm_config[task_key])
         for plot_key, plot_data in task_data["plots"].items():
             if plot_data["data"] is None:

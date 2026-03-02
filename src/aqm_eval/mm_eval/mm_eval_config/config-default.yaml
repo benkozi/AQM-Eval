@@ -148,45 +148,45 @@ melodies_monet_parm:
               tasks_per_node: auto
               walltime: 00:15:00
           tasks: {}
-        task_overlay:
-          timeseries:
-            plots:
-              pg1:
-                domain_type: [ "country" ]
-                domain_name: [ "US" ]
-          taylor:
-            plots:
-              pg2:
-                domain_type: [ "country" ]
-                domain_name: [ "US" ]
-          spatial_bias:
-            plots:
-              pg3:
-                domain_type: ["country"]
-                domain_name: ["US"]
-          spatial_overlay:
-            plots:
-              pg4:
-                domain_type: [ "country" ]
-                domain_name: [ "US" ]
-          boxplot:
-            plots:
-              pg5:
-                domain_type: [ "country" ]
-                domain_name: [ "US" ]
-          multi_boxplot:
-            plots:
-              pg6:
-                domain_type: [ "country" ]
-                domain_name: [ "US" ]
-          csi:
-            plots:
-              pg8:
-                domain_type: [ "country" ]
-                domain_name: [ "US" ]
-          stats:
-            domain_type: [ "country" ]
-            domain_name: [ "US" ]
+#        task_overlay:
+#          timeseries:
+#            plots:
+#              pg1:
+#                domain_type: [ "country" ]
+#                domain_name: [ "US" ]
+#          taylor:
+#            plots:
+#              pg2:
+#                domain_type: [ "country" ]
+#                domain_name: [ "US" ]
+#          spatial_bias:
+#            plots:
+#              pg3:
+#                domain_type: ["country"]
+#                domain_name: ["US"]
+#          spatial_overlay:
+#            plots:
+#              pg4:
+#                domain_type: [ "country" ]
+#                domain_name: [ "US" ]
+#          boxplot:
+#            plots:
+#              pg5:
+#                domain_type: [ "country" ]
+#                domain_name: [ "US" ]
+#          multi_boxplot:
+#            plots:
+#              pg6:
+#                domain_type: [ "country" ]
+#                domain_name: [ "US" ]
+#          csi:
+#            plots:
+#              pg8:
+#                domain_type: [ "country" ]
+#                domain_name: [ "US" ]
+#          stats:
+#            domain_type: [ "country" ]
+#            domain_name: [ "US" ]
       aqs_pm:
         observation_template: null
         observation_variables:

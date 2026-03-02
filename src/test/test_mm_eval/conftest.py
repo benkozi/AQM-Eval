@@ -5,6 +5,7 @@ from typing import Any
 import pytest
 import yaml
 from _pytest.fixtures import FixtureRequest
+from faker import Faker
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from polyfactory.factories.pydantic_factory import ModelFactory
 
@@ -169,6 +170,17 @@ class SRWContextFactory(ModelFactory[SRWContext]):
                 PackageConfigFactory.build().observation_template
             )
         return data["melodies_monet_parm"]
+
+
+@pytest.fixture(autouse=True)
+def faker_seed() -> int:
+    return 1
+
+
+@pytest.fixture(autouse=True)
+def seed_factories(faker: Faker, faker_seed: int) -> None:
+    ModelFactory.__faker__ = faker
+    ModelFactory.__random__.seed(faker_seed)
 
 
 @pytest.fixture
