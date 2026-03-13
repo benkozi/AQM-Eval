@@ -20,8 +20,8 @@ class ContextForDaskTest(BaseModel):
     root_dir: PathExisting
     klass: type[AbstractDaskOperation]
     surf_only: bool
+    with_level: bool
 
-    dims: dict[str, int] = {"time": 1, "pfull": 64, "grid_yt": 20, "grid_xt": 10}
     global_attrs: dict[str, Any] = {"foo": "bar", "bar": "foo"}
     n_files: int = 15
 
@@ -49,13 +49,23 @@ class ContextForDaskTest(BaseModel):
             )
         )
 
+    @property
+    def dims(self) -> dict[str, int]:
+        if self.with_level:
+            return {"time": 1, "pfull": 64, "grid_yt": 20, "grid_xt": 10}
+        else:
+            return {"time": 1, "grid_yt": 20, "grid_xt": 10}
+
     @cached_property
     def ak_bk_value(self) -> np.ndarray:
-        return np.array(range(self.dims["pfull"] + 1))
+        if self.with_level:
+            return np.array(range(self.dims["pfull"] + 1))
+        else:
+            return np.array([])
 
     @cached_property
     def ak_bk_attrs(self) -> dict[str, np.ndarray]:
-        if self.surf_only:
+        if self.surf_only and self.with_level:
             return {"ak": self.ak_bk_value[0:2], "bk": self.ak_bk_value[0:2]}
         else:
             return {"ak": self.ak_bk_value, "bk": self.ak_bk_value}
@@ -96,14 +106,19 @@ def surf_only(request: pytest.FixtureRequest) -> bool:
     return request.param
 
 
-def test(tmp_path: Path, klass: type[AbstractDaskOperation], surf_only: bool) -> None:
+@pytest.fixture(params=[True, False])
+def with_level(request: pytest.FixtureRequest) -> bool:
+    return request.param
+
+
+def test(tmp_path: Path, klass: type[AbstractDaskOperation], surf_only: bool, with_level: bool) -> None:
     np.random.seed(0)
-    test_ctx = ContextForDaskTest(root_dir=tmp_path, klass=klass, surf_only=surf_only)
+    test_ctx = ContextForDaskTest(root_dir=tmp_path, klass=klass, surf_only=surf_only, with_level=with_level)
     result = test_ctx.op.run()
     print(result)
     expected_dims = test_ctx.dims
     expected_dims["time"] = test_ctx.n_files - 1  # no f0.nc file
-    if surf_only:
+    if surf_only and with_level:
         expected_dims["pfull"] = 1
     assert result.dims == expected_dims
     expected_vars = set(result.data_vars)
