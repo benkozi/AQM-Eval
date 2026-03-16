@@ -480,7 +480,8 @@ class AbstractDaskOperation(ABC, AeBaseModel):
         ds = xr.open_mfdataset(path, chunks=local_chunks, concat_dim="time", combine="nested")
         LOGGER(f"xr.open_mfdataset {ds=}", level=local_log_level)
         if self.surf_only:
-            ds = ds.isel(pfull=slice(0, 1))
+            if "pfull" in ds.dims:
+                ds = ds.isel(pfull=slice(0, 1))
             if "phalf" in ds.dims:
                 ds = ds.isel(phalf=slice(0, 1))
             if "ak" in ds.attrs:
