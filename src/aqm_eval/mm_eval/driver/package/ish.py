@@ -3,11 +3,13 @@ import dask.array
 import numpy as np
 import xarray as xr
 
+from aqm_eval.logging_aqm_eval import LOGGER, log_it
 from aqm_eval.mm_eval.driver.config import PackageKey, TaskKey
 from aqm_eval.mm_eval.driver.package.core import (
     AbstractDaskEvalPackage,
     AbstractDaskOperation,
 )
+from aqm_eval.shared import us_state_to_ecoregion
 
 
 class ISH_PreprocessDaskOperation(AbstractDaskOperation):
@@ -83,3 +85,27 @@ class ISH_EvalPackage(AbstractDaskEvalPackage):
         TaskKey.STATS,
     )
     klass_dask_operation: type[AbstractDaskOperation] = ISH_PreprocessDaskOperation
+
+    @log_it
+    def _post_task_(self, task_key: TaskKey) -> None:
+        match task_key:
+            case TaskKey.SAVE_PAIRED:
+                self._check_for_epa_ecoregions_and_add_if_not_exists_()
+            case _:
+                pass
+
+    def _check_for_epa_ecoregions_and_add_if_not_exists_(self) -> None:
+        for filename in self.paired_filenames.values():
+            path = self.output_dir / filename
+            with xr.open_dataset(path) as ds:
+                if "epa_region" in ds.data_vars:
+                    LOGGER(f"epa_region already exists in ISH observation dataset: {path}")
+                    continue
+
+                LOGGER(f"adding epa_region to ISH observation dataset: {path}")
+                da = ds["state"]
+                mapped = us_state_to_ecoregion(da)
+                mapped.attrs["long_name"] = "US EPA ecoregion added by AQM-Eval"
+                new_ds = xr.Dataset({"epa_region": mapped})
+
+            new_ds.to_netcdf(path, mode="a")
